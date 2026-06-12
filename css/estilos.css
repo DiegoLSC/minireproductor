@@ -1,0 +1,450 @@
+/* estilos.css - Paleta Crimson Velvet */
+
+/* RESET GENERAL Y FUENTE PREMIUM */
+html, body {
+    margin: 0; padding: 0; height: 100vh; width: 100vw;
+    background-color: #0a0a0a; /* Negro casi puro mate */
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+}
+
+/* ESTRUCTURA DIVISIONAL */
+.app-container { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
+.app-body { display: flex; flex: 1; height: calc(100vh - 90px); width: 100vw; overflow: hidden; }
+
+/* 1. SIDEBAR (Negro absoluto) */
+.sidebar {
+    width: 280px; min-width: 280px;
+    background-color: #000000;
+    border-right: 1px solid rgba(220, 38, 38, 0.15); /* Borde rojo sutil */
+    padding: 24px 16px; overflow-y: auto; height: 100%;
+}
+
+/* 2. MAIN CONTENT (Gradiente profundo a negro con tinte rojo) */
+.main-content {
+    flex-grow: 1;
+    background: linear-gradient(to bottom, #1a1111 0%, #0a0a0a 40%);
+    padding: 32px; overflow-y: auto; height: 100%;
+}
+
+/* 3. PLAYER BAR */
+.player-bar {
+    height: 90px; min-height: 90px;
+    background-color: #0d0d0d;
+    border-top: 1px solid rgba(220, 38, 38, 0.15);
+    width: 100vw; padding: 0 32px; z-index: 1030;
+}
+
+/* ELEMENTOS INTERACTIVOS Y COLORES DE ACENTO (Rojo Carmesí) */
+.text-success { color: #ef4444 !important; } /* Rojo brillante para activos */
+.text-secondary { color: #a1a1aa !important; } /* Gris neutro suave */
+.text-info { color: #fca5a5 !important; } /* Rojo pastel para artistas */
+
+.btn-success { background-color: #dc2626 !important; border-color: #dc2626 !important; color: #ffffff !important; }
+.btn-success:hover { background-color: #b91c1c !important; }
+
+/* Brillo Neón suave en iconos activos */
+.text-success.bi-shuffle, .text-success.bi-queue { filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6)); }
+
+/* Tablas y Filas */
+.song-row { transition: background-color 0.2s ease; border-bottom: 1px solid rgba(255, 255, 255, 0.02) !important; }
+.song-row:hover { background-color: rgba(220, 38, 38, 0.08) !important; cursor: pointer; }
+
+/* Imágenes */
+.album-img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
+.player-img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+
+/* Formularios y Buscador */
+.form-control, .form-select { background-color: #141414 !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; }
+.form-control:focus, .form-select:focus { border-color: #dc2626 !important; background-color: #1a1a1a !important; }
+.input-group { border: 1px solid rgba(255, 255, 255, 0.1) !important; background-color: #111111 !important; }
+
+/* Barra de progreso */
+.form-range::-webkit-slider-thumb { background: #ef4444 !important; }
+.form-range::-moz-range-thumb { background: #ef4444 !important; }
+
+/* Acordeones Sidebar */
+.accordion-item { background-color: transparent !important; border: none !important; }
+.accordion-button { font-size: 0.85rem !important; letter-spacing: 0.05em; padding: 12px 0 !important; }
+.accordion-button:not(.collapsed) { background-color: transparent !important; color: #ef4444 !important; }
+
+/* ==========================================
+   PANEL LATERAL: COLA DE REPRODUCCIÓN
+========================================== */
+#colaPanel {
+    position: fixed;
+    top: 0;
+    right: -350px; /* Oculto fuera de la pantalla por defecto */
+    width: 350px;
+    height: 100vh;
+    background-color: #0a0a0a; /* Fondo oscuro */
+    z-index: 1060; /* Por encima de todo */
+    transition: right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    overflow-y: auto;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+}
+
+/* Esta clase es la que el JavaScript activa para meter el panel a la pantalla */
+#colaPanel.activo {
+    right: 0 !important; 
+}
+
+/* Scrollbar estilizado para la cola */
+#colaPanel::-webkit-scrollbar { width: 6px; }
+#colaPanel::-webkit-scrollbar-track { background: transparent; }
+#colaPanel::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
+/* Corrección visual interna para que la lista no se pegue abajo */
+#lista-cola-dinamica {
+    padding-bottom: 20px;
+}
+
+/* Aparecer subrayado al pasar el mouse */
+.hover-underline:hover {
+    text-decoration: underline !important;
+}
+
+/* Control de visibilidad para los menús de 3 puntos (Opciones) */
+.item-con-opciones .btn-opciones {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+.item-con-opciones:hover .btn-opciones,
+.item-con-opciones .btn-opciones button[aria-expanded="true"] {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Liberar los menús desplegables para que no se corten en tablas pequeñas */
+.table-responsive {
+    overflow: visible !important;
+}
+
+/* ==========================================
+   ESTILOS PREMIUM PARA MENÚS DE 3 PUNTOS (CRIMSON VELVET)
+   ========================================== */
+
+/* Contenedor principal del menú desplegable */
+.dropdown-menu {
+    background-color: #141414 !important; /* Fondo gris súper oscuro mate */
+    border: 1px solid rgba(220, 38, 38, 0.2) !important; /* Borde rojo carmesí muy sutil */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.95) !important; /* Sombra pesada para dar elevación */
+    border-radius: 8px !important;
+    padding: 6px 0 !important;
+}
+
+/* Opciones individuales dentro del menú */
+.dropdown-item {
+    color: #a1a1aa !important; /* Color texto secundario base */
+    font-size: 0.85rem !important;
+    padding: 8px 20px !important;
+    transition: background-color 0.2s ease, color 0.2s ease !important;
+    display: flex;
+    align-items: center;
+}
+
+/* Efecto Hover: Al pasar el mouse sobre una opción normal */
+.dropdown-item:hover, .dropdown-item:focus {
+    background-color: rgba(220, 38, 38, 0.08) !important; /* Fondo con tinte rojo sangre transparente */
+    color: #ffffff !important; /* El texto se ilumina en blanco */
+}
+
+/* Efecto Hover Exclusivo para opciones destructivas (Eliminar) */
+.dropdown-item.text-danger:hover {
+    background-color: rgba(220, 38, 38, 0.15) !important; /* Un fondo rojo un poco más fuerte */
+    color: #ef4444 !important; /* El texto brilla en rojo neón */
+}
+
+/* La línea divisoria entre opciones */
+.dropdown-divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important; /* Línea gris casi invisible */
+    margin: 6px 0 !important;
+}
+
+/* ==========================================
+   ESTILOS PREMIUM PARA FORMULARIOS Y MODALES
+   ========================================== */
+
+/* 1. Neón constante y agresivo para la ventana completa del formulario/modal */
+.modal-content {
+    background-color: #121212 !important;
+    border: 2px solid var(--sistema-carmesí) !important; /* Borde más grueso y sólido */
+    border-radius: 12px !important;
+    
+    /* El truco del Neón: Brillo exterior + Brillo interior (inset) */
+    box-shadow: 
+        0 0 15px rgba(220, 38, 38, 0.8),   /* Resplandor fuerte pegado al borde */
+        0 0 30px rgba(220, 38, 38, 0.5),   /* Halo de luz medio */
+        0 0 50px rgba(220, 38, 38, 0.2),   /* Halo de luz lejano */
+        inset 0 0 15px rgba(220, 38, 38, 0.3) !important; /* Luz reflejada hacia adentro de la caja */
+}
+
+/* Oscurecemos las líneas separadoras internas del modal para que no le roben atención al borde exterior */
+.modal-header, .modal-footer {
+    border-color: rgba(220, 38, 38, 0.15) !important;
+}
+
+/* Inputs y Selects */
+.modal-body .form-control, 
+.modal-body .form-select {
+    background-color: #1a1a1a !important;
+    border: 1px solid #333 !important;
+    color: #ffffff !important;
+    padding: 0.6rem 1rem !important;
+    border-radius: 6px !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Efecto al hacer clic en un input */
+.modal-body .form-control:focus, 
+.modal-body .form-select:focus {
+    background-color: #1f1f1f !important;
+    border-color: #dc2626 !important; /* Rojo carmesí al enfocar */
+    box-shadow: 0 0 0 0.25rem rgba(220, 38, 38, 0.15) !important;
+    outline: none !important;
+}
+
+/* Labels más legibles */
+.modal-body label {
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05rem !important;
+    color: #71717a !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Botones de acción del modal */
+.btn-primary {
+    background-color: #dc2626 !important;
+    border: none !important;
+    font-weight: 600 !important;
+}
+
+.btn-primary:hover {
+    background-color: #b91c1c !important;
+}
+
+.btn-secondary {
+    background-color: #27272a !important;
+    border: none !important;
+}
+
+/* ==========================================
+   PANTALLA DE CARGA (LOADER)
+   ========================================== */
+#pantalla-carga {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #0a0a0a; /* El negro mate de tu sistema */
+    z-index: 9999; /* Por encima de todo */
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+/* Clase que inyectará JS para desaparecerlo suavemente */
+#pantalla-carga.oculto {
+    opacity: 0;
+    visibility: hidden;
+}
+/* Transición general */
+#sidebar {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    overflow-x: hidden;
+}
+
+/* Estado contraído reforzado */
+#sidebar.contraido {
+    width: 80px !important;
+    min-width: 80px !important; /* ¡Esta es la clave que faltaba! */
+    flex: 0 0 80px !important;  /* Rompe la resistencia si usas Flexbox */
+}
+
+/* Ocultar textos */
+#sidebar.contraido .ocultar-al-contraer {
+    opacity: 0;
+    display: none !important;
+}
+
+/* Centrado de botones */
+#sidebar.contraido .nav-link,
+#sidebar.contraido .btn,
+#sidebar.contraido h4 {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+#sidebar.contraido .bi {
+    margin-right: 0 !important;
+    font-size: 1.2rem;
+}
+
+/* ==========================================
+   SCROLL INTERNO PARA LISTAS GIGANTES
+========================================= */
+/* Limita la altura del catálogo y playlists para que no rompan la pantalla */
+#dropArtistas .accordion-body,
+#dropPlaylists .accordion-body {
+    max-height: 55vh; /* Ocupa máximo un poco más de la mitad de la pantalla */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Scrollbar estilizado (estilo neón oscuro) para estas listas */
+#dropArtistas .accordion-body::-webkit-scrollbar,
+#dropPlaylists .accordion-body::-webkit-scrollbar {
+    width: 6px;
+}
+#dropArtistas .accordion-body::-webkit-scrollbar-track,
+#dropPlaylists .accordion-body::-webkit-scrollbar-track {
+    background: #121212; 
+    border-radius: 10px;
+}
+#dropArtistas .accordion-body::-webkit-scrollbar-thumb,
+#dropPlaylists .accordion-body::-webkit-scrollbar-thumb {
+    background: #333; 
+    border-radius: 10px;
+}
+#dropArtistas .accordion-body::-webkit-scrollbar-thumb:hover,
+#dropPlaylists .accordion-body::-webkit-scrollbar-thumb:hover {
+    background: var(--sistema-carmesí, #dc3545); /* Tu color rojo */
+}
+
+/* ==========================================
+   ADAPTACIÓN PARA MÓVILES (Menos de 768px)
+========================================= */
+@media (max-width: 768px) {
+    #sidebar {
+        position: fixed;
+        z-index: 1050;
+        top: 0;
+        bottom: 0;
+        left: -100%; /* Oculto fuera de la pantalla por defecto */
+        width: 260px !important; /* Ancho fijo y cómodo para dedos */
+        max-width: 80vw;
+        background-color: #0a0a0a; /* Asegurar que no sea transparente */
+        transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+    }
+
+    /* Clase que usaremos con JS para meter el panel a la pantalla */
+    #sidebar.movil-abierto {
+        left: 0 !important;
+    }
+
+    /* En móvil ignoramos la clase "contraido" de 80px */
+    #sidebar.contraido {
+        width: 260px !important;
+        min-width: 260px !important;
+    }
+    
+    /* En móvil, los textos siempre deben verse, ignoramos el "ocultar" */
+    #sidebar.contraido .ocultar-al-contraer {
+        opacity: 1 !important;
+        display: inline-block !important;
+    }
+
+    /* Deja espacio para la cabecera superior en celulares */
+    .app-body {
+        padding-top: 70px !important; 
+    }
+}
+
+/* ==========================================
+   REPRODUCTOR RESPONSIVE (MÓVILES)
+========================================= */
+@media (max-width: 768px) {
+    /* Si tu reproductor principal tiene un ID, úsalo aquí. Asumiré que está en un footer o div fijo */
+    #reproductor-inferior { 
+        height: auto !important; 
+        padding: 10px 5px !important;
+        flex-direction: column !important; /* Apila los elementos en vertical */
+        gap: 10px;
+    }
+
+    /* 1. La sección de la carátula y título (Izquierda) */
+    #reproductor-inferior > div:nth-child(1) {
+        width: 100% !important;
+        justify-content: center !important;
+        text-align: center;
+    }
+
+    /* 2. La sección de los controles y barra de progreso (Centro) */
+    #reproductor-inferior > div:nth-child(2) {
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+
+    /* 3. La sección del volumen (Derecha) desaparece en celulares */
+    #reproductor-inferior > div:nth-child(3) {
+        display: none !important; 
+    }
+}
+
+/* ==========================================
+   COLA DE REPRODUCCIÓN RESPONSIVA (MÓVILES)
+========================================== */
+@media (max-width: 768px) {
+    #colaPanel {
+        width: 100% !important; /* Ocupa el 100% de la pantalla */
+        right: -100% !important; /* Lo esconde al 100% cuando está cerrado */
+        z-index: 1100 !important; /* Asegura que tape la cabecera del celular */
+    }
+    
+    #colaPanel.activo {
+        right: 0 !important;
+    }
+}
+
+/* ==========================================
+   REPRODUCTOR INFERIOR RESPONSIVO (MÓVILES)
+========================================== */
+@media (max-width: 768px) {
+    .player-bar {
+        flex-wrap: wrap !important; /* Permite que los elementos salten de línea */
+        height: auto !important;
+        padding: 15px !important;
+        gap: 0 !important; /* El espacio lo controlamos con márgenes */
+    }
+    
+    /* 1. Zona de Información (Izquierda, Arriba) */
+    .player-bar > div:nth-child(1) {
+        width: calc(100% - 50px) !important; /* Deja exactamente 50px libres para el botón de la cola */
+        order: 1 !important; /* Se dibuja primero */
+        justify-content: flex-start !important; 
+    }
+    
+    /* Previene que nombres súper largos rompan la fila */
+    #current-title, #current-artist {
+        max-width: 50vw !important; 
+    }
+
+    /* 2. Botón de la Cola (Derecha, Arriba) */
+    #btn-abrir-cola {
+        position: static !important; /* Le quitamos el absolute problemático */
+        width: 50px !important;
+        order: 2 !important; /* Se dibuja al lado de la información */
+        display: flex !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        font-size: 1.5rem !important;
+        margin: 0 !important;
+    }
+
+    /* 3. Zona de Controles y Barra (Abajo, ocupa todo el ancho) */
+    .player-bar > div:nth-child(2) {
+        width: 100% !important;
+        order: 3 !important; /* Salta a la línea de abajo */
+        margin-top: 15px !important;
+    }
+    
+    /* 4. Zona de Volumen (Oculta) */
+    .player-bar > div:nth-child(3) {
+        display: none !important; 
+    }
+}
