@@ -1,0 +1,165 @@
+// assets/js/apiServices.js
+
+function enviarFormularioAsincrono(event, urlDestino) {
+    event.preventDefault();
+    const formulario = event.target;
+    const formData = new FormData(formulario);
+    const modalInstance = bootstrap.Modal.getInstance(formulario.closest('.modal'));
+
+    fetch(urlDestino, { method: 'POST', body: formData })
+    .then(response => {
+        if (response.ok) {
+            if (modalInstance) modalInstance.hide();
+            formulario.reset();
+            alert("¡Cambios guardados con éxito en la Base de Datos!");
+            if (typeof filtrarBiblioteca === 'function') filtrarBiblioteca();
+        } else { alert("Hubo un problema en el servidor."); }
+    }).catch(err => console.error(err));
+}
+
+function eliminarElementoAsincrono(tabla, id, botonClid) {
+    event.stopPropagation();
+    if (!confirm(`¿Estás seguro de que deseas eliminar este registro?`)) return;
+    fetch(`api/eliminar_elementos.php?tabla=${tabla}&id=${id}`)
+    .then(response => {
+        if (response.ok) {
+            alert("¡El elemento ha sido eliminado con éxito!");
+            const fila = botonClid.closest('tr') || botonClid.closest('li');
+            if (fila) fila.remove();
+            if (typeof filtrarBiblioteca === 'function') filtrarBiblioteca(); 
+        } else { alert("Error: No se pudo eliminar el elemento."); }
+    }).catch(err => console.error(err));
+}
+
+// SISTEMA DE BACKUP
+let backupInterval;
+
+function iniciarBackup() {
+    if (!confirm("¿Estás seguro de que deseas generar un backup de toda tu biblioteca?\n\nEste proceso se ejecutará en segundo plano y puede tardar un poco.")) return;
+
+    const toastEl = document.getElementById('backupToast');
+    const toastBody = document.getElementById('backupToastMensaje');
+    const toast = new bootstrap.Toast(toastEl);
+
+    toastBody.innerHTML = `<span class="spinner-border spinner-border-sm text-warning" role="status"></span> Empaquetando tu biblioteca...`;
+    toast.show();
+
+    fetch('api/backup.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'accion=iniciar'
+    }).catch(e => console.error("Error al lanzar proceso:", e));
+
+    clearInterval(backupInterval);
+    backupInterval = setInterval(revisarEstadoBackup, 3000);
+}
+
+function procesarSubidaBackup(input) {
+    const archivo = input.files[0];
+    if (!archivo) return; 
+
+    const mensaje = `¿Estás seguro de sincronizar el backup "${archivo.name}"?\n\nEl sistema analizará los archivos y SOLO añadirá las canciones, artistas y álbumes que NO existan actualmente.`;
+
+    if (!confirm(mensaje)) {
+        input.value = ''; 
+        return;
+    }
+
+    const toastEl = document.getElementById('backupToast');
+    const toastBody = document.getElementById('backupToastMensaje');
+    if (toastEl && toastBody) {
+        const toast = new bootstrap.Toast(toastEl);
+        toastBody.innerHTML = `<span class="spinner-border spinner-border-sm text-info" role="status"></span> Analizando y fusionando biblioteca...`;
+        toast.show();
+    }
+
+    const formData = new FormData();
+    formData.append('archivo_backup', archivo);
+
+    fetch('api/restaurar_backup.php', { method: 'POST', body: formData })
+    .then(response => response.json())
+    .then(datos => {
+        if (datos.estado === 'exito') {
+            toastBody.innerHTML = `<i class="bi bi-check-circle-fill text-success fs-5"></i> ¡Fusión completada! Se añadieron ${datos.canciones_nuevas || 0} canciones nuevas.`;
+            setTimeout(() => location.reload(), 3000); 
+        } else {
+            toastBody.innerHTML = `<i class="bi bi-x-circle-fill text-danger fs-5"></i> Error: ${datos.mensaje}`;
+        }
+    })
+    .catch(err => {
+        console.error("Error en la subida:", err);
+        toastBody.innerHTML = `<i class="bi bi-x-circle-fill text-danger fs-5"></i> Hubo un error de red al subir el archivo.`;
+    })
+    .finally(() => { input.value = ''; });
+}
+
+async function revisarEstadoBackup() {
+    try {
+        const respuesta = await fetch('api/backup.php?accion=estado');
+        const datos = await respuesta.json();
+
+        if (datos.estado === 'completado') {
+            clearInterval(backupInterval); 
+            const toastBody = document.getElementById('backupToastMensaje');
+            toastBody.innerHTML = `
+                <i class="bi bi-check-circle-fill text-success fs-5"></i> 
+                <span>¡Backup Listo!</span>
+                <a href="${datos.archivo}" download class="btn btn-sm btn-success ms-2">Descargar ZIP</a>
+            `;
+            fetch('api/backup.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'accion=limpiar' });
+        } 
+        else if (datos.estado === 'error') {
+            clearInterval(backupInterval);
+            document.getElementById('backupToastMensaje').innerHTML = `<i class="bi bi-x-circle-fill text-danger fs-5"></i> Hubo un error al crear el backup.`;
+        }
+    } catch (error) { console.error("Revisando estado...", error); }
+}
+
+async function descargarCancionConMetadatos(boton, rutaAudio, tituloTrack, artistasTexto, albumTrack) {
+    const textoOriginal = boton.querySelector('.texto-btn').innerText;
+    const iconoOriginal = boton.querySelector('i').className;
+    
+    try {
+        boton.querySelector('.texto-btn').innerText = " Preparando...";
+        boton.querySelector('i').className = "bi bi-hourglass-split text-warning spinner-border spinner-border-sm";
+        boton.disabled = true;
+
+        const rutaLimpia = rutaAudio.replace('../', '');
+        const respuesta = await fetch(rutaLimpia);
+        if (!respuesta.ok) throw new Error("Archivo MP3 no encontrado.");
+        const buffer = await respuesta.arrayBuffer();
+
+        let writer;
+        if (typeof ID3Writer !== 'undefined') writer = new ID3Writer(buffer);
+        else if (typeof browserID3Writer !== 'undefined') writer = new browserID3Writer(buffer);
+        else throw new Error("La librería de metadatos no cargó.");
+
+        const arrayArtistas = artistasTexto ? artistasTexto.split(',').map(a => a.trim()) : ['Artista Desconocido'];
+
+        writer.setFrame('TIT2', tituloTrack)
+              .setFrame('TPE1', arrayArtistas)
+              .setFrame('TALB', albumTrack || 'Sencillo');
+        writer.addTag();
+
+        const blob = writer.getBlob();
+        const urlObjeto = URL.createObjectURL(blob);
+
+        const enlaceDescarga = document.createElement('a');
+        enlaceDescarga.href = urlObjeto;
+        enlaceDescarga.download = `${tituloTrack.replace(/[<>:"/\\|?*]+/g, '')}.mp3`;
+        
+        document.body.appendChild(enlaceDescarga);
+        enlaceDescarga.click();
+        
+        document.body.removeChild(enlaceDescarga);
+        URL.revokeObjectURL(urlObjeto);
+
+    } catch (error) {
+        console.error("Error al inyectar metadatos:", error);
+        alert("Error: " + error.message); 
+    } finally {
+        boton.querySelector('.texto-btn').innerText = textoOriginal;
+        boton.querySelector('i').className = iconoOriginal;
+        boton.disabled = false;
+    }
+}

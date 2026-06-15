@@ -1,0 +1,51 @@
+/* assets/css/base.css */
+
+:root {
+    /* Paleta Crimson Velvet Centralizada */
+    --bg-absoluto: #000000;
+    --bg-base: #0a0a0a;
+    --bg-superficie: #121212;
+    --bg-superficie-ligero: #141414;
+    --bg-superficie-hover: #1a1a1a;
+    
+    --texto-primario: #ffffff;
+    --texto-secundario: #a1a1aa;
+    
+    --sistema-carmesí: #dc2626; /* Rojo base */
+    --carmesí-hover: #b91c1c;   /* Rojo oscuro */
+    --carmesí-brillante: #ef4444; /* Rojo neón */
+    --carmesí-pastel: #fca5a5;  /* Rojo suave */
+    
+    --borde-tenue: rgba(255, 255, 255, 0.05);
+    --borde-carmesí: rgba(220, 38, 38, 0.15);
+}
+
+/* RESET GENERAL Y FUENTE */
+html, body {
+    margin: 0; padding: 0; height: 100vh; width: 100vw;
+    background-color: var(--bg-base);
+    color: var(--texto-primario);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+}
+
+/* UTILIDADES Y COLORES DE ACENTO */
+.text-success { color: var(--carmesí-brillante) !important; } 
+.text-secondary { color: var(--texto-secundario) !important; } 
+.text-info { color: var(--carmesí-pastel) !important; } 
+
+.btn-success { background-color: var(--sistema-carmesí) !important; border-color: var(--sistema-carmesí) !important; color: var(--texto-primario) !important; }
+.btn-success:hover { background-color: var(--carmesí-hover) !important; }
+
+.hover-underline:hover { text-decoration: underline !important; }
+
+/* Brillo Neón suave en iconos activos */
+.text-success.bi-shuffle, .text-success.bi-queue { filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6)); }
+
+/* Pantalla de carga (Loader) */
+#pantalla-carga {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: var(--bg-base); z-index: 9999;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+#pantalla-carga.oculto { opacity: 0; visibility: hidden; }

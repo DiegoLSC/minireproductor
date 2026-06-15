@@ -1,0 +1,81 @@
+/* assets/css/components.css */
+
+/* IMÁGENES */
+.album-img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
+.player-img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+
+/* TABLAS Y LISTAS */
+.table-responsive { overflow: visible !important; }
+.song-row { transition: background-color 0.2s ease; border-bottom: 1px solid var(--borde-tenue) !important; }
+.song-row:hover { background-color: rgba(220, 38, 38, 0.08) !important; cursor: pointer; }
+
+/* MENÚS DE TRES PUNTOS (DROPDOWNS) */
+.item-con-opciones .btn-opciones { opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+.item-con-opciones:hover .btn-opciones, .item-con-opciones .btn-opciones button[aria-expanded="true"] { opacity: 1; pointer-events: auto; }
+
+.dropdown-menu {
+    background-color: var(--bg-superficie-ligero) !important;
+    border: 1px solid var(--borde-carmesí) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.95) !important;
+    border-radius: 8px !important; padding: 6px 0 !important;
+}
+.dropdown-item {
+    color: var(--texto-secundario) !important; font-size: 0.85rem !important; padding: 8px 20px !important;
+    transition: background-color 0.2s ease, color 0.2s ease !important; display: flex; align-items: center;
+}
+.dropdown-item:hover, .dropdown-item:focus { background-color: rgba(220, 38, 38, 0.08) !important; color: var(--texto-primario) !important; }
+.dropdown-item.text-danger:hover { background-color: rgba(220, 38, 38, 0.15) !important; color: var(--carmesí-brillante) !important; }
+.dropdown-divider { border-top: 1px solid var(--borde-tenue) !important; margin: 6px 0 !important; }
+
+/* FORMULARIOS Y RANGOS */
+.form-control, .form-select { background-color: var(--bg-superficie-ligero) !important; color: var(--texto-primario) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; }
+.form-control:focus, .form-select:focus { border-color: var(--sistema-carmesí) !important; background-color: var(--bg-superficie-hover) !important; }
+.input-group { border: 1px solid rgba(255, 255, 255, 0.1) !important; background-color: #111111 !important; }
+
+.form-range::-webkit-slider-thumb { background: var(--carmesí-brillante) !important; }
+.form-range::-moz-range-thumb { background: var(--carmesí-brillante) !important; }
+
+/* ACORDEONES Y SCROLLBARS INTERNOS */
+.accordion-item { background-color: transparent !important; border: none !important; }
+.accordion-button { font-size: 0.85rem !important; letter-spacing: 0.05em; padding: 12px 0 !important; }
+.accordion-button:not(.collapsed) { background-color: transparent !important; color: var(--carmesí-brillante) !important; }
+
+#dropArtistas .accordion-body, #dropPlaylists .accordion-body { max-height: 55vh; overflow-y: auto; overflow-x: hidden; }
+#dropArtistas .accordion-body::-webkit-scrollbar, #dropPlaylists .accordion-body::-webkit-scrollbar { width: 6px; }
+#dropArtistas .accordion-body::-webkit-scrollbar-track, #dropPlaylists .accordion-body::-webkit-scrollbar-track { background: var(--bg-superficie); border-radius: 10px; }
+#dropArtistas .accordion-body::-webkit-scrollbar-thumb, #dropPlaylists .accordion-body::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+#dropArtistas .accordion-body::-webkit-scrollbar-thumb:hover, #dropPlaylists .accordion-body::-webkit-scrollbar-thumb:hover { background: var(--sistema-carmesí); }
+
+/* MODALES NEÓN */
+.modal-content {
+    background-color: var(--bg-superficie) !important;
+    border: 2px solid var(--sistema-carmesí) !important; border-radius: 12px !important;
+    box-shadow: 0 0 15px rgba(220, 38, 38, 0.8), 0 0 30px rgba(220, 38, 38, 0.5), 0 0 50px rgba(220, 38, 38, 0.2), inset 0 0 15px rgba(220, 38, 38, 0.3) !important;
+}
+.modal-header, .modal-footer { border-color: var(--borde-carmesí) !important; }
+.modal-body .form-control, .modal-body .form-select { background-color: var(--bg-superficie-hover) !important; border: 1px solid #333 !important; color: var(--texto-primario) !important; padding: 0.6rem 1rem !important; border-radius: 6px !important; transition: all 0.3s ease !important; }
+.modal-body .form-control:focus, .modal-body .form-select:focus { background-color: #1f1f1f !important; border-color: var(--sistema-carmesí) !important; box-shadow: 0 0 0 0.25rem var(--borde-carmesí) !important; outline: none !important; }
+.modal-body label { font-size: 0.75rem !important; text-transform: uppercase !important; letter-spacing: 0.05rem !important; color: #71717a !important; margin-bottom: 0.5rem !important; }
+.btn-primary { background-color: var(--sistema-carmesí) !important; border: none !important; font-weight: 600 !important; }
+.btn-primary:hover { background-color: var(--carmesí-hover) !important; }
+.btn-secondary { background-color: #27272a !important; border: none !important; }
+
+/* PANEL LATERAL DE COLA */
+#colaPanel {
+    position: fixed; top: 0; right: -350px; width: 350px; height: 100vh;
+    background-color: var(--bg-base); z-index: 1060;
+    transition: right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    overflow-y: auto; border-left: 1px solid var(--borde-tenue);
+    box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+}
+#colaPanel.activo { right: 0 !important; }
+#colaPanel::-webkit-scrollbar { width: 6px; }
+#colaPanel::-webkit-scrollbar-track { background: transparent; }
+#colaPanel::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+#lista-cola-dinamica { padding-bottom: 20px; }
+
+/* PANEL LATERAL DE COLA (MÓVIL) */
+@media (max-width: 768px) {
+    #colaPanel { width: 100% !important; right: -100% !important; z-index: 1100 !important; }
+    #colaPanel.activo { right: 0 !important; }
+}

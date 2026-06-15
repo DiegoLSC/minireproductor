@@ -1,0 +1,62 @@
+/* assets/css/layout.css */
+
+/* ESTRUCTURA DIVISIONAL */
+.app-container { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
+.app-body { display: flex; flex: 1; height: calc(100vh - 90px); width: 100vw; overflow: hidden; }
+
+/* MAIN CONTENT (Gradiente profundo) */
+.main-content {
+    flex-grow: 1;
+    background: linear-gradient(to bottom, #1a1111 0%, var(--bg-base) 40%);
+    padding: 32px; overflow-y: auto; height: 100%;
+}
+
+/* PLAYER BAR */
+.player-bar {
+    height: 90px; min-height: 90px;
+    background-color: #0d0d0d;
+    border-top: 1px solid var(--borde-carmesí);
+    width: 100vw; padding: 0 32px; z-index: 1030;
+}
+
+/* SIDEBAR (Escritorio) */
+.sidebar {
+    width: 280px; min-width: 280px;
+    background-color: var(--bg-absoluto);
+    border-right: 1px solid var(--borde-carmesí);
+    padding: 24px 16px; overflow-y: auto; height: 100%;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    overflow-x: hidden;
+}
+
+#sidebar.contraido {
+    width: 80px !important; min-width: 80px !important; flex: 0 0 80px !important; 
+}
+#sidebar.contraido .ocultar-al-contraer { opacity: 0; display: none !important; }
+#sidebar.contraido .nav-link, #sidebar.contraido .btn, #sidebar.contraido h4 { justify-content: center !important; padding-left: 0 !important; padding-right: 0 !important; }
+#sidebar.contraido .bi { margin-right: 0 !important; font-size: 1.2rem; }
+
+/* ADAPTACIÓN PARA MÓVILES (Menos de 768px) */
+@media (max-width: 768px) {
+    /* Ajustes generales de espacio */
+    .app-body { padding-top: 70px !important; }
+
+    /* Sidebar Móvil */
+    #sidebar {
+        position: fixed; z-index: 1050; top: 0; bottom: 0; left: -100%; 
+        width: 260px !important; max-width: 80vw;
+        background-color: var(--bg-base);
+        box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+    }
+    #sidebar.movil-abierto { left: 0 !important; }
+    #sidebar.contraido { width: 260px !important; min-width: 260px !important; }
+    #sidebar.contraido .ocultar-al-contraer { opacity: 1 !important; display: inline-block !important; }
+
+    /* Barra Reproductor Móvil */
+    .player-bar { flex-wrap: wrap !important; height: auto !important; padding: 15px !important; gap: 0 !important; }
+    .player-bar > div:nth-child(1) { width: calc(100% - 50px) !important; order: 1 !important; justify-content: flex-start !important; }
+    #current-title, #current-artist { max-width: 50vw !important; }
+    #btn-abrir-cola { position: static !important; width: 50px !important; order: 2 !important; display: flex !important; justify-content: flex-end !important; align-items: center !important; margin: 0 !important; }
+    .player-bar > div:nth-child(2) { width: 100% !important; order: 3 !important; margin-top: 15px !important; }
+    .player-bar > div:nth-child(3) { display: none !important; }
+}
