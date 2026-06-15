@@ -372,7 +372,11 @@ $albumes = $pdo->query($queryAlbumes)->fetchAll(PDO::FETCH_ASSOC);
                                                     </button>
                                                 </li>
                                                 <li>
-                                                    <button type="button" class="dropdown-item text-white rounded small py-1.5" data-bs-toggle="modal" data-bs-target="#editCancionModal" onclick="cargarModalCancion(<?= $c['id'] ?>, '<?= addslashes($c['titulo']) ?>', '<?= $c['album_id'] ?? '' ?>', <?= $c['duracion'] ?? 0 ?>); cargarEtiquetasEdicion('<?= $c['artistas_ids'] ?? '' ?>', '<?= addslashes($c['artistas_nombres'] ?? '') ?>');">
+                                                    <button type="button" class="dropdown-item text-white rounded small py-1.5" data-bs-toggle="modal" data-bs-target="#editCancionModal" 
+                                                        onclick="
+                                                            cargarModalCancion(<?= $c['id'] ?>, '<?= addslashes($c['titulo']) ?>', '<?= $c['album_id'] ?? '' ?>', <?= $c['duracion'] ?? 0 ?>, '<?= addslashes($c['ruta'] ?? '') ?>'); 
+                                                            cargarEtiquetasEdicion('<?= $c['artistas_ids'] ?? '' ?>', '<?= addslashes($c['artistas_nombres'] ?? '') ?>');
+                                                        ">
                                                         <i class="bi bi-pencil me-2 text-warning"></i> Editar detalles
                                                     </button>
                                                 </li>
@@ -648,12 +652,27 @@ $albumes = $pdo->query($queryAlbumes)->fetchAll(PDO::FETCH_ASSOC);
                     <label class="form-label">Título de la Canción</label>
                     <input type="text" name="titulo" id="edit_can_titulo" class="form-control" required>
                 </div>
+
+                <div>
+                    <label class="form-label">Archivo MP3 (Opcional)</label>
+                    <input type="file" name="archivo_mp3" id="edit_can_archivo" class="form-control bg-dark border-secondary text-white shadow-none" accept=".mp3,audio/*" onchange="obtenerDuracionArchivo(this)">
+                    <div class="form-text text-white-50" style="font-size: 0.75rem;">Sube un nuevo archivo solo si deseas reemplazar el audio actual.</div>
+                    
+                    <input type="hidden" name="ruta_actual" id="edit_can_ruta_actual">
+                </div>
                 
                 <div>
                     <label class="form-label">Álbum</label>
                     <select name="album_id" id="edit_can_album" class="form-select">
                         <option value="">-- Ninguno (Single / Sencillo) --</option>
-                        <?php foreach($albumes as $alb): ?><option value="<?= $alb['id'] ?>"><?= htmlspecialchars($alb['titulo']) ?></option><?php endforeach; ?>
+                        <?php foreach($albumes as $alb): ?>
+                            <option value="<?= $alb['id'] ?>">
+                                <?= htmlspecialchars($alb['titulo']) ?> 
+                                <?php if(!empty($alb['artistas_nombres'])): ?>
+                                    (<?= htmlspecialchars($alb['artistas_nombres']) ?>)
+                                <?php endif; ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 

@@ -501,15 +501,24 @@ function obtenerDuracionArchivo(input) {
 // ==========================================
 // LLENAR DATOS DEL MODAL (EDITAR CANCIÓN)
 // ==========================================
-function cargarModalCancion(id, titulo, album_id, duracion) {
+function cargarModalCancion(id, titulo, album_id, duracion, ruta) {
     // 1. Llenar los campos básicos
     document.getElementById('edit_can_id').value = id;
     document.getElementById('edit_can_titulo').value = titulo;
     
-    // 2. Seleccionar el álbum (o dejarlo en Single si es nulo)
+    // [MODIFICADO] 2. Gestionar el archivo MP3
+    // Guardamos la ruta actual en el input invisible
+    const inputRutaActual = document.getElementById('edit_can_ruta_actual');
+    if(inputRutaActual) inputRutaActual.value = ruta;
+    
+    // Limpiamos el input de "Seleccionar archivo" por si quedó seleccionado algo de antes
+    const inputArchivo = document.getElementById('edit_can_archivo');
+    if(inputArchivo) inputArchivo.value = '';
+    
+    // 3. Seleccionar el álbum
     document.getElementById('edit_can_album').value = album_id || '';
     
-    // 3. Formatear la duración (ej: 188 segundos -> 3:08 min)
+    // 4. Formatear la duración
     let min = Math.floor(duracion / 60);
     let sec = duracion % 60;
     let secFormateado = sec < 10 ? '0' + sec : sec;
