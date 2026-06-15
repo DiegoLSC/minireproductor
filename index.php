@@ -122,11 +122,19 @@ $albumes = $pdo->query($queryAlbumes)->fetchAll(PDO::FETCH_ASSOC);
                     <span class="ocultar-al-contraer">Subir Canción</span>
                 </button>
 
-                <button class="btn btn-primary btn-sm rounded-pill text-start fw-bold mt-2 shadow d-flex align-items-center" onclick="iniciarBackup()">
-                    <i class="bi bi-box-seam-fill me-2 text-white"></i> 
-                    <span class="ocultar-al-contraer">Descargar Backup</span>
-                </button>
-                
+                <div class="d-flex gap-2 mt-2 w-100">
+                    <button type="button" class="btn btn-primary btn-sm rounded-pill fw-bold shadow d-flex align-items-center justify-content-center flex-fill" onclick="iniciarBackup()" title="Descargar Backup">
+                        <i class="bi bi-box-seam-fill me-2 text-white"></i> 
+                        <span class="ocultar-al-contraer">Descargar</span>
+                    </button>
+
+                    <button type="button" class="btn btn-primary btn-sm rounded-pill fw-bold shadow d-flex align-items-center justify-content-center flex-fill" onclick="document.getElementById('input-subir-backup').click()" title="Sincronizar Backup">
+                        <i class="bi bi-cloud-arrow-up-fill me-2 text-white"></i> 
+                        <span class="ocultar-al-contraer">Sincronizar</span>
+                    </button>
+                </div>
+
+                <input type="file" id="input-subir-backup" class="d-none" accept=".zip" onchange="procesarSubidaBackup(this)">
             </div>
         
             <hr class="text-secondary border-opacity-50 my-2">

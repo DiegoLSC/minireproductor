@@ -1391,6 +1391,60 @@ function iniciarBackup() {
     backupInterval = setInterval(revisarEstadoBackup, 3000);
 }
 
+// ==========================================
+// SUBIR Y SINCRONIZAR BACKUP
+// ==========================================
+function procesarSubidaBackup(input) {
+    const archivo = input.files[0];
+    
+    // Si el usuario abre la ventana de archivos pero le da a "Cancelar", detenemos todo
+    if (!archivo) return; 
+
+    // 1. Mensaje de confirmación antes de arrancar
+    const mensaje = `¿Estás seguro de sincronizar el archivo "${archivo.name}"?\n\nEl sistema analizará el backup y SOLO añadirá las canciones, artistas y álbumes que NO existan actualmente. No se perderá tu música ni se crearán duplicados.`;
+
+    if (!confirm(mensaje)) {
+        input.value = ''; // Limpiamos el input por si luego quiere subir el mismo archivo
+        return; 
+    }
+
+    // 2. Mostrar notificación de inicio (Reutilizando tu Toast actual)
+    const toastEl = document.getElementById('backupToast');
+    const toastBody = document.getElementById('backupToastMensaje');
+    const toast = new bootstrap.Toast(toastEl);
+
+    toastBody.innerHTML = `<span class="spinner-border spinner-border-sm text-info" role="status"></span> Subiendo y procesando el backup. Por favor, no cierres esta ventana...`;
+    toast.show();
+
+    // 3. Preparar el archivo (FormData permite enviar archivos físicos por Fetch)
+    const formData = new FormData();
+    formData.append('archivo_backup', archivo);
+
+    // 4. Enviar la orden de subir al PHP
+    fetch('api/restaurar_backup.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(datos => {
+        if (datos.estado === 'exito') {
+            toastBody.innerHTML = `<i class="bi bi-check-circle-fill text-success fs-5"></i> ¡Sincronización completada con éxito!`;
+            
+            // Recargamos la página después de 2 segundos para que veas la nueva música en tu tabla
+            setTimeout(() => location.reload(), 2000); 
+        } else {
+            toastBody.innerHTML = `<i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i> Error: ${datos.mensaje}`;
+        }
+    })
+    .catch(e => {
+        console.error("Error al procesar el backup:", e);
+        toastBody.innerHTML = `<i class="bi bi-x-circle-fill text-danger fs-5"></i> Ocurrió un error al intentar enviar el archivo al servidor.`;
+    })
+    .finally(() => {
+        input.value = ''; // Siempre limpiamos la memoria del input al terminar
+    });
+}
+
 async function revisarEstadoBackup() {
     try {
         const respuesta = await fetch('api/backup.php?accion=estado');
@@ -1529,4 +1583,58 @@ function restaurarSesion() {
         // 4. Actualizamos la pantalla de bloqueo
         actualizarPantallaBloqueo(titulo, artista, 'NebulaPlayer', caratula);
     }
+}
+
+// ==========================================
+// SUBIDA Y FUSIÓN DE BACKUP
+// ==========================================
+function procesarSubidaBackup(input) {
+    const archivo = input.files[0];
+    if (!archivo) return; // Si el usuario cerró la ventana sin elegir nada, no hacemos nada
+
+    // 1. El mensaje de confirmación súper claro
+    const mensaje = `¿Estás seguro de sincronizar el backup "${archivo.name}"?\n\nEl sistema analizará los archivos y SOLO añadirá las canciones, artistas y álbumes que NO existan actualmente en tu biblioteca. No se perderá ni se duplicará tu música actual.`;
+
+    // Si hace clic en "Cancelar", abortamos
+    if (!confirm(mensaje)) {
+        input.value = ''; // Limpiamos el input por si quiere volver a intentarlo
+        return;
+    }
+
+    // 2. Mostrar la notificación visual (Reutilizamos el Toast de tu backup actual)
+    const toastEl = document.getElementById('backupToast');
+    const toastBody = document.getElementById('backupToastMensaje');
+    
+    if (toastEl && toastBody) {
+        const toast = new bootstrap.Toast(toastEl);
+        toastBody.innerHTML = `<span class="spinner-border spinner-border-sm text-info" role="status"></span> Analizando y fusionando biblioteca... Esto puede tardar varios minutos.`;
+        toast.show();
+    }
+
+    // 3. Empaquetar el archivo para enviarlo al servidor de forma oculta
+    const formData = new FormData();
+    formData.append('archivo_backup', archivo);
+
+    // 4. Enviar a PHP
+    fetch('api/restaurar_backup.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(datos => {
+        if (datos.estado === 'exito') {
+            toastBody.innerHTML = `<i class="bi bi-check-circle-fill text-success fs-5"></i> ¡Fusión completada! Se añadieron ${datos.canciones_nuevas} canciones nuevas.`;
+            // Recargamos la página después de 3 segundos para que veas la nueva música en la tabla
+            setTimeout(() => location.reload(), 3000); 
+        } else {
+            toastBody.innerHTML = `<i class="bi bi-x-circle-fill text-danger fs-5"></i> Error: ${datos.mensaje}`;
+        }
+    })
+    .catch(err => {
+        console.error("Error en la subida:", err);
+        toastBody.innerHTML = `<i class="bi bi-x-circle-fill text-danger fs-5"></i> Hubo un error de red al subir el archivo.`;
+    })
+    .finally(() => {
+        input.value = ''; // Siempre limpiamos el input al terminar
+    });
 }
