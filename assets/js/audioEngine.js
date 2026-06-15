@@ -230,20 +230,39 @@ function inicializarDragAndDropCola() {
     });
 }
 
+
+// AUN CON ERROR
 function irACancionActual() {
     if (!window.rutaEnReproduccion) return; 
-    const index = filasFiltradasGlobal.findIndex(fila => fila.getAttribute('data-ruta') === window.rutaEnReproduccion);
-    if (index !== -1) {
-        const paginaDestino = Math.floor(index / cancionesPorPagina) + 1;
-        if (paginaActual !== paginaDestino) cambiarPagina(paginaDestino);
+
+    // 1. Buscamos el índice visual (para la tabla)
+    const indexVisual = filasFiltradasGlobal.findIndex(fila => fila.getAttribute('data-ruta') === window.rutaEnReproduccion);
+
+    if (indexVisual !== -1) {
+        const paginaDestino = Math.floor(indexVisual / cancionesPorPagina) + 1;
+        
+        // 2. Si no estamos en la página correcta, cambiamos de página
+        if (paginaActual !== paginaDestino) {
+            cambiarPagina(paginaDestino);
+        }
+
+        // 3. Ejecutamos el scroll y forzamos la sincronización del puntero
         setTimeout(() => {
-            const filaObjetivo = filasFiltradasGlobal[index];
-            filaObjetivo.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            filaObjetivo.style.transition = "background-color 0.4s ease";
-            filaObjetivo.style.backgroundColor = "rgba(239, 68, 68, 0.4)"; 
-            setTimeout(() => { filaObjetivo.style.backgroundColor = ""; }, 1200);
+            const filaObjetivo = filasFiltradasGlobal[indexVisual];
+            if (filaObjetivo) {
+                // Sincronización forzada: Buscamos dónde está la ruta en la lista real de reproducción
+                const nuevoIndice = listaDeReproduccion.findIndex(t => t.ruta === window.rutaEnReproduccion);
+                if (nuevoIndice !== -1) {
+                    indiceActual = nuevoIndice; // <--- AQUÍ ESTÁ EL ANCLAJE
+                }
+
+                filaObjetivo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                filaObjetivo.style.transition = "background-color 0.4s ease";
+                filaObjetivo.style.backgroundColor = "rgba(239, 68, 68, 0.4)"; 
+                setTimeout(() => { filaObjetivo.style.backgroundColor = ""; }, 1200);
+            }
         }, 150); 
     } else {
-        alert("La canción que está sonando no se encuentra en tu búsqueda actual. Limpia el buscador e inténtalo de nuevo.");
+        alert("La canción que está sonando no se encuentra en tu búsqueda actual.");
     }
 }
