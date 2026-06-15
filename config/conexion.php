@@ -1,6 +1,6 @@
 <?php
 // config/conexion.php
-$host = '127.0.0.1'; // <-- ESTE ES EL CAMBIO CRUCIAL
+$host = '127.0.0.1';
 $db   = 'minireproductor';
 $user = 'root'; 
 $pass = '';     
