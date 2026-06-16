@@ -7,6 +7,12 @@ let filtroPlaylistActivo = "";
 let sortableCola = null;
 let volumenAnterior = 1;
 
+// Función Helper: Quita tildes y diacríticos para búsquedas exactas
+function quitarTildes(texto) {
+    if (!texto) return "";
+    return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 function formatearTiempo(segundos) {
     if (isNaN(segundos)) return "0:00";
     const mins = Math.floor(segundos / 60);
@@ -39,7 +45,8 @@ function limpiarBuscador() {
 }
 
 function filtrarBiblioteca() {
-    const textoFiltro = document.getElementById('buscadorInput').value.toLowerCase();
+    const textoFiltro = quitarTildes(document.getElementById('buscadorInput').value.toLowerCase());
+    
     const btnLimpiar = document.getElementById('btn-limpiar-busqueda');
     if (btnLimpiar) btnLimpiar.classList.toggle('d-none', textoFiltro.length === 0);
 
@@ -47,13 +54,14 @@ function filtrarBiblioteca() {
     filasFiltradasGlobal = []; 
 
     todasLasFilas.forEach(fila => {
-        const titulo = fila.querySelector('.title-col').innerText.toLowerCase();
-        const album = fila.querySelector('.album-col').innerText.toLowerCase();
-        const artistas = fila.querySelector('.artist-col').innerText.toLowerCase();
-        const playlistsAsociadas = fila.getAttribute('data-playlists').toLowerCase();
+        const titulo = quitarTildes(fila.querySelector('.title-col').innerText.toLowerCase());
+        const album = quitarTildes(fila.querySelector('.album-col').innerText.toLowerCase());
+        const artistas = quitarTildes(fila.querySelector('.artist-col').innerText.toLowerCase());
+        const playlistsAsociadas = quitarTildes(fila.getAttribute('data-playlists').toLowerCase());
         
         const coincideTexto = titulo.includes(textoFiltro) || album.includes(textoFiltro) || artistas.includes(textoFiltro) || playlistsAsociadas.includes(textoFiltro);
-        const coincidePlaylist = (filtroPlaylistActivo === "") || playlistsAsociadas.includes(filtroPlaylistActivo.toLowerCase());
+        
+        const coincidePlaylist = (filtroPlaylistActivo === "") || playlistsAsociadas.includes(quitarTildes(filtroPlaylistActivo.toLowerCase()));
         
         if (coincideTexto && coincidePlaylist) filasFiltradasGlobal.push(fila);
         fila.style.display = 'none'; 
@@ -64,7 +72,7 @@ function filtrarBiblioteca() {
     
     paginaActual = 1; 
     renderizarPaginaActual();
-
+    
     if (typeof actualizarColaReproduccion === 'function') actualizarColaReproduccion();
 }
 
@@ -137,19 +145,26 @@ function filtrarPorPlaylist(nombrePlaylist) {
 }
 
 function filtrarMenuCatalogo() {
-    const texto = document.getElementById('inputBuscarCatalogo').value.toLowerCase();
+    const texto = quitarTildes(document.getElementById('inputBuscarCatalogo').value.toLowerCase());
+    
     document.querySelectorAll('#acordeonSubArtistas > .accordion-item').forEach(block => {
         const spanArtista = block.querySelector('.text-white.fw-medium.text-truncate');
         if (!spanArtista) return;
-        const coincideArtista = spanArtista.innerText.toLowerCase().includes(texto);
+        
+        const textoArtista = quitarTildes(spanArtista.innerText.toLowerCase());
+        const coincideArtista = textoArtista.includes(texto);
+        
         let algunAlbumCoincide = false;
 
         block.querySelectorAll('ul > li.item-con-opciones').forEach(li => {
             const spanAlbum = li.querySelector('.text-white-50.text-truncate');
             if (!spanAlbum) return;
-            if (coincideArtista || spanAlbum.innerText.toLowerCase().includes(texto)) {
+            
+            const textoAlbum = quitarTildes(spanAlbum.innerText.toLowerCase());
+            
+            if (coincideArtista || textoAlbum.includes(texto)) {
                 li.classList.replace('d-none', 'd-flex');
-                if (spanAlbum.innerText.toLowerCase().includes(texto)) algunAlbumCoincide = true;
+                if (textoAlbum.includes(texto)) algunAlbumCoincide = true;
             } else {
                 li.classList.replace('d-flex', 'd-none');
             }
