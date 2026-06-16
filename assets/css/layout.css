@@ -60,3 +60,134 @@
     .player-bar > div:nth-child(2) { width: 100% !important; order: 3 !important; margin-top: 15px !important; }
     .player-bar > div:nth-child(3) { display: none !important; }
 }
+
+/* =========================================
+   SCROLLBAR Y HOVER DEL MENÚ LATERAL
+========================================= */
+
+/* Scrollbar personalizado y elegante para el Sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+.sidebar::-webkit-scrollbar-track {
+    background: transparent; 
+}
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1); 
+    border-radius: 10px;
+}
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(220, 38, 38, 0.5); /* Rojo carmesí tenue al pasar el mouse */
+}
+
+/* Efecto hover suave para items del menú */
+.btn-menu-lateral {
+    transition: all 0.2s ease;
+}
+.btn-menu-lateral:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #fff !important;
+}
+.btn-menu-lateral:hover i {
+    color: #dc2626 !important; /* Icono se vuelve rojo al hacer hover */
+}
+
+/* =========================================
+   ESTILOS DE LA VISTA PRINCIPAL (CRIMSON VELVET)
+========================================= */
+
+/* Controles Superiores (Buscador y Filtros) */
+.btn-filtro-orden { 
+    border: 1px solid rgba(255, 255, 255, 0.1); 
+    background-color: transparent; 
+    color: #9ca3af; 
+    transition: all 0.3s ease; 
+}
+.btn-filtro-orden:hover { 
+    border-color: rgba(255, 255, 255, 0.3); 
+    color: #fff; 
+}
+.btn-filtro-orden.active { 
+    background-color: rgba(220, 38, 38, 0.08); /* Fondo carmesí ultra sutil */
+    border-color: #dc2626; 
+    color: #dc2626; 
+    font-weight: 600; 
+}
+
+/* Tabla Inmersiva */
+.table-dark-custom { 
+    --bs-table-bg: transparent; 
+    --bs-table-color: #fff; 
+    margin-bottom: 0;
+}
+.table-header-row th { 
+    border-bottom: 1px solid rgba(220, 38, 38, 0.3) !important; /* Línea separadora sutil */
+    color: #a3a3a3; 
+    font-size: 0.85rem; 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+    padding-bottom: 15px; 
+    border-top: none;
+}
+.song-row { 
+    transition: background-color 0.2s ease; 
+    cursor: pointer; 
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02); 
+}
+.song-row:hover { 
+    background-color: rgba(255, 255, 255, 0.05) !important; 
+}
+.song-row td { 
+    border: none !important; 
+    vertical-align: middle; 
+    padding: 12px 8px; 
+}
+
+/* Tipografía de la Tabla */
+.title-col { 
+    font-weight: 600; 
+    color: #fff; 
+    letter-spacing: 0.3px; 
+}
+.artist-col, .artist-col a { 
+    color: #9ca3af !important; /* Gris elegante en lugar de salmón */
+    font-size: 0.85rem; 
+    text-decoration: none; 
+    transition: color 0.2s; 
+}
+.artist-col a:hover, .song-row:hover .artist-col { 
+    color: #fff !important; /* Se iluminan al hacer hover en la fila */
+}
+
+/* Placeholder para carátulas sin foto */
+.cover-placeholder { 
+    background-color: #1a1a1a; 
+    color: #404040; 
+    border-radius: 6px; 
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+/* =========================================
+   SCROLLBAR GLOBAL (CRIMSON VELVET)
+========================================= */
+
+/* Aplica el scrollbar elegante a TODA la app (Sidebar, Main Content, Modales, etc) */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px; /* Por si hay scroll horizontal en tablas */
+}
+::-webkit-scrollbar-track {
+    background: transparent; 
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15); 
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(220, 38, 38, 0.6); /* El toque carmesí al pasar el mouse */
+}
