@@ -1,3 +1,6 @@
 # Ignorar subidas de música e imágenes
 /uploads/
 /backups/
+
+# Ignorar credenciales de la base de datos
+/config/conexion.php
