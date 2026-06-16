@@ -64,6 +64,8 @@ function filtrarBiblioteca() {
     
     paginaActual = 1; 
     renderizarPaginaActual();
+
+    if (typeof actualizarColaReproduccion === 'function') actualizarColaReproduccion();
 }
 
 function renderizarPaginaActual() {
@@ -110,7 +112,6 @@ function renderizarPaginaActual() {
         liNext.innerHTML = `<a class="page-link bg-dark border-secondary text-white shadow-none" href="#" onclick="cambiarPagina(${paginaActual + 1}); return false;">&raquo;</a>`;
         ulPaginacion.appendChild(liNext);
     }
-    if (typeof actualizarColaReproduccion === 'function') actualizarColaReproduccion();
 }
 
 function cambiarPagina(nuevaPagina) {
