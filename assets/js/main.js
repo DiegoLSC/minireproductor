@@ -69,6 +69,15 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => { loader.style.visibility = 'hidden'; }, 500);
         }, 500); 
     }
+
+    const modalLogsEl = document.getElementById('modalLogs');
+    if (modalLogsEl) {
+        modalLogsEl.addEventListener('show.bs.modal', function () {
+            if (typeof cargarHistorialLogs === 'function') {
+                cargarHistorialLogs();
+            }
+        });
+    }
 });
 
 // Atajos de Teclado

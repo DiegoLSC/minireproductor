@@ -198,4 +198,12 @@
                 </div>
 
             </div>
+
+            <hr class="border-secondary opacity-25 my-3">
+
+            <div class="nav-item w-100 mb-2">
+                <button type="button" class="btn btn-transparent text-secondary w-100 text-start px-3 py-2 d-flex align-items-center hover-bg-carmesi" data-bs-toggle="modal" data-bs-target="#modalLogs">                    <i class="bi bi-shield-check fs-5 me-3"></i>
+                    <span class="fw-medium text-truncate ocultar-al-contraer">Registro de Actividad</span>
+                </button>
+            </div>
         </div>

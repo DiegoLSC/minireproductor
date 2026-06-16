@@ -237,7 +237,10 @@ function inicializarBuscadorEtiquetas(config) {
                 div.textContent = art.nombre;
                 
                 div.addEventListener('click', function() {
-                    window[`agregarEtiqueta${prefix}`](art.id, art.nombre);
+                    if (prefix === 'alb') window.agregarEtiquetaAlbum(art.id, art.nombre);
+                    else if (prefix === 'can') window.agregarEtiquetaCancion(art.id, art.nombre);
+                    else if (prefix === 'sub') window.agregarEtiquetaSubir(art.id, art.nombre);
+                    
                     searchInput.value = '';
                     resultsContainer.style.display = 'none';
                     searchInput.focus(); 
