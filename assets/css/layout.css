@@ -1,8 +1,8 @@
 /* assets/css/layout.css */
 
 /* ESTRUCTURA DIVISIONAL */
-.app-container { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
-.app-body { display: flex; flex: 1; height: calc(100vh - 90px); width: 100vw; overflow: hidden; }
+.app-container { display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100vw; overflow: hidden; }
+.app-body { display: flex; flex: 1; width: 100vw; overflow: hidden; }
 
 /* MAIN CONTENT (Gradiente profundo) */
 .main-content {
@@ -23,7 +23,6 @@
    SIDEBAR & COMPORTAMIENTO DE COLAPSO
 ========================================= */
 
-/* Estado Normal (Expandido) */
 .sidebar {
     width: 280px; min-width: 280px;
     background-color: var(--bg-absoluto);
@@ -33,225 +32,148 @@
     overflow-x: hidden;
 }
 
-/* Transiciones globales para el contenido del sidebar */
-#sidebar * {
-    transition: opacity 0.2s ease, width 0.3s ease;
-}
+#sidebar * { transition: opacity 0.2s ease, width 0.3s ease; }
 
-/* ESTADO CONTRAÍDO (Estilo Tira de Íconos - 80px) */
 #sidebar.contraido {
-    width: 80px !important; 
-    min-width: 80px !important; 
-    flex: 0 0 80px !important; 
-    padding: 24px 10px !important; /* Menos padding lateral para centrar iconos */
+    width: 80px !important; min-width: 80px !important; flex: 0 0 80px !important; 
+    padding: 24px 10px !important;
 }
 
-/* 1. Ocultar textos y botones específicos */
-#sidebar.contraido .ocultar-al-contraer { 
-    opacity: 0; 
-    display: none !important; 
+#sidebar.contraido .ocultar-al-contraer { opacity: 0; display: none !important; }
+#sidebar.contraido .d-flex { justify-content: center !important; }
+#sidebar.contraido .nav-link, #sidebar.contraido .btn, #sidebar.contraido .accordion-button { 
+    justify-content: center !important; padding-left: 0 !important; padding-right: 0 !important; width: 100% !important; 
 }
-
-/* 2. Centrar los contenedores y botones de los íconos */
-#sidebar.contraido .d-flex {
-    justify-content: center !important;
-}
-
-#sidebar.contraido .nav-link, 
-#sidebar.contraido .btn, 
-#sidebar.contraido .accordion-button { 
-    justify-content: center !important; 
-    padding-left: 0 !important; 
-    padding-right: 0 !important; 
-    width: 100% !important; /* Evita que el hover se desborde */
-}
-
-/* 3. Ajuste fino de los íconos (tamaño y márgenes) */
-#sidebar.contraido .bi { 
-    margin-right: 0 !important; 
-    font-size: 1.4rem !important; 
-    text-align: center;
-}
-
-/* 4. Transformar el botón grande rojo en un círculo perfecto */
+#sidebar.contraido .bi { margin-right: 0 !important; font-size: 1.4rem !important; text-align: center; }
 #sidebar.contraido .btn-danger.rounded-pill {
-    border-radius: 50% !important;
-    width: 45px !important;
-    height: 45px !important;
-    padding: 0 !important;
-    margin: 0 auto !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    border-radius: 50% !important; width: 45px !important; height: 45px !important; padding: 0 !important;
+    margin: 0 auto !important; display: flex !important; align-items: center !important; justify-content: center !important;
 }
-
-#sidebar.contraido .btn-danger.rounded-pill i {
-    font-size: 1.2rem !important;
-}
+#sidebar.contraido .btn-danger.rounded-pill i { font-size: 1.2rem !important; }
 
 
-/* ADAPTACIÓN PARA MÓVILES (Menos de 768px) */
+/* =========================================
+   ADAPTACIÓN PARA MÓVILES (MENOS DE 768px)
+   (BLINDAJE ESTRUCTURAL ESTRICTO)
+========================================= */
 @media (max-width: 768px) {
-    /* Ajustes generales de espacio */
-    .app-body { padding-top: 70px !important; }
-
-    /* Sidebar Móvil */
-    #sidebar {
-        position: fixed; z-index: 1050; top: 0; bottom: 0; left: -100%; 
-        width: 260px !important; max-width: 80vw;
-        background-color: var(--bg-base);
-        box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+    /* 1. Bloqueamos el scroll fantasma del navegador */
+    html, body {
+        position: fixed !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;
     }
-    #sidebar.movil-abierto { left: 0 !important; }
-    
-    /* En móviles, cuando se "contrae", en realidad vuelve a su estado normal expandido de 260px */
-    #sidebar.contraido { width: 260px !important; min-width: 260px !important; padding: 24px 16px !important; }
-    #sidebar.contraido .ocultar-al-contraer { opacity: 1 !important; display: inline-block !important; }
-    
-    /* Revertir estilos de iconos para móviles */
-    #sidebar.contraido .d-flex { justify-content: flex-start !important; }
-    #sidebar.contraido .btn, #sidebar.contraido .accordion-button { justify-content: flex-start !important; padding-left: 0.5rem !important; }
-    #sidebar.contraido .bi { margin-right: 1rem !important; font-size: 1.25rem !important; }
-    #sidebar.contraido .btn-danger.rounded-pill { width: auto !important; height: auto !important; padding: 0.5rem 1rem !important; border-radius: 50rem !important; margin: 0 0.5rem 0.5rem 0.5rem !important; }
 
-    /* Barra Reproductor Móvil */
-    .player-bar { flex-wrap: wrap !important; height: auto !important; padding: 15px !important; gap: 0 !important; }
+    /* 2. El contenedor principal ocupa el 100% del espacio real (dvh) */
+    .app-container {
+        position: absolute !important;
+        top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+        height: 100dvh !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* 3. El cuerpo toma el espacio sobrante */
+    .app-body {
+        flex: 1 !important;
+        position: relative !important;
+        width: 100% !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+    }
+
+    /* 4. El contenido scrolleable se encierra entre el header y el reproductor */
+    .main-content {
+        position: absolute !important;
+        top: 65px !important; /* Espacio para tu barra negra superior */
+        bottom: 0 !important;
+        left: 0 !important; right: 0 !important;
+        height: auto !important;
+        overflow-y: auto !important;
+        padding: 20px 15px 40px 15px !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* 5. El reproductor: Intocable, inamovible, no se aplasta */
+    .player-bar {
+        flex: 0 0 auto !important; /* NUNCA se encoje */
+        position: relative !important;
+        bottom: auto !important;
+        width: 100vw !important;
+        height: auto !important;
+        min-height: max-content !important;
+        z-index: 1060 !important;
+        flex-wrap: wrap !important;
+        padding: 15px !important;
+        padding-bottom: env(safe-area-inset-bottom, 15px) !important;
+        gap: 0 !important;
+    }
+
+    /* Ajustes internos del reproductor móvil */
     .player-bar > div:nth-child(1) { width: calc(100% - 50px) !important; order: 1 !important; justify-content: flex-start !important; }
     #current-title, #current-artist { max-width: 50vw !important; }
     #btn-abrir-cola { position: static !important; width: 50px !important; order: 2 !important; display: flex !important; justify-content: flex-end !important; align-items: center !important; margin: 0 !important; }
     .player-bar > div:nth-child(2) { width: 100% !important; order: 3 !important; margin-top: 15px !important; }
     .player-bar > div:nth-child(3) { display: none !important; }
+
+    /* Sidebar Móvil */
+    #sidebar {
+        position: fixed; z-index: 1070; top: 0; bottom: 0; left: -100%;
+        width: 260px !important; max-width: 80vw;
+        background-color: var(--bg-base);
+        box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+    }
+    #sidebar.movil-abierto { left: 0 !important; }
+    #sidebar.contraido { width: 260px !important; min-width: 260px !important; padding: 24px 16px !important; }
+    #sidebar.contraido .ocultar-al-contraer { opacity: 1 !important; display: inline-block !important; }
+    #sidebar.contraido .d-flex { justify-content: flex-start !important; }
+    #sidebar.contraido .btn, #sidebar.contraido .accordion-button { justify-content: flex-start !important; padding-left: 0.5rem !important; }
+    #sidebar.contraido .bi { margin-right: 1rem !important; font-size: 1.25rem !important; }
+    #sidebar.contraido .btn-danger.rounded-pill { width: auto !important; height: auto !important; padding: 0.5rem 1rem !important; border-radius: 50rem !important; margin: 0 0.5rem 0.5rem 0.5rem !important; }
 }
 
 /* =========================================
    SCROLLBAR Y HOVER DEL MENÚ LATERAL
 ========================================= */
 
-/* Scrollbar personalizado y elegante para el Sidebar */
-.sidebar::-webkit-scrollbar {
-    width: 6px;
-}
-.sidebar::-webkit-scrollbar-track {
-    background: transparent; 
-}
-.sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1); 
-    border-radius: 10px;
-}
-.sidebar::-webkit-scrollbar-thumb:hover {
-    background: rgba(220, 38, 38, 0.5); 
-}
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+.sidebar::-webkit-scrollbar-thumb:hover { background: rgba(220, 38, 38, 0.5); }
 
-/* Efectos hover globales para menú */
 .hover-scale { transition: transform 0.2s ease; }
 .hover-scale:hover { transform: scale(1.1); color: #fff !important; }
 
-.btn-menu-lateral {
-    transition: all 0.2s ease;
-}
-.btn-menu-lateral:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: #fff !important;
-}
-.btn-menu-lateral:hover i {
-    color: #dc2626 !important; 
-}
+.btn-menu-lateral { transition: all 0.2s ease; }
+.btn-menu-lateral:hover { background-color: rgba(255, 255, 255, 0.05); color: #fff !important; }
+.btn-menu-lateral:hover i { color: #dc2626 !important; }
 
 /* =========================================
    ESTILOS DE LA VISTA PRINCIPAL (CRIMSON VELVET)
 ========================================= */
 
-/* Controles Superiores (Buscador y Filtros) */
-.btn-filtro-orden { 
-    border: 1px solid rgba(255, 255, 255, 0.1); 
-    background-color: transparent; 
-    color: #9ca3af; 
-    transition: all 0.3s ease; 
-}
-.btn-filtro-orden:hover { 
-    border-color: rgba(255, 255, 255, 0.3); 
-    color: #fff; 
-}
-.btn-filtro-orden.active { 
-    background-color: rgba(220, 38, 38, 0.08); 
-    border-color: #dc2626; 
-    color: #dc2626; 
-    font-weight: 600; 
-}
+.btn-filtro-orden { border: 1px solid rgba(255, 255, 255, 0.1); background-color: transparent; color: #9ca3af; transition: all 0.3s ease; }
+.btn-filtro-orden:hover { border-color: rgba(255, 255, 255, 0.3); color: #fff; }
+.btn-filtro-orden.active { background-color: rgba(220, 38, 38, 0.08); border-color: #dc2626; color: #dc2626; font-weight: 600; }
 
-/* Tabla Inmersiva */
-.table-dark-custom { 
-    --bs-table-bg: transparent; 
-    --bs-table-color: #fff; 
-    margin-bottom: 0;
-}
-.table-header-row th { 
-    border-bottom: 1px solid rgba(220, 38, 38, 0.3) !important; 
-    color: #a3a3a3; 
-    font-size: 0.85rem; 
-    text-transform: uppercase; 
-    letter-spacing: 1px; 
-    padding-bottom: 15px; 
-    border-top: none;
-}
-.song-row { 
-    transition: background-color 0.2s ease; 
-    cursor: pointer; 
-    border-bottom: 1px solid rgba(255, 255, 255, 0.02); 
-}
-.song-row:hover { 
-    background-color: rgba(255, 255, 255, 0.05) !important; 
-}
-.song-row td { 
-    border: none !important; 
-    vertical-align: middle; 
-    padding: 12px 8px; 
-}
+.table-dark-custom { --bs-table-bg: transparent; --bs-table-color: #fff; margin-bottom: 0; }
+.table-header-row th { border-bottom: 1px solid rgba(220, 38, 38, 0.3) !important; color: #a3a3a3; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 15px; border-top: none; }
+.song-row { transition: background-color 0.2s ease; cursor: pointer; border-bottom: 1px solid rgba(255, 255, 255, 0.02); }
+.song-row:hover { background-color: rgba(255, 255, 255, 0.05) !important; }
+.song-row td { border: none !important; vertical-align: middle; padding: 12px 8px; }
 
-/* Tipografía de la Tabla */
-.title-col { 
-    font-weight: 600; 
-    color: #fff; 
-    letter-spacing: 0.3px; 
-}
-.artist-col, .artist-col a { 
-    color: #9ca3af !important; 
-    font-size: 0.85rem; 
-    text-decoration: none; 
-    transition: color 0.2s; 
-}
-.artist-col a:hover, .song-row:hover .artist-col { 
-    color: #fff !important; 
-}
+.title-col { font-weight: 600; color: #fff; letter-spacing: 0.3px; }
+.artist-col, .artist-col a { color: #9ca3af !important; font-size: 0.85rem; text-decoration: none; transition: color 0.2s; }
+.artist-col a:hover, .song-row:hover .artist-col { color: #fff !important; }
 
-/* Placeholder para carátulas sin foto */
-.cover-placeholder { 
-    background-color: #1a1a1a; 
-    color: #404040; 
-    border-radius: 6px; 
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-}
+.cover-placeholder { background-color: #1a1a1a; color: #404040; border-radius: 6px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
 
 /* =========================================
-   SCROLLBAR GLOBAL (CRIMSON VELVET)
+   SCROLLBAR GLOBAL
 ========================================= */
 
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px; 
-}
-::-webkit-scrollbar-track {
-    background: transparent; 
-}
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15); 
-    border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(220, 38, 38, 0.6); 
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(220, 38, 38, 0.6); }

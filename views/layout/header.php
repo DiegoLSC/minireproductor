@@ -7,7 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="assets/css/base.css" rel="stylesheet">
-    <link href="assets/css/layout.css" rel="stylesheet">
+    <link href="assets/css/layout.css?v=<?php echo time(); ?>" rel="stylesheet">
     <link href="assets/css/components.css" rel="stylesheet">
 </head>
 <body>
