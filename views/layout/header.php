@@ -30,14 +30,18 @@
         </div>
 
         <div class="sidebar" id="sidebar">
-            <button type="button" class="btn text-secondary border-0 p-2 mb-3 w-100 d-flex justify-content-start" onclick="toggleSidebar()" title="Contraer/Expandir Menú">
-                <i class="bi bi-layout-sidebar text-white fs-5"></i>
-            </button>
-        
-            <h4 class="text-danger mb-4 fw-bold d-flex align-items-center" onclick="window.location='index.php'" style="cursor:pointer;">
-                <i class="bi bi-music-note-beamed me-2"></i> 
-                <span class="ocultar-al-contraer text-white">NebulaPlayer</span>
-            </h4>
+            
+            <div class="d-flex align-items-center justify-content-between mb-4 mt-2 px-2">
+                <div class="d-flex align-items-center w-100">
+                    <i class="bi bi-music-note-beamed text-danger fs-3 me-3 hover-scale" style="cursor:pointer;" onclick="if(document.getElementById('sidebar').classList.contains('contraido')) { toggleSidebar(); } else { window.location='index.php'; }" title="NebulaPlayer"></i>
+                    
+                    <span class="ocultar-al-contraer fw-bold text-white fs-5 flex-grow-1 text-truncate" style="cursor:pointer; letter-spacing: 0.5px;" onclick="window.location='index.php'">NebulaPlayer</span>
+                    
+                    <button type="button" class="btn text-secondary border-0 p-0 shadow-none ocultar-al-contraer ms-2 hover-scale" onclick="toggleSidebar()" title="Contraer Menú">
+                        <i class="bi bi-layout-sidebar-inset text-white-50 fs-5 hover-text-white"></i>
+                    </button>
+                </div>
+            </div>
         
             <div class="d-flex flex-column gap-1 mb-4">
                 <div class="d-flex flex-column mb-2 px-2">

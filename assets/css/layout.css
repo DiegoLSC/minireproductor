@@ -19,7 +19,11 @@
     width: 100vw; padding: 0 32px; z-index: 1030;
 }
 
-/* SIDEBAR (Escritorio) */
+/* =========================================
+   SIDEBAR & COMPORTAMIENTO DE COLAPSO
+========================================= */
+
+/* Estado Normal (Expandido) */
 .sidebar {
     width: 280px; min-width: 280px;
     background-color: var(--bg-absoluto);
@@ -29,12 +33,62 @@
     overflow-x: hidden;
 }
 
-#sidebar.contraido {
-    width: 80px !important; min-width: 80px !important; flex: 0 0 80px !important; 
+/* Transiciones globales para el contenido del sidebar */
+#sidebar * {
+    transition: opacity 0.2s ease, width 0.3s ease;
 }
-#sidebar.contraido .ocultar-al-contraer { opacity: 0; display: none !important; }
-#sidebar.contraido .nav-link, #sidebar.contraido .btn, #sidebar.contraido h4 { justify-content: center !important; padding-left: 0 !important; padding-right: 0 !important; }
-#sidebar.contraido .bi { margin-right: 0 !important; font-size: 1.2rem; }
+
+/* ESTADO CONTRAÍDO (Estilo Tira de Íconos - 80px) */
+#sidebar.contraido {
+    width: 80px !important; 
+    min-width: 80px !important; 
+    flex: 0 0 80px !important; 
+    padding: 24px 10px !important; /* Menos padding lateral para centrar iconos */
+}
+
+/* 1. Ocultar textos y botones específicos */
+#sidebar.contraido .ocultar-al-contraer { 
+    opacity: 0; 
+    display: none !important; 
+}
+
+/* 2. Centrar los contenedores y botones de los íconos */
+#sidebar.contraido .d-flex {
+    justify-content: center !important;
+}
+
+#sidebar.contraido .nav-link, 
+#sidebar.contraido .btn, 
+#sidebar.contraido .accordion-button { 
+    justify-content: center !important; 
+    padding-left: 0 !important; 
+    padding-right: 0 !important; 
+    width: 100% !important; /* Evita que el hover se desborde */
+}
+
+/* 3. Ajuste fino de los íconos (tamaño y márgenes) */
+#sidebar.contraido .bi { 
+    margin-right: 0 !important; 
+    font-size: 1.4rem !important; 
+    text-align: center;
+}
+
+/* 4. Transformar el botón grande rojo en un círculo perfecto */
+#sidebar.contraido .btn-danger.rounded-pill {
+    border-radius: 50% !important;
+    width: 45px !important;
+    height: 45px !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#sidebar.contraido .btn-danger.rounded-pill i {
+    font-size: 1.2rem !important;
+}
+
 
 /* ADAPTACIÓN PARA MÓVILES (Menos de 768px) */
 @media (max-width: 768px) {
@@ -49,8 +103,16 @@
         box-shadow: 5px 0 15px rgba(0,0,0,0.5);
     }
     #sidebar.movil-abierto { left: 0 !important; }
-    #sidebar.contraido { width: 260px !important; min-width: 260px !important; }
+    
+    /* En móviles, cuando se "contrae", en realidad vuelve a su estado normal expandido de 260px */
+    #sidebar.contraido { width: 260px !important; min-width: 260px !important; padding: 24px 16px !important; }
     #sidebar.contraido .ocultar-al-contraer { opacity: 1 !important; display: inline-block !important; }
+    
+    /* Revertir estilos de iconos para móviles */
+    #sidebar.contraido .d-flex { justify-content: flex-start !important; }
+    #sidebar.contraido .btn, #sidebar.contraido .accordion-button { justify-content: flex-start !important; padding-left: 0.5rem !important; }
+    #sidebar.contraido .bi { margin-right: 1rem !important; font-size: 1.25rem !important; }
+    #sidebar.contraido .btn-danger.rounded-pill { width: auto !important; height: auto !important; padding: 0.5rem 1rem !important; border-radius: 50rem !important; margin: 0 0.5rem 0.5rem 0.5rem !important; }
 
     /* Barra Reproductor Móvil */
     .player-bar { flex-wrap: wrap !important; height: auto !important; padding: 15px !important; gap: 0 !important; }
@@ -77,10 +139,13 @@
     border-radius: 10px;
 }
 .sidebar::-webkit-scrollbar-thumb:hover {
-    background: rgba(220, 38, 38, 0.5); /* Rojo carmesí tenue al pasar el mouse */
+    background: rgba(220, 38, 38, 0.5); 
 }
 
-/* Efecto hover suave para items del menú */
+/* Efectos hover globales para menú */
+.hover-scale { transition: transform 0.2s ease; }
+.hover-scale:hover { transform: scale(1.1); color: #fff !important; }
+
 .btn-menu-lateral {
     transition: all 0.2s ease;
 }
@@ -89,7 +154,7 @@
     color: #fff !important;
 }
 .btn-menu-lateral:hover i {
-    color: #dc2626 !important; /* Icono se vuelve rojo al hacer hover */
+    color: #dc2626 !important; 
 }
 
 /* =========================================
@@ -108,7 +173,7 @@
     color: #fff; 
 }
 .btn-filtro-orden.active { 
-    background-color: rgba(220, 38, 38, 0.08); /* Fondo carmesí ultra sutil */
+    background-color: rgba(220, 38, 38, 0.08); 
     border-color: #dc2626; 
     color: #dc2626; 
     font-weight: 600; 
@@ -121,7 +186,7 @@
     margin-bottom: 0;
 }
 .table-header-row th { 
-    border-bottom: 1px solid rgba(220, 38, 38, 0.3) !important; /* Línea separadora sutil */
+    border-bottom: 1px solid rgba(220, 38, 38, 0.3) !important; 
     color: #a3a3a3; 
     font-size: 0.85rem; 
     text-transform: uppercase; 
@@ -150,13 +215,13 @@
     letter-spacing: 0.3px; 
 }
 .artist-col, .artist-col a { 
-    color: #9ca3af !important; /* Gris elegante en lugar de salmón */
+    color: #9ca3af !important; 
     font-size: 0.85rem; 
     text-decoration: none; 
     transition: color 0.2s; 
 }
 .artist-col a:hover, .song-row:hover .artist-col { 
-    color: #fff !important; /* Se iluminan al hacer hover en la fila */
+    color: #fff !important; 
 }
 
 /* Placeholder para carátulas sin foto */
@@ -176,10 +241,9 @@
    SCROLLBAR GLOBAL (CRIMSON VELVET)
 ========================================= */
 
-/* Aplica el scrollbar elegante a TODA la app (Sidebar, Main Content, Modales, etc) */
 ::-webkit-scrollbar {
     width: 6px;
-    height: 6px; /* Por si hay scroll horizontal en tablas */
+    height: 6px; 
 }
 ::-webkit-scrollbar-track {
     background: transparent; 
@@ -189,5 +253,5 @@
     border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(220, 38, 38, 0.6); /* El toque carmesí al pasar el mouse */
+    background: rgba(220, 38, 38, 0.6); 
 }
