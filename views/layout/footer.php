@@ -123,56 +123,68 @@
     </div>
 
     <div class="modal fade" id="cancionModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title">Publicar Canción</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <form onsubmit="enviarFormularioAsincrono(event, 'api/insertar_elementos.php')">
-            <input type="hidden" name="accion" value="subir_cancion">
-            <input type="hidden" name="duracion" id="input_duracion_mp3" value="0">
-            <div class="modal-body d-flex flex-column gap-3">
-                    <div>
-                        <label class="form-label">Archivo de Audio (.MP3)</label>
-                        <input type="file" name="archivo_mp3" id="file_mp3" class="form-control" accept=".mp3" onchange="obtenerDuracionArchivo(this)" required>
-                    </div>
-                    <div>
-                        <label class="form-label">Título del Track</label>
-                        <input type="text" name="titulo" class="form-control" required>
-                    </div>
-                    <div>
-                        <label class="form-label">Álbum Vinculado <span class="text-warning">(Opcional)</span></label>
-                        <select name="album_id" class="form-select">
-                            <option value="">-- Ninguno (Single / Sencillo) --</option>
-                            <?php foreach($albumes as $alb): ?>
-                                <option value="<?= $alb['id'] ?>">
-                                    <?= htmlspecialchars($alb['titulo']) ?> 
-                                    <?php if(!empty($alb['artistas_nombres'])): ?>
-                                        (<?= htmlspecialchars($alb['artistas_nombres']) ?>)
-                                    <?php endif; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">Artistas Integrantes</label>
-                        <div id="subir_can_contenedor_buscador" data-artistas='<?= htmlspecialchars(json_encode($artistas), ENT_QUOTES, 'UTF-8') ?>'>
-                            <div id="subir_can_selected_artists" class="d-flex flex-wrap gap-2 mb-2"></div>
-                            <div class="position-relative">
-                                <input type="text" id="subir_can_artist_search" class="form-control" placeholder="Buscar artista para agregar..." autocomplete="off">
-                                <div id="subir_can_artist_results" class="position-absolute w-100 mt-1 rounded shadow-lg" style="display: none; z-index: 1060; max-height: 160px; overflow-y: auto; background-color: #141414; border: 1px solid rgba(220, 38, 38, 0.4);"></div>
-                            </div>
-                            <div id="subir_can_hidden_inputs"></div>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Publicar Canción</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="subirCancionConProgreso(event, 'api/insertar_elementos.php')">
+                <input type="hidden" name="accion" value="subir_cancion">
+                <input type="hidden" name="duracion" id="input_duracion_mp3" value="0">
+                <div class="modal-body d-flex flex-column gap-3">
+                        <div>
+                            <label class="form-label">Archivo de Audio (.MP3)</label>
+                            <input type="file" name="archivo_mp3" id="file_mp3" class="form-control" accept=".mp3" onchange="obtenerDuracionArchivo(this)" required>
                         </div>
-                    </div>
+                        <div>
+                            <label class="form-label">Título del Track</label>
+                            <input type="text" name="titulo" class="form-control" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Álbum Vinculado <span class="text-warning">(Opcional)</span></label>
+                            <select name="album_id" class="form-select">
+                                <option value="">-- Ninguno (Single / Sencillo) --</option>
+                                <?php foreach($albumes as $alb): ?>
+                                    <option value="<?= $alb['id'] ?>">
+                                        <?= htmlspecialchars($alb['titulo']) ?> 
+                                        <?php if(!empty($alb['artistas_nombres'])): ?>
+                                            (<?= htmlspecialchars($alb['artistas_nombres']) ?>)
+                                        <?php endif; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Artistas Integrantes</label>
+                            <div id="subir_can_contenedor_buscador" data-artistas='<?= htmlspecialchars(json_encode($artistas), ENT_QUOTES, 'UTF-8') ?>'>
+                                <div id="subir_can_selected_artists" class="d-flex flex-wrap gap-2 mb-2"></div>
+                                <div class="position-relative">
+                                    <input type="text" id="subir_can_artist_search" class="form-control" placeholder="Buscar artista para agregar..." autocomplete="off">
+                                    <div id="subir_can_artist_results" class="position-absolute w-100 mt-1 rounded shadow-lg" style="display: none; z-index: 1060; max-height: 160px; overflow-y: auto; background-color: #141414; border: 1px solid rgba(220, 38, 38, 0.4);"></div>
+                                </div>
+                                <div id="subir_can_hidden_inputs"></div>
+                            </div>
+                        </div>
+
+                        <div id="contenedor-progreso-subida" class="d-none mt-2">
+                            <div class="d-flex justify-content-between text-secondary mb-1" style="font-size: 0.75rem;">
+                                <span id="texto-progreso-subida" class="fw-bold">Preparando subida...</span>
+                                <span id="porcentaje-progreso-subida" class="fw-bold text-success">0%</span>
+                            </div>
+                            <div class="progress bg-dark border border-secondary border-opacity-25" style="height: 12px;">
+                                <div id="barra-progreso-subida" class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                </div>
+                
+                <div class="modal-footer justify-content-between border-secondary">
+                    <button type="button" id="btn-cancelar-subida" class="btn btn-outline-danger d-none fw-bold" onclick="cancelarSubidaActual()">Cancelar Subida</button>
+                    <button type="submit" id="btn-submit-cancion" class="btn btn-primary fw-bold flex-grow-1">Subir Música</button>
+                </div>
+            </form>
             </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary fw-bold w-100">Subir Música</button>
-            </div>
-        </form>
         </div>
-    </div>
     </div>
 
     <div class="modal fade" id="agregarAPlaylistModal" tabindex="-1" aria-hidden="true">

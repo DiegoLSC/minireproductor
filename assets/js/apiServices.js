@@ -1,23 +1,160 @@
 // assets/js/apiServices.js
 
-function enviarFormularioAsincrono(event, urlDestino) {
+// ==========================================
+// FORMULARIOS LIGEROS (Textos, Ediciones pequeñas)
+// ==========================================
+function enviarFormularioAsincrono(event, urlApi) {
     event.preventDefault();
     const formulario = event.target;
-    const formData = new FormData(formulario);
-    const modalInstance = bootstrap.Modal.getInstance(formulario.closest('.modal'));
+    const botonSubmit = formulario.querySelector('button[type="submit"]');
+    
+    // Bloqueo Visual
+    const textoOriginal = botonSubmit.innerHTML;
+    botonSubmit.disabled = true;
+    botonSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
 
-    fetch(urlDestino, { method: 'POST', body: formData })
-    .then(response => {
-        if (response.ok) {
-            if (modalInstance) modalInstance.hide();
-            formulario.reset();
-            alert("¡Cambios guardados con éxito!");
-            // ESTA LÍNEA ES LA CLAVE: Forzamos al navegador a pedir el HTML fresco
-            location.reload(); 
-        } else { 
-            alert("Hubo un problema en el servidor."); 
+    const formData = new FormData(formulario);
+
+    fetch(urlApi, { method: 'POST', body: formData })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload(); // O recargar la tabla dinámicamente si tienes la función
+        } else alert("Error: " + data.message);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("Ocurrió un error de conexión con el servidor.");
+    })
+    .finally(() => {
+        // Restauración
+        botonSubmit.disabled = false;
+        botonSubmit.innerHTML = textoOriginal;
+    });
+}
+
+
+// ==========================================
+// FORMULARIO PESADO (MP3 CON BARRA DE PROGRESO)
+// ==========================================
+let xhrSubidaActual = null; // Variable global para poder abortar
+
+function subirCancionConProgreso(event, urlApi) {
+    event.preventDefault();
+    const formulario = event.target;
+    
+    // Captura de elementos UI
+    const botonSubmit = document.getElementById('btn-submit-cancion');
+    const botonCancelar = document.getElementById('btn-cancelar-subida');
+    const contenedorProgreso = document.getElementById('contenedor-progreso-subida');
+    const barraProgreso = document.getElementById('barra-progreso-subida');
+    const textoProgreso = document.getElementById('texto-progreso-subida');
+    const porcentajeTexto = document.getElementById('porcentaje-progreso-subida');
+
+    // Preparar UI para modo "Subiendo"
+    botonSubmit.classList.add('d-none');
+    contenedorProgreso.classList.remove('d-none');
+    botonCancelar.classList.remove('d-none');
+    barraProgreso.style.width = '0%';
+    barraProgreso.classList.remove('bg-danger');
+    barraProgreso.classList.add('bg-success', 'progress-bar-animated');
+
+    const formData = new FormData(formulario);
+    xhrSubidaActual = new XMLHttpRequest();
+    const tiempoInicio = Date.now();
+
+    // Evento que se dispara continuamente mientras el archivo viaja a internet
+    xhrSubidaActual.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+            // 1. Porcentaje puro
+            const porcentaje = Math.round((e.loaded / e.total) * 100);
+            barraProgreso.style.width = porcentaje + '%';
+            porcentajeTexto.innerText = porcentaje + '%';
+
+            // 2. Cálculo de métricas y velocidad
+            const subidoMB = (e.loaded / (1024 * 1024)).toFixed(1);
+            const totalMB = (e.total / (1024 * 1024)).toFixed(1);
+            
+            const tiempoTranscurrido = (Date.now() - tiempoInicio) / 1000; // en segundos
+            let textoTiempo = '';
+
+            // Solo calculamos el ETA si ya pasó medio segundo para evitar saltos locos al inicio
+            if (tiempoTranscurrido > 0.5) {
+                const velocidadSubida = e.loaded / tiempoTranscurrido; // bytes por segundo
+                const bytesRestantes = e.total - e.loaded;
+                const segundosRestantes = Math.max(0, bytesRestantes / velocidadSubida);
+
+                if (segundosRestantes > 60) {
+                    textoTiempo = Math.ceil(segundosRestantes / 60) + ' min restantes';
+                } else if (segundosRestantes > 0 && e.loaded !== e.total) {
+                    textoTiempo = Math.ceil(segundosRestantes) + ' seg restantes';
+                } else {
+                    textoTiempo = 'Procesando archivo en el servidor...';
+                }
+            }
+
+            textoProgreso.innerText = `${subidoMB} MB / ${totalMB} MB — ${textoTiempo}`;
         }
-    }).catch(err => console.error(err));
+    });
+
+    // Evento cuando el servidor responde
+    xhrSubidaActual.addEventListener('load', () => {
+        if (xhrSubidaActual.status === 200) {
+            try {
+                const data = JSON.parse(xhrSubidaActual.responseText);
+                if (data.status === 'success') {
+                    textoProgreso.innerText = "¡Subida completada con éxito!";
+                    porcentajeTexto.innerText = "100%";
+                    barraProgreso.classList.remove('progress-bar-animated');
+                    
+                    // Esperamos 1 segundo para que el usuario vea que llegó al 100% y recargamos
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    mostrarErrorSubida("Error del servidor: " + data.message);
+                }
+            } catch(err) {
+                mostrarErrorSubida("La respuesta del servidor no fue válida.");
+            }
+        } else {
+            mostrarErrorSubida("Error de servidor. Código: " + xhrSubidaActual.status);
+        }
+    });
+
+    // Evento si se cae el internet
+    xhrSubidaActual.addEventListener('error', () => mostrarErrorSubida("Fallo en la conexión a internet."));
+    
+    // Evento si el usuario apretó Cancelar
+    xhrSubidaActual.addEventListener('abort', () => mostrarErrorSubida("Subida cancelada por el usuario."));
+
+    // Enviar a la ruta
+    xhrSubidaActual.open('POST', urlApi, true);
+    xhrSubidaActual.send(formData);
+
+    // Helper interno para limpiar en caso de error
+    function mostrarErrorSubida(mensaje) {
+        textoProgreso.innerText = mensaje;
+        textoProgreso.classList.replace('text-secondary', 'text-danger');
+        barraProgreso.classList.replace('bg-success', 'bg-danger');
+        barraProgreso.classList.remove('progress-bar-animated');
+        botonCancelar.innerText = "Cerrar";
+        
+        // Habilitamos el botón de volver a intentar en 3 segundos
+        setTimeout(() => {
+            botonSubmit.classList.remove('d-none');
+            botonCancelar.classList.add('d-none');
+            textoProgreso.classList.replace('text-danger', 'text-secondary');
+            contenedorProgreso.classList.add('d-none');
+            botonCancelar.innerText = "Cancelar Subida";
+        }, 3500);
+    }
+}
+
+// Función que detona el botón "Cancelar"
+function cancelarSubidaActual() {
+    if (xhrSubidaActual) {
+        xhrSubidaActual.abort(); // Dispara automáticamente el evento 'abort' arriba
+        xhrSubidaActual = null;
+    }
 }
 
 function eliminarElementoAsincrono(tabla, id, botonClid) {
