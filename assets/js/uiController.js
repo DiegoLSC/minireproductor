@@ -353,3 +353,30 @@ function toggleMute() {
         actualizarIconoVolumen(true, 0);
     }
 }
+
+// ==========================================
+// DELEGACIÓN DE EVENTOS (CLIC EN LA COLA)
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    document.body.addEventListener('click', function(e) {
+        // Buscamos si el clic ocurrió dentro de un elemento que tenga el atributo data-index
+        const itemCola = e.target.closest('[data-index]');
+        
+        // ¡CORRECCIÓN AQUÍ! Ahora usamos los IDs reales de tu footer.php
+        const perteneceACola = e.target.closest('#colaPanel') || e.target.closest('#lista-cola-dinamica');
+
+        if (itemCola && perteneceACola) {
+            // Evitamos que salte si hicieron clic en el botón de eliminar de la cola
+            if (e.target.closest('.btn-eliminar-cola') || e.target.tagName.toLowerCase() === 'button' || e.target.classList.contains('bi-x') || e.target.closest('i.bi-x-lg')) {
+                return; 
+            }
+
+            const indiceStr = itemCola.getAttribute('data-index');
+            const indice = parseInt(indiceStr);
+
+            if (!isNaN(indice) && typeof reproducirDesdeCola === 'function') {
+                reproducirDesdeCola(indice);
+            }
+        }
+    });
+});

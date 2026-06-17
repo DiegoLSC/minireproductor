@@ -9,25 +9,33 @@ const shuffleBtn = document.getElementById('shuffle-btn');
 
 let listaDeReproduccion = [];
 let indiceActual = -1;
-let modoAleatorio = false;
+
+// SOLUCIÓN: Recuperar el estado de aleatorio de la sesión anterior
+let modoAleatorio = localStorage.getItem('nebula_shuffle') === 'true';
 window.modoRepetirActivo = false; 
 
+// Inicializar el botón de shuffle según lo guardado
+if (modoAleatorio && shuffleBtn) {
+    shuffleBtn.className = "btn text-success fs-5 p-0 lh-1";
+}
+
 function actualizarColaReproduccion() {
-    const cancionGuardada = window.rutaEnReproduccion;
+    const cancionGuardada = window.rutaEnReproduccion || localStorage.getItem('nebula_track_ruta');
 
     listaDeReproduccion = [];
-    filasFiltradasGlobal.forEach((fila) => {
-        listaDeReproduccion.push({
-            ruta: fila.getAttribute('data-ruta'),
-            titulo: fila.getAttribute('data-titulo'),
-            artista: fila.getAttribute('data-artista'),
-            caratula: fila.getAttribute('data-caratula')
+    if (typeof filasFiltradasGlobal !== 'undefined') {
+        filasFiltradasGlobal.forEach((fila) => {
+            listaDeReproduccion.push({
+                ruta: fila.getAttribute('data-ruta'),
+                titulo: fila.getAttribute('data-titulo'),
+                artista: fila.getAttribute('data-artista'),
+                caratula: fila.getAttribute('data-caratula')
+            });
         });
-    });
+    }
 
     if (cancionGuardada) {
         indiceActual = listaDeReproduccion.findIndex(c => c.ruta === cancionGuardada);
-        
         if (modoAleatorio && indiceActual !== -1) {
             mezclarColaActual();
         }
@@ -84,7 +92,7 @@ function reproducirCancion(ruta, titulo, artist, caratula) {
         if (textoTituloActivo) textoTituloActivo.classList.add('text-success');
     }
 
-    audio.play();
+    audio.play().catch(e => console.log("Auto-play bloqueado por el navegador", e));
     playBtn.innerHTML = '<i class="bi bi-pause-fill fs-3 text-black"></i>';
     if (document.getElementById('colaPanel').classList.contains('activo')) renderizarColaVisual();
     if (typeof actualizarPantallaBloqueo === 'function') actualizarPantallaBloqueo(titulo, artist, 'NebulaPlayer', caratula);
@@ -131,6 +139,8 @@ function mezclarColaActual() {
 
 function toggleShuffle() {
     modoAleatorio = !modoAleatorio;
+    localStorage.setItem('nebula_shuffle', modoAleatorio); // SOLUCIÓN: Guardar estado
+
     if (modoAleatorio) {
         shuffleBtn.className = "btn text-success fs-5 p-0 lh-1";
         if (indiceActual !== -1) {
@@ -172,6 +182,10 @@ function togglePanelCola() {
     panel.classList.toggle('activo');
     if (panel.classList.contains('activo')) {
         botonCola.className = "btn text-success p-0 fs-5 lh-1";
+        
+        // SOLUCIÓN: Si no hay cola generada, forzarla a generarse al abrir el panel
+        if (listaDeReproduccion.length === 0) actualizarColaReproduccion();
+        
         renderizarColaVisual();
         inicializarDragAndDropCola(); 
     } else botonCola.className = "btn text-secondary p-0 fs-5 lh-1";
@@ -195,10 +209,14 @@ function renderizarColaVisual() {
         const indexOrigen = i; 
         
         const li = document.createElement('li');
-        li.className = "list-group-item bg-black border-0 border-bottom border-secondary border-opacity-10 d-flex align-items-center justify-content-between p-2.5 text-white small song-row-cola";
+        // SOLUCIÓN: Agregado setAttribute para que el uiController detecte el clic
+        li.setAttribute('data-index', indexOrigen);
+        li.className = "list-group-item bg-black border-0 border-bottom border-secondary border-opacity-10 d-flex align-items-center justify-content-between p-2.5 text-white small song-row-cola hover-bg-dark";
+        li.style.cursor = "pointer"; // Para que parezca clickeable
+        
         li.innerHTML = `
             <div class="d-flex align-items-center flex-grow-1 pe-2 text-truncate" style="max-width: 200px;">
-                <i class="bi bi-grip-vertical text-secondary me-2 drag-handle" style="cursor: grab; font-size: 1.2rem;"></i>
+                <i class="bi bi-grip-vertical text-secondary me-2 drag-handle" style="cursor: grab; font-size: 1.2rem;" onclick="event.stopPropagation();"></i>
                 <span class="text-secondary fw-bold me-3 opacity-50" style="min-width: 15px;">${posicionEnCola}</span>
                 <div class="text-truncate">
                     <span class="fw-semibold d-block text-truncate text-white" title="${track.titulo}">${track.titulo}</span>
@@ -206,7 +224,7 @@ function renderizarColaVisual() {
                 </div>
             </div>
             <div class="d-flex gap-1">
-                <button type="button" class="btn btn-transparent btn-sm p-1 text-danger opacity-75 hover-opacity-100" onclick="quitarDeColaTemporal(${indexOrigen}); event.stopPropagation();"><i class="bi bi-x-lg"></i></button>
+                <button type="button" class="btn btn-transparent btn-sm p-1 text-danger opacity-75 hover-opacity-100 btn-eliminar-cola" onclick="quitarDeColaTemporal(${indexOrigen}); event.stopPropagation();"><i class="bi bi-x-lg"></i></button>
             </div>
         `;
         contenedorLista.appendChild(li);
@@ -265,5 +283,16 @@ function irACancionActual() {
         }, 150); 
     } else {
         alert("La canción que está sonando no se encuentra en tu búsqueda actual.");
+    }
+}
+
+// SOLUCIÓN: Código corregido (cargarCancion no existía y reproducirCancion necesitaba parámetros)
+function reproducirDesdeCola(indice) {
+    if (indice >= 0 && indice < listaDeReproduccion.length) {
+        indiceActual = indice; 
+        const track = listaDeReproduccion[indiceActual];
+        
+        // Al llamar a esto, automáticamente hace Play, actualiza la info y vuelve a pintar la cola
+        reproducirCancion(track.ruta, track.titulo, track.artista, track.caratula);
     }
 }
