@@ -134,11 +134,20 @@ function cancionAnterior() {
 }
 
 function mezclarColaActual() {
-    const inicio = indiceActual + 1;
-    for (let i = listaDeReproduccion.length - 1; i > inicio; i--) {
-        const j = Math.floor(Math.random() * (i - inicio + 1)) + inicio;
-        [listaDeReproduccion[i], listaDeReproduccion[j]] = [listaDeReproduccion[j], listaDeReproduccion[i]];
+    if (indiceActual === -1 || listaDeReproduccion.length <= 1) return;
+
+    const cancionActual = listaDeReproduccion[indiceActual];
+
+    const restoDeCanciones = listaDeReproduccion.filter((_, index) => index !== indiceActual);
+
+    for (let i = restoDeCanciones.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [restoDeCanciones[i], restoDeCanciones[j]] = [restoDeCanciones[j], restoDeCanciones[i]];
     }
+
+    listaDeReproduccion = [cancionActual, ...restoDeCanciones];
+
+    indiceActual = 0;
 }
 
 function toggleShuffle() {
