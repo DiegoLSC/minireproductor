@@ -226,7 +226,9 @@ function cargarModalAlbum(id, titulo, anio) {
     document.getElementById('edit_alb_anio').value = anio || '';
 }
 
+// ==========================================
 // SISTEMA DE ETIQUETAS (TAGS) GENERALIZADO
+// ==========================================
 function inicializarBuscadorEtiquetas(config) {
     const { idContenedor, idSearch, idResults, idSelected, idHidden, setGlobal, prefix } = config;
     const contenedor = document.getElementById(idContenedor);
@@ -235,6 +237,8 @@ function inicializarBuscadorEtiquetas(config) {
     const listaArtistas = JSON.parse(contenedor.dataset.artistas || '[]');
     const searchInput = document.getElementById(idSearch);
     const resultsContainer = document.getElementById(idResults);
+
+    if (!searchInput || !resultsContainer) return;
 
     searchInput.addEventListener('input', function() {
         const query = this.value.toLowerCase().trim();
@@ -251,10 +255,13 @@ function inicializarBuscadorEtiquetas(config) {
                 div.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
                 div.textContent = art.nombre;
                 
-                div.addEventListener('click', function() {
+                div.addEventListener('click', function(e) {
+                    console.log(`[Buscador] Click en: ${art.nombre} (ID: ${art.id}) con prefijo: ${prefix}`);
+                    
                     if (prefix === 'alb') window.agregarEtiquetaAlbum(art.id, art.nombre);
                     else if (prefix === 'can') window.agregarEtiquetaCancion(art.id, art.nombre);
                     else if (prefix === 'sub') window.agregarEtiquetaSubir(art.id, art.nombre);
+                    else if (prefix === 'nuevo_alb') window.agregarEtiquetaNuevoAlbum(art.id, art.nombre);
                     
                     searchInput.value = '';
                     resultsContainer.style.display = 'none';
@@ -271,38 +278,52 @@ function inicializarBuscadorEtiquetas(config) {
 }
 
 function creadorDeEtiquetas(id, nombre, setGlobal, prefix, hiddenContainerId, selectedContainerId) {
+    console.log(`[Creador] Construyendo tag para: ${nombre} -> Contenedor destino: ${selectedContainerId}`);
     const idStr = id.toString();
     setGlobal.add(idStr);
+
+    const hiddenContainer = document.getElementById(hiddenContainerId);
+    const selectedContainer = document.getElementById(selectedContainerId);
+
+    if (!hiddenContainer || !selectedContainer) {
+        console.error(`[Error] No se encontraron los contenedores en el HTML: ${hiddenContainerId} o ${selectedContainerId}`);
+        return;
+    }
 
     const hiddenInput = document.createElement('input');
     hiddenInput.type = 'hidden';
     hiddenInput.name = 'artista_ids[]';
     hiddenInput.value = idStr;
     hiddenInput.id = `${prefix}_hidden_art_${idStr}`;
-    document.getElementById(hiddenContainerId).appendChild(hiddenInput);
+    hiddenContainer.appendChild(hiddenInput);
 
     const tag = document.createElement('span');
     tag.className = 'badge d-flex align-items-center p-2 rounded-pill';
-    tag.style.cssText = 'background-color: #1a1a1a; border: 1px solid var(--sistema-carmesí); color: #ffffff; font-size: 0.8rem;';
+    tag.style.cssText = 'background-color: #1a1a1a; border: 1px solid var(--borde-carmesí); color: #ffffff; font-size: 0.8rem;';
     tag.id = `${prefix}_tag_art_${idStr}`;
     tag.innerHTML = `${nombre} <i class="bi bi-x-circle-fill ms-2 text-danger" style="cursor:pointer; font-size: 0.9rem;"></i>`;
 
     tag.querySelector('i').addEventListener('click', function() {
         tag.remove();
-        document.getElementById(`${prefix}_hidden_art_${idStr}`).remove();
+        const inputABorrar = document.getElementById(`${prefix}_hidden_art_${idStr}`);
+        if (inputABorrar) inputABorrar.remove();
         setGlobal.delete(idStr);
     });
-    document.getElementById(selectedContainerId).appendChild(tag);
+    
+    selectedContainer.appendChild(tag);
+    console.log(`[Éxito] Tag inyectado correctamente en ${selectedContainerId}`);
 }
 
 // Inicialización de Sets globales
 window.editAlbArtistasSeleccionados = new Set();
 window.editArtistasSeleccionados = new Set();
 window.subirArtistasSeleccionados = new Set();
+window.crearAlbArtistasSeleccionados = new Set(); 
 
 window.agregarEtiquetaAlbum = (id, nombre) => creadorDeEtiquetas(id, nombre, window.editAlbArtistasSeleccionados, 'alb', 'edit_alb_hidden_inputs', 'edit_alb_selected_artists');
 window.agregarEtiquetaCancion = (id, nombre) => creadorDeEtiquetas(id, nombre, window.editArtistasSeleccionados, 'can', 'edit_can_hidden_inputs', 'edit_can_selected_artists');
 window.agregarEtiquetaSubir = (id, nombre) => creadorDeEtiquetas(id, nombre, window.subirArtistasSeleccionados, 'sub', 'subir_can_hidden_inputs', 'subir_can_selected_artists');
+window.agregarEtiquetaNuevoAlbum = (id, nombre) => creadorDeEtiquetas(id, nombre, window.crearAlbArtistasSeleccionados, 'nuevo_alb', 'album_hidden_inputs', 'album_selected_artists');
 
 function cargarEtiquetasEdicionAlbum(idsCSV, nombresCSV) {
     document.getElementById('edit_alb_selected_artists').innerHTML = '';
@@ -355,18 +376,62 @@ function toggleMute() {
 }
 
 // ==========================================
-// DELEGACIÓN DE EVENTOS (CLIC EN LA COLA)
+// INITIALIZATION AND DELEGATED EVENTS
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
+    
+    console.log("[Sistema] Inicializando los 4 Buscadores de Etiquetas...");
+
+    // 1. Modal Registrar Álbum (albumModal)
+    inicializarBuscadorEtiquetas({
+        idContenedor: 'contenedor_buscador_artistas',
+        idSearch: 'album_artist_search',
+        idResults: 'album_artist_results',
+        idSelected: 'album_selected_artists',
+        idHidden: 'album_hidden_inputs',
+        setGlobal: window.crearAlbArtistasSeleccionados,
+        prefix: 'nuevo_alb'
+    });
+
+    // 2. Modal Publicar Canción (cancionModal)
+    inicializarBuscadorEtiquetas({
+        idContenedor: 'subir_can_contenedor_buscador',
+        idSearch: 'subir_can_artist_search',
+        idResults: 'subir_can_artist_results',
+        idSelected: 'subir_can_selected_artists',
+        idHidden: 'subir_can_hidden_inputs',
+        setGlobal: window.subirArtistasSeleccionados,
+        prefix: 'sub'
+    });
+
+    // 3. Modal Modificar Canción (editCancionModal)
+    inicializarBuscadorEtiquetas({
+        idContenedor: 'edit_can_contenedor_buscador',
+        idSearch: 'edit_can_artist_search',
+        idResults: 'edit_can_artist_results',
+        idSelected: 'edit_can_selected_artists',
+        idHidden: 'edit_can_hidden_inputs',
+        setGlobal: window.editArtistasSeleccionados,
+        prefix: 'can'
+    });
+
+    // 4. Modal Editar Álbum (editAlbumModal)
+    inicializarBuscadorEtiquetas({
+        idContenedor: 'edit_alb_contenedor_buscador',
+        idSearch: 'edit_alb_artist_search',
+        idResults: 'edit_alb_artist_results',
+        idSelected: 'edit_alb_selected_artists',
+        idHidden: 'edit_alb_hidden_inputs',
+        setGlobal: window.editAlbArtistasSeleccionados,
+        prefix: 'alb'
+    });
+
+    // Escucha de clics delegados para reproducir canciones desde la cola visual
     document.body.addEventListener('click', function(e) {
-        // Buscamos si el clic ocurrió dentro de un elemento que tenga el atributo data-index
         const itemCola = e.target.closest('[data-index]');
-        
-        // ¡CORRECCIÓN AQUÍ! Ahora usamos los IDs reales de tu footer.php
         const perteneceACola = e.target.closest('#colaPanel') || e.target.closest('#lista-cola-dinamica');
 
         if (itemCola && perteneceACola) {
-            // Evitamos que salte si hicieron clic en el botón de eliminar de la cola
             if (e.target.closest('.btn-eliminar-cola') || e.target.tagName.toLowerCase() === 'button' || e.target.classList.contains('bi-x') || e.target.closest('i.bi-x-lg')) {
                 return; 
             }

@@ -10,14 +10,18 @@ const shuffleBtn = document.getElementById('shuffle-btn');
 let listaDeReproduccion = [];
 let indiceActual = -1;
 
-// SOLUCIÓN: Recuperar el estado de aleatorio de la sesión anterior
+// Recuperar el estado de aleatorio de la sesión anterior
 let modoAleatorio = localStorage.getItem('nebula_shuffle') === 'true';
 window.modoRepetirActivo = false; 
 
-// Inicializar el botón de shuffle según lo guardado
-if (modoAleatorio && shuffleBtn) {
-    shuffleBtn.className = "btn text-success fs-5 p-0 lh-1";
-}
+// SOLUCIÓN: Forzar al botón a pintarse de verde de forma segura cuando el HTML esté 100% listo
+document.addEventListener('DOMContentLoaded', () => {
+    const botonShuffleNativo = document.getElementById('shuffle-btn');
+    if (modoAleatorio && botonShuffleNativo) {
+        botonShuffleNativo.className = "btn text-success fs-5 p-0 lh-1";
+        console.log("[AudioEngine] Modo Aleatorio restaurado y activo (Visual: Verde)");
+    }
+});
 
 function actualizarColaReproduccion() {
     const cancionGuardada = window.rutaEnReproduccion || localStorage.getItem('nebula_track_ruta');
@@ -139,7 +143,7 @@ function mezclarColaActual() {
 
 function toggleShuffle() {
     modoAleatorio = !modoAleatorio;
-    localStorage.setItem('nebula_shuffle', modoAleatorio); // SOLUCIÓN: Guardar estado
+    localStorage.setItem('nebula_shuffle', modoAleatorio); 
 
     if (modoAleatorio) {
         shuffleBtn.className = "btn text-success fs-5 p-0 lh-1";
@@ -183,7 +187,6 @@ function togglePanelCola() {
     if (panel.classList.contains('activo')) {
         botonCola.className = "btn text-success p-0 fs-5 lh-1";
         
-        // SOLUCIÓN: Si no hay cola generada, forzarla a generarse al abrir el panel
         if (listaDeReproduccion.length === 0) actualizarColaReproduccion();
         
         renderizarColaVisual();
@@ -209,10 +212,9 @@ function renderizarColaVisual() {
         const indexOrigen = i; 
         
         const li = document.createElement('li');
-        // SOLUCIÓN: Agregado setAttribute para que el uiController detecte el clic
         li.setAttribute('data-index', indexOrigen);
         li.className = "list-group-item bg-black border-0 border-bottom border-secondary border-opacity-10 d-flex align-items-center justify-content-between p-2.5 text-white small song-row-cola hover-bg-dark";
-        li.style.cursor = "pointer"; // Para que parezca clickeable
+        li.style.cursor = "pointer"; 
         
         li.innerHTML = `
             <div class="d-flex align-items-center flex-grow-1 pe-2 text-truncate" style="max-width: 200px;">
@@ -286,13 +288,10 @@ function irACancionActual() {
     }
 }
 
-// SOLUCIÓN: Código corregido (cargarCancion no existía y reproducirCancion necesitaba parámetros)
 function reproducirDesdeCola(indice) {
     if (indice >= 0 && indice < listaDeReproduccion.length) {
         indiceActual = indice; 
         const track = listaDeReproduccion[indiceActual];
-        
-        // Al llamar a esto, automáticamente hace Play, actualiza la info y vuelve a pintar la cola
         reproducirCancion(track.ruta, track.titulo, track.artista, track.caratula);
     }
 }

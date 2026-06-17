@@ -5,12 +5,11 @@ document.addEventListener('DOMContentLoaded', () => {
     inicializarControlesNativos();
     restaurarSesion();
 
-    // Inicializadores de Etiquetas (Tags)
-    inicializarBuscadorEtiquetas({ idContenedor: 'contenedor_buscador_artistas', idSearch: 'album_artist_search', idResults: 'album_artist_results', idSelected: 'album_selected_artists', idHidden: 'album_hidden_inputs', setGlobal: window.editAlbArtistasSeleccionados, prefix: 'alb' });
-    inicializarBuscadorEtiquetas({ idContenedor: 'edit_can_contenedor_buscador', idSearch: 'edit_can_artist_search', idResults: 'edit_can_artist_results', idSelected: 'edit_can_selected_artists', idHidden: 'edit_can_hidden_inputs', setGlobal: window.editArtistasSeleccionados, prefix: 'can' });
-    inicializarBuscadorEtiquetas({ idContenedor: 'subir_can_contenedor_buscador', idSearch: 'subir_can_artist_search', idResults: 'subir_can_artist_results', idSelected: 'subir_can_selected_artists', idHidden: 'subir_can_hidden_inputs', setGlobal: window.subirArtistasSeleccionados, prefix: 'sub' });
-
-    // Limpieza de Modales
+    // ==========================================
+    // LIMPIEZA DE MODALES AL CERRAR
+    // ==========================================
+    
+    // Limpieza Modal: Publicar Canción
     const modalSubir = document.getElementById('cancionModal');
     if (modalSubir) {
         modalSubir.addEventListener('hidden.bs.modal', function () {
@@ -21,6 +20,22 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('subir_can_artist_results').style.display = 'none';
         });
     }
+
+    // Limpieza Modal: Registrar Álbum (¡Añadido para evitar duplicados al reabrir!)
+    const modalNuevoAlbum = document.getElementById('albumModal');
+    if (modalNuevoAlbum) {
+        modalNuevoAlbum.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('album_selected_artists').innerHTML = '';
+            document.getElementById('album_hidden_inputs').innerHTML = '';
+            if (window.crearAlbArtistasSeleccionados) window.crearAlbArtistasSeleccionados.clear();
+            document.getElementById('album_artist_search').value = '';
+            document.getElementById('album_artist_results').style.display = 'none';
+        });
+    }
+
+    // ==========================================
+    // ESTRUCTURA Y COMPORTAMIENTO UI
+    // ==========================================
 
     // Memoria Sidebar PC
     const sidebar = document.getElementById('sidebar');
@@ -80,7 +95,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Atajos de Teclado
+// ==========================================
+// ATAJOS DE TECLADO
+// ==========================================
 document.addEventListener('keydown', function(event) {
     const elementoActivo = document.activeElement.tagName;
     if (elementoActivo === 'INPUT' || elementoActivo === 'TEXTAREA' || elementoActivo === 'SELECT') return;

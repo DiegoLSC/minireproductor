@@ -79,30 +79,30 @@
     </div>
 
     <div class="modal fade" id="albumModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark text-white border-secondary">
-        <div class="modal-header border-secondary"><h5>Registrar Álbum</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-        <form onsubmit="enviarFormularioAsincrono(event, 'api/insertar_elementos.php')">
-            <input type="hidden" name="accion" value="crear_album">
-            <div class="modal-body d-flex flex-column gap-3">
-                    <div><label class="form-label text-secondary small fw-bold">Título del Álbum</label><input type="text" name="titulo" class="form-control bg-secondary text-white border-0" required></div>
-                    <div id="contenedor_buscador_artistas" data-artistas='<?= htmlspecialchars(json_encode($artistas), ENT_QUOTES, 'UTF-8') ?>'>
-                        <label class="form-label">Artistas Responsables</label>
-                        <div id="album_selected_artists" class="d-flex flex-wrap gap-2 mb-2"></div>
-                        <div class="position-relative">
-                            <input type="text" id="album_artist_search" class="form-control" placeholder="Escribe para buscar un artista..." autocomplete="off">
-                            <div id="album_artist_results" class="position-absolute w-100 mt-1 rounded shadow-lg" style="display: none; z-index: 1060; max-height: 160px; overflow-y: auto; background-color: #141414; border: 1px solid rgba(220, 38, 38, 0.4);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary"><h5>Registrar Álbum</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form onsubmit="enviarFormularioAsincrono(event, 'api/insertar_elementos.php')">
+                <input type="hidden" name="accion" value="crear_album">
+                <div class="modal-body d-flex flex-column gap-3">
+                        <div><label class="form-label text-secondary small fw-bold">Título del Álbum</label><input type="text" name="titulo" class="form-control bg-secondary text-white border-0" required></div>
+                        <div id="contenedor_buscador_artistas" data-artistas='<?= htmlspecialchars(json_encode($artistas), ENT_QUOTES, 'UTF-8') ?>'>
+                            <label class="form-label">Artistas Responsables</label>
+                            <div id="album_selected_artists" class="d-flex flex-wrap gap-2 mb-2"></div>
+                            <div class="position-relative">
+                                <input type="text" id="album_artist_search" class="form-control" placeholder="Escribe para buscar un artista..." autocomplete="off">
+                                <div id="album_artist_results" class="position-absolute w-100 mt-1 rounded shadow-lg" style="display: none; z-index: 1060; max-height: 160px; overflow-y: auto; background-color: #141414; border: 1px solid rgba(220, 38, 38, 0.4);">
+                                </div>
                             </div>
+                            <div id="album_hidden_inputs"></div>
                         </div>
-                        <div id="album_hidden_inputs"></div>
-                    </div>
-                    <div><label class="form-label text-secondary small fw-bold">Año de lanzamiento <span class="text-warning">(Opcional)</span></label><input type="number" name="anio" class="form-control bg-secondary text-white border-0" placeholder="Ej: 2026"></div>
-                    <div><label class="form-label text-secondary small fw-bold">Carátula del Álbum <span class="text-warning">(Opcional)</span></label><input type="file" name="caratula" class="form-control bg-secondary text-white border-0" accept="image/*"></div>
+                        <div><label class="form-label text-secondary small fw-bold">Año de lanzamiento <span class="text-warning">(Opcional)</span></label><input type="number" name="anio" class="form-control bg-secondary text-white border-0" placeholder="Ej: 2026"></div>
+                        <div><label class="form-label text-secondary small fw-bold">Carátula del Álbum <span class="text-warning">(Opcional)</span></label><input type="file" name="caratula" class="form-control bg-secondary text-white border-0" accept="image/*"></div>
+                </div>
+                <div class="modal-footer border-secondary"><button type="submit" class="btn btn-success fw-bold w-100">Guardar Álbum</button></div>
+            </form>
             </div>
-            <div class="modal-footer border-secondary"><button type="submit" class="btn btn-success fw-bold w-100">Guardar Álbum</button></div>
-        </form>
         </div>
-    </div>
     </div>
 
     <div class="modal fade" id="playlistModal" tabindex="-1" aria-hidden="true">
@@ -406,7 +406,7 @@
     <script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.4.0/dist/browser-id3-writer.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="assets/js/apiServices.js"></script>
-    <script src="assets/js/uiController.js"></script>
+    <script src="assets/js/uiController.js?v=4"></script>
     <script src="assets/js/audioEngine.js"></script>
     <script src="assets/js/main.js"></script>
     <script src="assets/js/logsController.js?v=2"></script>
