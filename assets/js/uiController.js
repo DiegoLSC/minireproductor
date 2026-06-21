@@ -72,8 +72,6 @@ function filtrarBiblioteca() {
     
     paginaActual = 1; 
     renderizarPaginaActual();
-    
-    if (typeof actualizarColaReproduccion === 'function') actualizarColaReproduccion();
 }
 
 function renderizarPaginaActual() {

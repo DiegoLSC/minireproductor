@@ -8,6 +8,7 @@ const timeTotal = document.getElementById('time-total');
 const shuffleBtn = document.getElementById('shuffle-btn');
 
 let listaDeReproduccion = [];
+let listaDeReproduccionOriginal = []; // NUEVA VARIABLE: Guarda la cola intacta
 let indiceActual = -1;
 
 // Recuperar el estado de aleatorio de la sesión anterior
@@ -37,6 +38,9 @@ function actualizarColaReproduccion() {
             });
         });
     }
+
+    // CLAVE: Tomamos una "foto" de la cola original en el instante en que se crea
+    listaDeReproduccionOriginal = [...listaDeReproduccion];
 
     if (cancionGuardada) {
         indiceActual = listaDeReproduccion.findIndex(c => c.ruta === cancionGuardada);
@@ -164,7 +168,14 @@ function toggleShuffle() {
         shuffleBtn.className = "btn text-secondary fs-5 p-0 lh-1";
         if (indiceActual !== -1) {
             const rutaActual = listaDeReproduccion[indiceActual].ruta;
-            actualizarColaReproduccion(); 
+            
+            // CLAVE: Restauramos desde la copia de seguridad
+            if (listaDeReproduccionOriginal.length > 0) {
+                listaDeReproduccion = [...listaDeReproduccionOriginal];
+            } else {
+                actualizarColaReproduccion(); 
+            }
+
             indiceActual = listaDeReproduccion.findIndex(c => c.ruta === rutaActual);
             if (document.getElementById('colaPanel').classList.contains('activo')) renderizarColaVisual();
         }
@@ -251,9 +262,9 @@ function quitarDeColaTemporal(indexEliminar) {
 
 function inicializarDragAndDropCola() {
     const contenedorLista = document.getElementById('lista-cola-dinamica');
-    if (!contenedorLista || sortableCola) return; 
+    if (!contenedorLista || typeof sortableCola !== 'undefined') return; 
 
-    sortableCola = new Sortable(contenedorLista, {
+    window.sortableCola = new Sortable(contenedorLista, {
         handle: '.drag-handle',
         animation: 150,        
         ghostClass: 'bg-secondary', 
