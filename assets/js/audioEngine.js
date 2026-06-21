@@ -8,21 +8,47 @@ const timeTotal = document.getElementById('time-total');
 const shuffleBtn = document.getElementById('shuffle-btn');
 
 let listaDeReproduccion = [];
-let listaDeReproduccionOriginal = []; // NUEVA VARIABLE: Guarda la cola intacta
+let listaDeReproduccionOriginal = []; // Guarda la cola intacta sin aleatorio
 let indiceActual = -1;
 
 // Recuperar el estado de aleatorio de la sesión anterior
 let modoAleatorio = localStorage.getItem('nebula_shuffle') === 'true';
 window.modoRepetirActivo = false; 
 
-// SOLUCIÓN: Forzar al botón a pintarse de verde de forma segura cuando el HTML esté 100% listo
+// ==========================================
+// PERSISTENCIA: NÚCLEO DE RECUPERACIÓN DE SESIÓN
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     const botonShuffleNativo = document.getElementById('shuffle-btn');
     if (modoAleatorio && botonShuffleNativo) {
         botonShuffleNativo.className = "btn text-success fs-5 p-0 lh-1";
         console.log("[AudioEngine] Modo Aleatorio restaurado y activo (Visual: Verde)");
     }
+
+    // CLAVE: Al volver a entrar a la página, recuperamos la cola exacta del LocalStorage
+    const listaGuardada = localStorage.getItem('nebula_lista_reproduccion');
+    const originalGuardada = localStorage.getItem('nebula_lista_original');
+    const indiceGuardado = localStorage.getItem('nebula_indice_actual');
+
+    if (listaGuardada && originalGuardada && indiceGuardado !== null) {
+        listaDeReproduccion = JSON.parse(listaGuardada);
+        listaDeReproduccionOriginal = JSON.parse(originalGuardada);
+        indiceActual = parseInt(indiceGuardado);
+        console.log(`[AudioEngine] Cola persistente restaurada (${listaDeReproduccion.length} canciones en memoria).`);
+        
+        // Si el panel lateral estaba abierto por algún motivo, dibujarlo de inmediato
+        if (document.getElementById('colaPanel') && document.getElementById('colaPanel').classList.contains('activo')) {
+            renderizarColaVisual();
+        }
+    }
 });
+
+// Función asistente para guardar el estado exacto de la cola en cada cambio
+function guardarEstadoCola() {
+    localStorage.setItem('nebula_lista_reproduccion', JSON.stringify(listaDeReproduccion));
+    localStorage.setItem('nebula_lista_original', JSON.stringify(listaDeReproduccionOriginal));
+    localStorage.setItem('nebula_indice_actual', indiceActual);
+}
 
 function actualizarColaReproduccion() {
     const cancionGuardada = window.rutaEnReproduccion || localStorage.getItem('nebula_track_ruta');
@@ -39,7 +65,7 @@ function actualizarColaReproduccion() {
         });
     }
 
-    // CLAVE: Tomamos una "foto" de la cola original en el instante en que se crea
+    // Tomamos una "foto" de la cola original en el instante en que se crea
     listaDeReproduccionOriginal = [...listaDeReproduccion];
 
     if (cancionGuardada) {
@@ -50,6 +76,8 @@ function actualizarColaReproduccion() {
     } else {
         indiceActual = -1;
     }
+    
+    guardarEstadoCola(); // Almacenamos el cambio inicial
 }
 
 function reproducirDesdeFila(elementoFila) {
@@ -62,9 +90,11 @@ function reproducirDesdeFila(elementoFila) {
         const track = listaDeReproduccion[indiceActual];
         reproducirCancion(track.ruta, track.titulo, track.artista, track.caratula);
     }
+    
+    guardarEstadoCola(); // Almacenamos tras cambiar canción base
 }
 
-function reproducirCancion(ruta, titulo, artist, caratula) {
+function reproducirCancion(ruta, titulo, artist, caratula, autoPlay = true) {
     localStorage.setItem('nebula_track_ruta', ruta);
     localStorage.setItem('nebula_track_titulo', titulo);
     localStorage.setItem('nebula_track_artista', artist);
@@ -100,8 +130,13 @@ function reproducirCancion(ruta, titulo, artist, caratula) {
         if (textoTituloActivo) textoTituloActivo.classList.add('text-success');
     }
 
-    audio.play().catch(e => console.log("Auto-play bloqueado por el navegador", e));
-    playBtn.innerHTML = '<i class="bi bi-pause-fill fs-3 text-black"></i>';
+    if (autoPlay) {
+        audio.play().catch(e => console.log("Auto-play bloqueado por el navegador", e));
+        playBtn.innerHTML = '<i class="bi bi-pause-fill fs-3 text-black"></i>';
+    } else {
+        playBtn.innerHTML = '<i class="bi bi-play-fill fs-3 text-black"></i>';
+    }
+    
     if (document.getElementById('colaPanel').classList.contains('activo')) renderizarColaVisual();
     if (typeof actualizarPantallaBloqueo === 'function') actualizarPantallaBloqueo(titulo, artist, 'NebulaPlayer', caratula);
 }
@@ -125,6 +160,8 @@ function siguienteCancion() {
     if (indiceActual >= listaDeReproduccion.length) indiceActual = 0; 
     const track = listaDeReproduccion[indiceActual];
     reproducirCancion(track.ruta, track.titulo, track.artista, track.caratula);
+    
+    guardarEstadoCola(); // Almacenamos el nuevo índice actual
 }
 
 function cancionAnterior() {
@@ -135,13 +172,14 @@ function cancionAnterior() {
     if (indiceActual < 0) indiceActual = listaDeReproduccion.length - 1;
     const track = listaDeReproduccion[indiceActual];
     reproducirCancion(track.ruta, track.titulo, track.artista, track.caratula);
+    
+    guardarEstadoCola(); // Almacenamos el nuevo índice actual
 }
 
 function mezclarColaActual() {
     if (indiceActual === -1 || listaDeReproduccion.length <= 1) return;
 
     const cancionActual = listaDeReproduccion[indiceActual];
-
     const restoDeCanciones = listaDeReproduccion.filter((_, index) => index !== indiceActual);
 
     for (let i = restoDeCanciones.length - 1; i > 0; i--) {
@@ -150,8 +188,9 @@ function mezclarColaActual() {
     }
 
     listaDeReproduccion = [cancionActual, ...restoDeCanciones];
-
     indiceActual = 0;
+    
+    guardarEstadoCola();
 }
 
 function toggleShuffle() {
@@ -169,7 +208,6 @@ function toggleShuffle() {
         if (indiceActual !== -1) {
             const rutaActual = listaDeReproduccion[indiceActual].ruta;
             
-            // CLAVE: Restauramos desde la copia de seguridad
             if (listaDeReproduccionOriginal.length > 0) {
                 listaDeReproduccion = [...listaDeReproduccionOriginal];
             } else {
@@ -180,6 +218,8 @@ function toggleShuffle() {
             if (document.getElementById('colaPanel').classList.contains('activo')) renderizarColaVisual();
         }
     }
+    
+    guardarEstadoCola(); // Almacenamos el cambio del modo shuffle en la lista
 }
 
 function ajustarTiempo(valorPorcentaje) {
@@ -257,26 +297,49 @@ function renderizarColaVisual() {
 
 function quitarDeColaTemporal(indexEliminar) {
     listaDeReproduccion.splice(indexEliminar, 1);
+    guardarEstadoCola(); // Almacenamos tras eliminar un track de la cola
     renderizarColaVisual();
 }
 
 function inicializarDragAndDropCola() {
     const contenedorLista = document.getElementById('lista-cola-dinamica');
-    if (!contenedorLista || typeof sortableCola !== 'undefined') return; 
+    if (!contenedorLista) return;
+
+    if (window.sortableCola) {
+        window.sortableCola.destroy();
+    }
 
     window.sortableCola = new Sortable(contenedorLista, {
         handle: '.drag-handle',
         animation: 150,        
         ghostClass: 'bg-secondary', 
-        delay: 150,            
+        delay: 100,            
         delayOnTouchOnly: true, 
         touchStartThreshold: 5, 
         onEnd: function (evt) {
             if (evt.oldIndex === evt.newIndex) return;
             const indexRealAntiguo = evt.oldIndex + indiceActual + 1;
             const indexRealNuevo = evt.newIndex + indiceActual + 1;
+
             const cancionMovida = listaDeReproduccion.splice(indexRealAntiguo, 1)[0];
+            cancionMovida.isManual = true; 
             listaDeReproduccion.splice(indexRealNuevo, 0, cancionMovida);
+
+            if (listaDeReproduccionOriginal.length > 0) {
+                const indexOrigAntiguo = listaDeReproduccionOriginal.findIndex(c => c.ruta === cancionMovida.ruta);
+                if (indexOrigAntiguo !== -1) {
+                    listaDeReproduccionOriginal.splice(indexOrigAntiguo, 1);
+                }
+                
+                const vecinoArriba = listaDeReproduccion[indexRealNuevo - 1];
+                let indexOrigNuevo = 0;
+                if (vecinoArriba) {
+                    indexOrigNuevo = listaDeReproduccionOriginal.findIndex(c => c.ruta === vecinoArriba.ruta) + 1;
+                }
+                listaDeReproduccionOriginal.splice(indexOrigNuevo, 0, cancionMovida);
+            }
+
+            guardarEstadoCola(); // Almacenamos el orden reajustado por el drag-and-drop
             renderizarColaVisual();
         }
     });
@@ -313,5 +376,104 @@ function reproducirDesdeCola(indice) {
         indiceActual = indice; 
         const track = listaDeReproduccion[indiceActual];
         reproducirCancion(track.ruta, track.titulo, track.artista, track.caratula);
+        guardarEstadoCola(); // Guardamos el nuevo índice tras saltar desde la cola
     }
+}
+
+// ==========================================
+// SISTEMA DE ENCOLADO MANUAL (Añadir a la cola)
+// ==========================================
+function agregarAColaManual(rutaBuscada) {
+    if (listaDeReproduccion.length === 0) {
+        actualizarColaReproduccion();
+    }
+
+    const fila = document.querySelector(`.target-row[data-ruta="${rutaBuscada}"]`);
+    if (!fila) return;
+
+    const nuevoTrack = {
+        ruta: fila.getAttribute('data-ruta'),
+        titulo: fila.getAttribute('data-titulo'),
+        artista: fila.getAttribute('data-artista'),
+        caratula: fila.getAttribute('data-caratula'),
+        isManual: true 
+    };
+
+    const indexFuturo = listaDeReproduccion.findIndex((c, i) => i > indiceActual && c.ruta === rutaBuscada);
+    if (indexFuturo !== -1) listaDeReproduccion.splice(indexFuturo, 1);
+
+    let posicionInsertar = indiceActual + 1;
+    while (posicionInsertar < listaDeReproduccion.length && listaDeReproduccion[posicionInsertar].isManual) {
+        posicionInsertar++;
+    }
+
+    listaDeReproduccion.splice(posicionInsertar, 0, nuevoTrack);
+
+    if (listaDeReproduccionOriginal.length > 0) {
+        const indexOriginalBorrar = listaDeReproduccionOriginal.findIndex((c, i) => i > indiceActual && c.ruta === rutaBuscada);
+        if (indexOriginalBorrar !== -1) listaDeReproduccionOriginal.splice(indexOriginalBorrar, 1);
+
+        let posOrig = listaDeReproduccionOriginal.findIndex(c => c.ruta === listaDeReproduccion[indiceActual]?.ruta) + 1;
+        if(posOrig > 0) {
+            while (posOrig < listaDeReproduccionOriginal.length && listaDeReproduccionOriginal[posOrig].isManual) posOrig++;
+            listaDeReproduccionOriginal.splice(posOrig, 0, nuevoTrack);
+        }
+    }
+
+    if (!audio.src || audio.src === window.location.href || (!window.rutaEnReproduccion && indiceActual === -1)) {
+        indiceActual = 0;
+        reproducirCancion(nuevoTrack.ruta, nuevoTrack.titulo, nuevoTrack.artista, nuevoTrack.caratula, false);
+    }
+
+    guardarEstadoCola(); // Almacenamos tras inyectar la canción manual
+
+    if (document.getElementById('colaPanel') && document.getElementById('colaPanel').classList.contains('activo')) {
+        renderizarColaVisual();
+    }
+
+    mostrarNotificacionCola(`"${nuevoTrack.titulo}" se reproducirá a continuación`);
+
+    const menusAbiertos = document.querySelectorAll('.dropdown-menu.show');
+    menusAbiertos.forEach(menu => {
+        menu.classList.remove('show');
+        const botonToggle = menu.previousElementSibling;
+        if (botonToggle) {
+            botonToggle.classList.remove('show');
+            botonToggle.setAttribute('aria-expanded', 'false');
+            if (typeof bootstrap !== 'undefined') {
+                const bsDropdown = bootstrap.Dropdown.getInstance(botonToggle);
+                if (bsDropdown) bsDropdown.hide();
+            }
+        }
+    });
+}
+
+function mostrarNotificacionCola(mensaje) {
+    let toast = document.getElementById('toast-cola');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast-cola';
+        toast.className = 'position-fixed bottom-0 start-50 translate-middle-x px-4 py-2 rounded-pill shadow-lg text-white fw-bold d-flex align-items-center gap-2';
+        toast.style.backgroundColor = '#141414';
+        toast.style.border = '1px solid #dc2626';
+        toast.style.zIndex = '9999';
+        toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        toast.style.transform = 'translate(-50%, 20px)'; 
+        toast.style.marginBottom = '110px'; 
+        document.body.appendChild(toast);
+    }
+    
+    toast.innerHTML = `<i class="bi bi-music-note-list text-danger fs-5"></i> <span>${mensaje}</span>`;
+    toast.style.display = 'flex';
+    
+    void toast.offsetWidth;
+    toast.style.opacity = '1';
+    toast.style.transform = 'translate(-50%, 0)';
+    
+    clearTimeout(window.toastColaTimer);
+    window.toastColaTimer = setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translate(-50%, 20px)';
+        setTimeout(() => toast.style.display = 'none', 300);
+    }, 2500);
 }

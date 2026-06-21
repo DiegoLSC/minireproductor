@@ -107,6 +107,11 @@
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end bg-dark border border-secondary border-opacity-20 shadow-lg p-1">
                                                 <li>
+                                                    <button class="dropdown-item text-white hover-bg-dark rounded small py-1.5" onclick="agregarAColaManual('<?= htmlspecialchars($c['ruta_archivo']) ?>'); event.stopPropagation();">
+                                                        <i class="bi bi-music-note-list text-danger me-2"></i> Añadir a la cola
+                                                    </button>
+                                                </li>       
+                                                <li>
                                                     <button type="button" class="dropdown-item text-white rounded small py-1.5" data-bs-toggle="modal" data-bs-target="#agregarAPlaylistModal" onclick="document.getElementById('id_cancion_playlist').value='<?= $c['id'] ?>'">
                                                         <i class="bi bi-plus-circle me-2 text-info"></i> Añadir a Playlist
                                                     </button>
@@ -114,7 +119,7 @@
                                                 <li>
                                                     <button type="button" class="dropdown-item text-white rounded small py-1.5" data-bs-toggle="modal" data-bs-target="#editCancionModal" 
                                                         onclick="
-                                                            cargarModalCancion(<?= $c['id'] ?>, '<?= addslashes($c['titulo']) ?>', '<?= $c['album_id'] ?? '' ?>', <?= $c['duracion'] ?? 0 ?>, '<?= addslashes($c['ruta'] ?? '') ?>'); 
+                                                            cargarModalCancion(<?= $c['id'] ?>, '<?= addslashes($c['titulo']) ?>', '<?= $c['album_id'] ?? '' ?>', <?= $c['duracion'] ?? 0 ?>, '<?= addslashes($c['ruta_archivo'] ?? '') ?>'); 
                                                             cargarEtiquetasEdicion('<?= $c['artistas_ids'] ?? '' ?>', '<?= addslashes($c['artistas_nombres'] ?? '') ?>');
                                                         ">
                                                         <i class="bi bi-pencil me-2 text-warning"></i> Editar detalles
