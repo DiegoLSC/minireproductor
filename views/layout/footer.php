@@ -191,22 +191,29 @@
     </div>
 
     <div class="modal fade" id="agregarAPlaylistModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content bg-dark text-white border-info">
-        <div class="modal-header border-secondary"><h6>Añadir a Playlist</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-        <form onsubmit="enviarFormularioAsincrono(event, 'api/insertar_elementos.php')">
-            <input type="hidden" name="accion" value="agregar_a_playlist">
-            <input type="hidden" name="cancion_id" id="id_cancion_playlist">
-            <div class="modal-body">
-                    <select name="playlist_id" class="form-select bg-secondary text-white border-0" required>
-                        <option value="">-- Elige Playlist --</option>
-                        <?php foreach($playlists as $pl): ?><option value="<?= $pl['id'] ?>"><?= htmlspecialchars($pl['nombre']) ?></option><?php endforeach; ?>
-                    </select>
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>Añadir a Playlist</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form onsubmit="enviarFormularioAsincrono(event, 'api/insertar_elementos.php')">
+                    <input type="hidden" name="accion" value="agregar_a_playlist">
+                    <input type="hidden" name="cancion_id" id="id_cancion_playlist">
+                    <div class="modal-body">
+                        <select name="playlist_id" class="form-select" required>
+                            <option value="">-- Elige Playlist --</option>
+                            <?php foreach($playlists as $pl): ?>
+                                <option value="<?= $pl['id'] ?>"><?= htmlspecialchars($pl['nombre']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary fw-bold w-100">Confirmar</button>
+                    </div>
+                </form>
             </div>
-            <div class="modal-footer border-secondary"><button type="submit" class="btn btn-info text-black fw-bold w-100">Confirmar</button></div>
-        </form>
         </div>
-    </div>
     </div>
 
     <div class="modal fade" id="editCancionModal" tabindex="-1" aria-hidden="true">
