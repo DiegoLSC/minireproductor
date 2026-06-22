@@ -103,7 +103,7 @@
                                     </a>
                                     <div class="d-flex gap-1">
                                         <span style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#editPlaylistModal" data-nombre="<?= htmlspecialchars($pl['nombre'], ENT_QUOTES, 'UTF-8') ?>" data-desc="<?= htmlspecialchars($pl['descripcion'], ENT_QUOTES, 'UTF-8') ?>" onclick="document.getElementById('edit_pl_id').value='<?= $pl['id'] ?>'; document.getElementById('edit_pl_nombre').value=this.getAttribute('data-nombre'); document.getElementById('edit_pl_desc').value=this.getAttribute('data-desc');"><i class="bi bi-pencil small text-warning opacity-75 hover-opacity-100"></i></span>
-                                        <span style="cursor:pointer;" onclick="eliminarElementoAsincrono('playlist', <?= $pl['id'] ?>, this)"><i class="bi bi-trash3 small text-danger opacity-75 hover-opacity-100"></i></span>
+                                        <span style="cursor:pointer;" onclick="event.stopPropagation(); prepararEliminacion('playlist', <?= $pl['id'] ?>, this)"><i class="bi bi-trash3 small text-danger opacity-75 hover-opacity-100"></i></span>
                                     </div>
                                 </li>
                                 <?php endforeach; ?>
@@ -148,7 +148,7 @@
                                                     <li><a class="dropdown-item small" href="#" data-nombre="<?= htmlspecialchars($art['nombre'], ENT_QUOTES, 'UTF-8') ?>" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-nombre'); filtrarBiblioteca(); return false;"><i class="bi bi-search text-success me-2"></i>Buscar todas sus canciones</a></li>
                                                     <li><a class="dropdown-item small" href="#" data-bs-toggle="modal" data-bs-target="#editArtistaModal" data-nombre="<?= htmlspecialchars($art['nombre'], ENT_QUOTES, 'UTF-8') ?>" onclick="document.getElementById('edit_art_id').value='<?= $art['id'] ?>'; document.getElementById('edit_art_nombre').value=this.getAttribute('data-nombre');"><i class="bi bi-pencil text-warning me-2"></i>Editar Artista</a></li>
                                                     <li><hr class="dropdown-divider border-secondary"></li>
-                                                    <li><a class="dropdown-item small text-danger" href="#" onclick="eliminarElementoAsincrono('artista', <?= $art['id'] ?>, this)"><i class="bi bi-trash3 text-danger me-2"></i>Eliminar Artista</a></li>
+                                                    <li><a class="dropdown-item small text-danger" href="#" onclick="event.preventDefault(); event.stopPropagation(); prepararEliminacion('artista', <?= $art['id'] ?>, this)"><i class="bi bi-trash3 text-danger me-2"></i>Eliminar Artista</a></li>
                                                 </ul>
                                             </div>
                                         </div>
@@ -177,7 +177,7 @@
                                                             <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
                                                                 <li><a class="dropdown-item small" href="#" data-titulo="<?= htmlspecialchars($alb['titulo'], ENT_QUOTES, 'UTF-8') ?>" data-artistas-nombres="<?= htmlspecialchars($alb['artistas_nombres'], ENT_QUOTES, 'UTF-8') ?>" data-artistas-ids="<?= $alb['artistas_ids'] ?>" data-bs-toggle="modal" data-bs-target="#editAlbumModal" onclick="cargarModalAlbum(<?= $alb['id'] ?>, this.getAttribute('data-titulo'), '<?= $alb['anio'] ?? '' ?>'); cargarEtiquetasEdicionAlbum(this.getAttribute('data-artistas-ids'), this.getAttribute('data-artistas-nombres'));"><i class="bi bi-pencil text-warning me-2"></i>Editar Álbum</a></li>
                                                                 <li><hr class="dropdown-divider border-secondary"></li>
-                                                                <li><a class="dropdown-item small text-danger" href="#" onclick="eliminarElementoAsincrono('album', <?= $alb['id'] ?>, this)"><i class="bi bi-trash3 text-danger me-2"></i>Eliminar Álbum</a></li>
+                                                                <li><a class="dropdown-item small text-danger" href="#" onclick="event.preventDefault(); event.stopPropagation(); prepararEliminacion('album', <?= $alb['id'] ?>, this)"><i class="bi bi-trash3 text-danger me-2"></i>Eliminar Álbum</a></li>
                                                             </ul>
                                                         </div>
                                                     </li>

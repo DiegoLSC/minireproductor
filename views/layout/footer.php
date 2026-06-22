@@ -269,31 +269,31 @@
     </div>
 
     <div class="modal fade" id="editArtistaModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-        <div class="modal-header">
-            <h5>Editar Datos del Artista</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <form onsubmit="enviarFormularioAsincrono(event, 'api/editar_elementos.php')">
-            <input type="hidden" name="accion" value="editar_artista">
-            <input type="hidden" name="id" id="edit_art_id">
-            <div class="modal-body d-flex flex-column gap-3">
-                    <div>
-                        <label class="form-label">Nombre del Artista</label>
-                        <input type="text" name="nombre" id="edit_art_nombre" class="form-control" required>
-                    </div>
-                    <div>
-                        <label class="form-label">Reemplazar Foto <span class="text-warning">(Opcional)</span></label>
-                        <input type="file" name="foto" class="form-control" accept="image/*">
-                    </div>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5>Editar Datos del Artista</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary fw-bold w-100">Guardar Cambios</button>
+            <form onsubmit="enviarFormularioAsincrono(event, 'api/editar_elementos.php')">
+                <input type="hidden" name="accion" value="editar_artista">
+                <input type="hidden" name="id" id="edit_art_id">
+                <div class="modal-body d-flex flex-column gap-3">
+                        <div>
+                            <label class="form-label">Nombre del Artista</label>
+                            <input type="text" name="nombre" id="edit_art_nombre" class="form-control" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Reemplazar Foto <span class="text-warning">(Opcional)</span></label>
+                            <input type="file" name="foto" class="form-control" accept="image/*">
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary fw-bold w-100">Guardar Cambios</button>
+                </div>
+            </form>
             </div>
-        </form>
         </div>
-    </div>
     </div>
 
     <div class="modal fade" id="editAlbumModal" tabindex="-1" aria-hidden="true">
@@ -340,20 +340,35 @@
     </div>
 
     <div class="modal fade" id="editPlaylistModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark text-white border-warning">
-        <div class="modal-header border-secondary"><h5>Editar Playlist</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-        <form onsubmit="enviarFormularioAsincrono(event, 'api/editar_elementos.php')">
-            <input type="hidden" name="accion" value="editar_playlist"><input type="hidden" name="id" id="edit_pl_id">
-            <div class="modal-body d-flex flex-column gap-3">
-                    <div><label class="form-label text-secondary small fw-bold">Nombre</label><input type="text" name="nombre" id="edit_pl_nombre" class="form-control bg-secondary text-white border-0" required></div>
-                    <div><label class="form-label text-secondary small fw-bold">Descripción</label><input type="text" name="descripcion" id="edit_pl_desc" class="form-control bg-secondary text-white border-0"></div>
-                    <div><label class="form-label text-secondary small fw-bold">Reemplazar Portada <span class="text-warning">(Opcional)</span></label><input type="file" name="caratula" class="form-control bg-secondary text-white border-0" accept="image/*"></div>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>Editar Playlist</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form onsubmit="enviarFormularioAsincrono(event, 'api/editar_elementos.php')">
+                    <input type="hidden" name="accion" value="editar_playlist">
+                    <input type="hidden" name="id" id="edit_pl_id">
+                    <div class="modal-body d-flex flex-column gap-3">
+                        <div>
+                            <label class="form-label">Nombre</label>
+                            <input type="text" name="nombre" id="edit_pl_nombre" class="form-control" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Descripción</label>
+                            <input type="text" name="descripcion" id="edit_pl_desc" class="form-control">
+                        </div>
+                        <div>
+                            <label class="form-label">Reemplazar Portada <span class="text-warning">(Opcional)</span></label>
+                            <input type="file" name="caratula" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary fw-bold w-100">Guardar Cambios</button>
+                    </div>
+                </form>
             </div>
-            <div class="modal-footer border-secondary"><button type="submit" class="btn btn-warning text-black fw-bold w-100">Guardar Cambios</button></div>
-        </form>
         </div>
-    </div>
     </div>
 
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
@@ -426,6 +441,24 @@
             <div class="text-center py-5 text-secondary">
                 <i class="bi bi-music-note fs-1 d-block mb-3 opacity-50"></i>
                 Reproduce una pista para buscar su letra
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalConfirmarEliminacion" tabindex="-1" aria-hidden="true" style="z-index: 1095;">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content bg-dark text-white border border-danger">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-danger fw-bold m-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Atención</h5>
+                    <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p id="mensajeEliminacionModal" class="fs-6 m-0"></p>
+                </div>
+                <div class="modal-footer border-secondary p-2 d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-white fw-bold flex-grow-1 shadow-none" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger btn-sm fw-bold flex-grow-1 shadow-none" id="btnAceptarEliminacion">Sí, Eliminar</button>
+                </div>
             </div>
         </div>
     </div>

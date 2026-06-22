@@ -250,3 +250,26 @@
         transform: scale(1.12); /* Zoom ligeramente más sutil en celular */
     }
 }
+
+/* =========================================
+   LIBERAR LOS MENÚS DESPLEGABLES EN LA TABLA
+========================================= */
+.table-responsive {
+    overflow: visible !important;
+}
+
+/* Elevar el menú por encima de la tabla, la paginación y cualquier otro elemento */
+.table .dropdown-menu {
+    z-index: 9999 !important;
+}
+
+/* =========================================
+   ELEVACIÓN GLOBAL DE MODALES (POR ENCIMA DEL REPRODUCTOR)
+========================================= */
+.modal-backdrop {
+    z-index: 1080 !important; /* El fondo oscuro transparente */
+}
+
+.modal {
+    z-index: 1090 !important; /* La caja del modal con el contenido */
+}

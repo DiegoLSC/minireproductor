@@ -568,7 +568,13 @@ function renderizarLetras() {
             const reproductor = document.getElementById('audio-player');
             if(reproductor.duration) {
                 reproductor.currentTime = linea.time;
-                reproductor.play();
+                reproductor.play().catch(e => console.log("Play bloqueado", e));
+                
+                // ¡LA SOLUCIÓN! Forzamos al botón visual a cambiar a "Pausa"
+                const playBtn = document.getElementById('play-btn');
+                if (playBtn) {
+                    playBtn.innerHTML = '<i class="bi bi-pause-fill fs-3 text-black"></i>';
+                }
             }
         };
         contenedor.appendChild(p);

@@ -165,3 +165,108 @@ function restaurarSesion() {
         actualizarPantallaBloqueo(titulo, artista, 'NebulaPlayer', caratula);
     }
 }
+
+// ==========================================
+// CONTROL DE ELIMINACIÓN CENTRALIZADO PREMIUM
+// ==========================================
+
+let _tipoAEliminar = '';
+let _idAEliminar = 0;
+let _elementoVisualARemover = null;
+
+function prepararEliminacion(tipo, id, btnElemento) {
+    _tipoAEliminar = tipo;
+    _idAEliminar = id;
+    
+    // Detecta la fila, tarjeta o contenedor del elemento para poder borrarlo asíncronamente
+    _elementoVisualARemover = btnElemento.closest('.target-row') || 
+                             btnElemento.closest('tr') || 
+                             btnElemento.closest('.card') || 
+                             btnElemento.closest('.playlist-item');
+
+    const mensajeEl = document.getElementById('mensajeEliminacionModal');
+    if (!mensajeEl) return;
+
+    // Diccionario para adaptar el mensaje de confirmación perfectamente
+    const configuracionTipos = {
+        'cancion':  { articulo: 'esta', nombre: 'pista' },
+        'playlist': { articulo: 'esta', nombre: 'playlist' },
+        'album':    { articulo: 'este', nombre: 'álbum' },
+        'artista':  { articulo: 'este', nombre: 'artista' }
+    };
+
+    // Si el tipo existe en el diccionario usa su configuración, si no, usa una por defecto
+    const config = configuracionTipos[tipo] || { articulo: 'este', nombre: tipo };
+    
+    // Inyecta el texto correcto (Ej: "¿Estás seguro de que deseas eliminar este álbum...?")
+    mensajeEl.innerText = `¿Estás seguro de que deseas eliminar ${config.articulo} ${config.nombre} permanentemente?`;
+
+    // Abre el modal de Bootstrap
+    const modalConfirmacion = new bootstrap.Modal(document.getElementById('modalConfirmarEliminacion'));
+    modalConfirmacion.show();
+}
+
+// Escuchador del botón definitivo de confirmación
+document.addEventListener('DOMContentLoaded', () => {
+    const btnAceptar = document.getElementById('btnAceptarEliminacion');
+    if (!btnAceptar) return;
+
+    btnAceptar.addEventListener('click', () => {
+        // Cierra el modal
+        const modalEl = document.getElementById('modalConfirmarEliminacion');
+        bootstrap.Modal.getInstance(modalEl).hide();
+
+        // Ejecuta tu función AJAX original pasándole el tipo, id y el elemento visual
+        eliminarProcedimientoAsincrono(_tipoAEliminar, _idAEliminar, _elementoVisualARemover);
+    });
+});
+
+// ==========================================
+// FUNCIÓN QUE EJECUTA LA ELIMINACIÓN REAL EN LA BD
+// ==========================================
+async function eliminarProcedimientoAsincrono(tipo, id, elementoVisual) {
+    try {
+        // MUY IMPORTANTE: Verifica que esta ruta apunte a tu archivo PHP real que procesa la eliminación.
+        // He puesto 'api/eliminar_elementos.php' como ejemplo basado en tu estructura.
+        const url = `api/eliminar_elementos.php?tabla=${tipo}&id=${id}`;
+        
+        const respuesta = await fetch(url, { method: 'GET' });
+        
+        if (!respuesta.ok) throw new Error('Error en la respuesta del servidor');
+        
+        const data = await respuesta.json();
+
+        if (data.status === 'success') {
+            // 1. Animación de desvanecimiento elegante (Crimson Velvet style)
+            if (elementoVisual) {
+                elementoVisual.style.transition = "all 0.4s ease";
+                elementoVisual.style.opacity = "0";
+                elementoVisual.style.transform = "scale(0.95)"; // Se encoje un poquito antes de desaparecer
+                
+                setTimeout(() => {
+                    elementoVisual.remove();
+                    
+                    // 2. (Opcional) Si estamos en la vista de canciones, actualizamos el contador de arriba
+                    const contador = document.getElementById('contador-dinamico');
+                    if (contador && tipo === 'cancion') {
+                        let total = parseInt(contador.innerText);
+                        if (!isNaN(total) && total > 0) {
+                            contador.innerText = `${total - 1} canciones totales`;
+                        }
+                    }
+                }, 400); // Espera a que termine la animación para borrar el HTML
+            }
+            
+            // 3. Reutilizamos tu notificación tipo Toast para avisar del éxito
+            if (typeof mostrarNotificacionCola === 'function') {
+                mostrarNotificacionCola('Elemento eliminado permanentemente.');
+            }
+            
+        } else {
+            alert("Error al eliminar: " + (data.message || "Motivo desconocido"));
+        }
+    } catch (error) {
+        console.error("Error en la petición de eliminación:", error);
+        alert("Ocurrió un error de conexión al intentar eliminar el elemento.");
+    }
+}
