@@ -101,9 +101,11 @@ class ApiControlador {
             $tabla = $get['tabla'] ?? '';
             $id = intval($get['id'] ?? 0);
             
-            if ($tabla === 'cancion') $this->borrarArchivoFisico($this->db->eliminarCancion($id));
-            elseif ($tabla === 'artista') $this->borrarArchivoFisico($this->db->eliminarArtista($id));
-            elseif ($tabla === 'album') $this->borrarArchivoFisico($this->db->eliminarAlbum($id));
+            // SOFT DELETE ACTIVO: Ya no usamos $this->borrarArchivoFisico() 
+            // Conservamos los mp3 y portadas en el servidor por si se desea restaurar.
+            if ($tabla === 'cancion') $this->db->eliminarCancion($id);
+            elseif ($tabla === 'artista') $this->db->eliminarArtista($id);
+            elseif ($tabla === 'album') $this->db->eliminarAlbum($id);
             elseif ($tabla === 'playlist') $this->db->eliminarPlaylist($id);
             elseif ($tabla === 'quitar_de_playlist') $this->db->quitarDePlaylist($get['playlist_id'], $get['cancion_id']);
         });

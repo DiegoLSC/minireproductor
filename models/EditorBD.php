@@ -27,19 +27,17 @@ class EditorBD {
     }
     
     public function eliminarArtista($id) {
-        // Consultamos el nombre ANTES de eliminarlo para el registro del log
         $stmt = $this->pdo->prepare("SELECT foto, nombre FROM artistas WHERE id=?"); 
         $stmt->execute([$id]); 
         $data = $stmt->fetch();
         $foto = $data['foto'] ?? null;
         $nombre = $data['nombre'] ?? 'Desconocido';
 
-        $this->pdo->prepare("DELETE FROM cancion_artistas WHERE artist_id=?")->execute([$id]);
-        $this->pdo->prepare("DELETE FROM albumes_artistas WHERE artista_id=?")->execute([$id]);
-        $this->pdo->prepare("DELETE FROM artistas WHERE id=?")->execute([$id]);
+        // SOFT DELETE: Cambiamos el estado a 0. No tocamos las tablas pivote para conservar el historial.
+        $this->pdo->prepare("UPDATE artistas SET estado = 0 WHERE id=?")->execute([$id]);
         
-        Logger::registrar($this->pdo, 'ELIMINAR', 'artistas', $id, "Se eliminó el artista '$nombre'.");
-        return $foto; // Retorna la ruta física para que el controlador borre el archivo
+        Logger::registrar($this->pdo, 'ELIMINAR', 'artistas', $id, "Se eliminó lógicamente al artista '$nombre'.");
+        return $foto; // Se sigue retornando la ruta por consistencia, pero el controlador no la borrará físicamente.
     }
 
     /* ================= ÁLBUMES ================= */
@@ -71,11 +69,10 @@ class EditorBD {
         $caratula = $data['caratula'] ?? null;
         $titulo = $data['titulo'] ?? 'Desconocido';
 
-        $this->pdo->prepare("UPDATE canciones SET album_id=NULL WHERE album_id=?")->execute([$id]);
-        $this->pdo->prepare("DELETE FROM albumes_artistas WHERE album_id=?")->execute([$id]);
-        $this->pdo->prepare("DELETE FROM albumes WHERE id=?")->execute([$id]);
+        // SOFT DELETE: Cambiamos estado a 0. Mantenemos las canciones vinculadas y los pivotes para la restauración limpia.
+        $this->pdo->prepare("UPDATE albumes SET estado = 0 WHERE id=?")->execute([$id]);
         
-        Logger::registrar($this->pdo, 'ELIMINAR', 'albumes', $id, "Se eliminó el álbum '$titulo'.");
+        Logger::registrar($this->pdo, 'ELIMINAR', 'albumes', $id, "Se eliminó lógicamente el álbum '$titulo'.");
         return $caratula;
     }
 
@@ -99,10 +96,10 @@ class EditorBD {
         $stmt->execute([$id]); 
         $nombre = $stmt->fetchColumn() ?: 'Desconocida';
 
-        $this->pdo->prepare("DELETE FROM playlist_canciones WHERE playlist_id=?")->execute([$id]);
-        $this->pdo->prepare("DELETE FROM playlists WHERE id=?")->execute([$id]);
+        // SOFT DELETE: Cambiamos estado a 0. Preservamos las canciones dentro de playlist_canciones.
+        $this->pdo->prepare("UPDATE playlists SET estado = 0 WHERE id=?")->execute([$id]);
         
-        Logger::registrar($this->pdo, 'ELIMINAR', 'playlists', $id, "Se eliminó la playlist '$nombre'.");
+        Logger::registrar($this->pdo, 'ELIMINAR', 'playlists', $id, "Se eliminó lógicamente la playlist '$nombre'.");
     }
     
     public function agregarAPlaylist($pl_id, $can_id) {
@@ -112,6 +109,7 @@ class EditorBD {
     }
     
     public function quitarDePlaylist($pl_id, $can_id) {
+        // Al desvincular una canción específica de una playlist manualmente, sí corresponde un DELETE físico de la relación.
         $this->pdo->prepare("DELETE FROM playlist_canciones WHERE playlist_id=? AND cancion_id=?")->execute([$pl_id, $can_id]);
         
         Logger::registrar($this->pdo, 'EDITAR', 'playlist_canciones', $pl_id, "Se desvinculó una canción (ID: $can_id) de la playlist (ID: $pl_id).");
@@ -146,16 +144,16 @@ class EditorBD {
         $archivo = $data['ruta_archivo'] ?? null;
         $titulo = $data['titulo'] ?? 'Desconocida';
 
-        $this->pdo->prepare("DELETE FROM cancion_artistas WHERE cancion_id=?")->execute([$id]);
-        $this->pdo->prepare("DELETE FROM playlist_canciones WHERE cancion_id=?")->execute([$id]);
-        $this->pdo->prepare("DELETE FROM canciones WHERE id=?")->execute([$id]);
+        // SOFT DELETE: Pasamos el estado de la canción a 0. No eliminamos relaciones físicas.
+        $this->pdo->prepare("UPDATE canciones SET estado = 0 WHERE id=?")->execute([$id]);
         
-        Logger::registrar($this->pdo, 'ELIMINAR', 'canciones', $id, "Se eliminó la canción '$titulo'.");
+        Logger::registrar($this->pdo, 'ELIMINAR', 'canciones', $id, "Se eliminó lógicamente la canción '$titulo'.");
         return $archivo;
     }
 
     /* ================= BACKUP ================= */
     public function exportarBaseDatos() {
+        // Mantenemos el SELECT * para que el Backup salve también los elementos inactivos (estado = 0)
         $tablas = ['canciones', 'artistas', 'albumes', 'playlists', 'playlist_canciones', 'cancion_artistas', 'albumes_artistas'];
         $db_data = [];
         foreach($tablas as $tabla) {

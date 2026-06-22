@@ -226,8 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
 async function eliminarProcedimientoAsincrono(tipo, id, elementoVisual) {
     try {
-        // MUY IMPORTANTE: Verifica que esta ruta apunte a tu archivo PHP real que procesa la eliminación.
-        // He puesto 'api/eliminar_elementos.php' como ejemplo basado en tu estructura.
         const url = `api/eliminar_elementos.php?tabla=${tipo}&id=${id}`;
         
         const respuesta = await fetch(url, { method: 'GET' });
@@ -237,29 +235,37 @@ async function eliminarProcedimientoAsincrono(tipo, id, elementoVisual) {
         const data = await respuesta.json();
 
         if (data.status === 'success') {
-            // 1. Animación de desvanecimiento elegante (Crimson Velvet style)
-            if (elementoVisual) {
-                elementoVisual.style.transition = "all 0.4s ease";
-                elementoVisual.style.opacity = "0";
-                elementoVisual.style.transform = "scale(0.95)"; // Se encoje un poquito antes de desaparecer
-                
-                setTimeout(() => {
-                    elementoVisual.remove();
-                    
-                    // 2. (Opcional) Si estamos en la vista de canciones, actualizamos el contador de arriba
-                    const contador = document.getElementById('contador-dinamico');
-                    if (contador && tipo === 'cancion') {
-                        let total = parseInt(contador.innerText);
-                        if (!isNaN(total) && total > 0) {
-                            contador.innerText = `${total - 1} canciones totales`;
-                        }
-                    }
-                }, 400); // Espera a que termine la animación para borrar el HTML
-            }
             
-            // 3. Reutilizamos tu notificación tipo Toast para avisar del éxito
+            // 1. Mostramos la notificación de éxito
             if (typeof mostrarNotificacionCola === 'function') {
-                mostrarNotificacionCola('Elemento eliminado permanentemente.');
+                mostrarNotificacionCola('Elemento eliminado correctamente.');
+            }
+
+            // 2. Lógica visual inteligente dependiendo de qué se eliminó
+            if (tipo === 'cancion') {
+                // Si es una canción individual, la borramos de la vista suavemente
+                if (elementoVisual && elementoVisual.classList.contains('target-row')) {
+                    elementoVisual.style.transition = "all 0.4s ease";
+                    elementoVisual.style.opacity = "0";
+                    elementoVisual.style.transform = "scale(0.95)";
+                    
+                    setTimeout(() => {
+                        elementoVisual.remove();
+                        const contador = document.getElementById('contador-dinamico');
+                        if (contador) {
+                            let total = parseInt(contador.innerText);
+                            if (!isNaN(total) && total > 0) {
+                                contador.innerText = `${total - 1} canciones totales`;
+                            }
+                        }
+                    }, 400); 
+                }
+            } else {
+                // Si es un Artista, Álbum o Playlist, forzamos una recarga automática sutil
+                // para que el sistema actualice todas las canciones que contenían ese dato.
+                setTimeout(() => {
+                    window.location.reload();
+                }, 800); // 800ms da tiempo a que el usuario lea la notificación roja antes de recargar
             }
             
         } else {
