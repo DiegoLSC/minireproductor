@@ -182,7 +182,7 @@
 ::-webkit-scrollbar-thumb:hover { background: rgba(220, 38, 38, 0.6); }
 
 /* =========================================
-   SISTEMA DE LETRAS (LRCLIB)
+   SISTEMA DE LETRAS (ESTILO FLUIDO)
 ========================================= */
 .letras-panel-overlay {
     position: fixed;
@@ -197,20 +197,33 @@
 
 .letras-panel-overlay.activo { right: 0; }
 
-.lyric-line {
-    transition: all 0.3s ease;
-    cursor: pointer;
-    transform-origin: center left;
+/* 1. Centrar el texto globalmente como en la imagen */
+#letras-lista-dinamica {
+    text-align: center;
 }
 
-.lyric-line:hover { color: #fff !important; }
+.lyric-line {
+    /* Transición súper suave para color y tamaño óptico */
+    transition: color 0.4s ease, transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), text-shadow 0.4s ease;
+    cursor: pointer;
+    transform-origin: center center; /* El zoom sale desde el centro */
+    
+    /* Estilo inactivo: Gris apagado y tamaño base */
+    color: #737373 !important; 
+    font-size: 1.05rem !important; 
+    margin-bottom: 24px !important; /* Espaciado generoso entre líneas */
+    line-height: 1.6;
+    display: block;
+}
 
-/* El estado de la línea que está sonando en ese instante */
+.lyric-line:hover { color: #d4d4d4 !important; }
+
+/* 2. El estado de la línea que está sonando (Sin saltos bruscos) */
 .lyric-line.active {
-    color: #fff !important;
-    font-size: 1.5rem !important;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-    transform: scale(1.05);
+    color: #ffffff !important;
+    /* CLAVE: scale no empuja a las demás líneas, evita el salto brusco */
+    transform: scale(1.15); 
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
 }
 
 /* Adaptación exclusiva de las Letras para Móviles */
@@ -218,27 +231,22 @@
     .letras-panel-overlay {
         width: 100vw !important;
         height: auto !important;
-        
-        /* Se ancla exactamente entre tu barra superior y tu reproductor blindado */
         top: 65px !important;       
         bottom: 135px !important;   
-        
         right: -100vw;
-        z-index: 1055 !important; /* Tapa la tabla, pero queda debajo del reproductor */
+        z-index: 1055 !important; 
         border-left: none;
     }
     
-    .letras-panel-overlay.activo { 
-        right: 0 !important; 
-    }
+    .letras-panel-overlay.activo { right: 0 !important; }
 
-    /* Ajuste tipográfico para que no se desborde en pantallas pequeñas */
+    /* Ajuste tipográfico móvil */
     .lyric-line {
-        font-size: 1.1rem !important;
-        margin-bottom: 20px !important;
+        font-size: 1rem !important;
+        margin-bottom: 22px !important;
     }
     
     .lyric-line.active {
-        font-size: 1.4rem !important;
+        transform: scale(1.12); /* Zoom ligeramente más sutil en celular */
     }
 }

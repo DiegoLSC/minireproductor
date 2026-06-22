@@ -412,7 +412,7 @@ function agregarAColaManual(rutaBuscada) {
         renderizarColaVisual();
     }
 
-    mostrarNotificacionCola(`🎶 "${nuevoTrack.titulo}" se reproducirá a continuación`);
+    mostrarNotificacionCola(`"${nuevoTrack.titulo}" se reproducirá a continuación`);
 
     const menusAbiertos = document.querySelectorAll('.dropdown-menu.show');
     menusAbiertos.forEach(menu => {
