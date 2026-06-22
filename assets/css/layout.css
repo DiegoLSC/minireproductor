@@ -110,11 +110,14 @@
         gap: 0 !important;
     }
 
-    /* Ajustes internos del reproductor móvil */
-    .player-bar > div:nth-child(1) { width: calc(100% - 50px) !important; order: 1 !important; justify-content: flex-start !important; }
+    /* Ajustes internos del reproductor móvil con 2 botones (Cola y Letras) */
+    .player-bar > div:nth-child(1) { width: calc(100% - 90px) !important; order: 1 !important; justify-content: flex-start !important; }
     #current-title, #current-artist { max-width: 50vw !important; }
-    #btn-abrir-cola { position: static !important; width: 50px !important; order: 2 !important; display: flex !important; justify-content: flex-end !important; align-items: center !important; margin: 0 !important; }
-    .player-bar > div:nth-child(2) { width: 100% !important; order: 3 !important; margin-top: 15px !important; }
+    
+    #btn-abrir-cola { position: static !important; width: 45px !important; order: 2 !important; display: flex !important; justify-content: flex-end !important; align-items: center !important; margin: 0 !important; }
+    #btn-abrir-letras { position: static !important; width: 45px !important; order: 3 !important; display: flex !important; justify-content: flex-end !important; align-items: center !important; margin: 0 !important; }
+    
+    .player-bar > div:nth-child(2) { width: 100% !important; order: 4 !important; margin-top: 15px !important; }
     .player-bar > div:nth-child(3) { display: none !important; }
 
     /* Sidebar Móvil */
@@ -177,3 +180,65 @@
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(220, 38, 38, 0.6); }
+
+/* =========================================
+   SISTEMA DE LETRAS (LRCLIB)
+========================================= */
+.letras-panel-overlay {
+    position: fixed;
+    top: 0; right: -400px; /* Oculto por defecto */
+    width: 350px; max-width: 100vw;
+    height: calc(100dvh - 90px); /* Respeta tu reproductor de 90px */
+    background-color: #0a0a0a;
+    box-shadow: -5px 0 25px rgba(0,0,0,0.8);
+    z-index: 1040;
+    transition: right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.letras-panel-overlay.activo { right: 0; }
+
+.lyric-line {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    transform-origin: center left;
+}
+
+.lyric-line:hover { color: #fff !important; }
+
+/* El estado de la línea que está sonando en ese instante */
+.lyric-line.active {
+    color: #fff !important;
+    font-size: 1.5rem !important;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+/* Adaptación exclusiva de las Letras para Móviles */
+@media (max-width: 768px) {
+    .letras-panel-overlay {
+        width: 100vw !important;
+        height: auto !important;
+        
+        /* Se ancla exactamente entre tu barra superior y tu reproductor blindado */
+        top: 65px !important;       
+        bottom: 135px !important;   
+        
+        right: -100vw;
+        z-index: 1055 !important; /* Tapa la tabla, pero queda debajo del reproductor */
+        border-left: none;
+    }
+    
+    .letras-panel-overlay.activo { 
+        right: 0 !important; 
+    }
+
+    /* Ajuste tipográfico para que no se desborde en pantallas pequeñas */
+    .lyric-line {
+        font-size: 1.1rem !important;
+        margin-bottom: 20px !important;
+    }
+    
+    .lyric-line.active {
+        font-size: 1.4rem !important;
+    }
+}

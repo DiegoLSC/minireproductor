@@ -1,4 +1,6 @@
-// assets/js/audioEngine.js
+// ==========================================
+// assets/js/audioEngine.js (VERSIÓN DEFINITIVA)
+// ==========================================
 
 const audio = document.getElementById('audio-player');
 const playBtn = document.getElementById('play-btn');
@@ -8,24 +10,21 @@ const timeTotal = document.getElementById('time-total');
 const shuffleBtn = document.getElementById('shuffle-btn');
 
 let listaDeReproduccion = [];
-let listaDeReproduccionOriginal = []; // Guarda la cola intacta sin aleatorio
+let listaDeReproduccionOriginal = []; 
 let indiceActual = -1;
 
-// Recuperar el estado de aleatorio de la sesión anterior
 let modoAleatorio = localStorage.getItem('nebula_shuffle') === 'true';
 window.modoRepetirActivo = false; 
 
 // ==========================================
-// PERSISTENCIA: NÚCLEO DE RECUPERACIÓN DE SESIÓN
+// 1. PERSISTENCIA Y CARGA INICIAL
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     const botonShuffleNativo = document.getElementById('shuffle-btn');
     if (modoAleatorio && botonShuffleNativo) {
         botonShuffleNativo.className = "btn text-success fs-5 p-0 lh-1";
-        console.log("[AudioEngine] Modo Aleatorio restaurado y activo (Visual: Verde)");
     }
 
-    // CLAVE: Al volver a entrar a la página, recuperamos la cola exacta del LocalStorage
     const listaGuardada = localStorage.getItem('nebula_lista_reproduccion');
     const originalGuardada = localStorage.getItem('nebula_lista_original');
     const indiceGuardado = localStorage.getItem('nebula_indice_actual');
@@ -34,26 +33,33 @@ document.addEventListener('DOMContentLoaded', () => {
         listaDeReproduccion = JSON.parse(listaGuardada);
         listaDeReproduccionOriginal = JSON.parse(originalGuardada);
         indiceActual = parseInt(indiceGuardado);
-        console.log(`[AudioEngine] Cola persistente restaurada (${listaDeReproduccion.length} canciones en memoria).`);
         
-        // Si el panel lateral estaba abierto por algún motivo, dibujarlo de inmediato
         if (document.getElementById('colaPanel') && document.getElementById('colaPanel').classList.contains('activo')) {
             renderizarColaVisual();
         }
     }
+
+    // Cargar la letra de la canción que se restauró al abrir la página
+    const tituloGuardado = localStorage.getItem('nebula_track_titulo');
+    const artistaGuardado = localStorage.getItem('nebula_track_artista');
+    if (tituloGuardado && artistaGuardado) {
+        buscarLetra(artistaGuardado, tituloGuardado);
+    }
 });
 
-// Función asistente para guardar el estado exacto de la cola en cada cambio
 function guardarEstadoCola() {
     localStorage.setItem('nebula_lista_reproduccion', JSON.stringify(listaDeReproduccion));
     localStorage.setItem('nebula_lista_original', JSON.stringify(listaDeReproduccionOriginal));
     localStorage.setItem('nebula_indice_actual', indiceActual);
 }
 
+// ==========================================
+// 2. MOTOR DE REPRODUCCIÓN BÁSICO
+// ==========================================
 function actualizarColaReproduccion() {
     const cancionGuardada = window.rutaEnReproduccion || localStorage.getItem('nebula_track_ruta');
-
     listaDeReproduccion = [];
+    
     if (typeof filasFiltradasGlobal !== 'undefined') {
         filasFiltradasGlobal.forEach((fila) => {
             listaDeReproduccion.push({
@@ -65,19 +71,15 @@ function actualizarColaReproduccion() {
         });
     }
 
-    // Tomamos una "foto" de la cola original en el instante en que se crea
     listaDeReproduccionOriginal = [...listaDeReproduccion];
 
     if (cancionGuardada) {
         indiceActual = listaDeReproduccion.findIndex(c => c.ruta === cancionGuardada);
-        if (modoAleatorio && indiceActual !== -1) {
-            mezclarColaActual();
-        }
+        if (modoAleatorio && indiceActual !== -1) mezclarColaActual();
     } else {
         indiceActual = -1;
     }
-    
-    guardarEstadoCola(); // Almacenamos el cambio inicial
+    guardarEstadoCola(); 
 }
 
 function reproducirDesdeFila(elementoFila) {
@@ -90,8 +92,7 @@ function reproducirDesdeFila(elementoFila) {
         const track = listaDeReproduccion[indiceActual];
         reproducirCancion(track.ruta, track.titulo, track.artista, track.caratula);
     }
-    
-    guardarEstadoCola(); // Almacenamos tras cambiar canción base
+    guardarEstadoCola(); 
 }
 
 function reproducirCancion(ruta, titulo, artist, caratula, autoPlay = true) {
@@ -131,7 +132,7 @@ function reproducirCancion(ruta, titulo, artist, caratula, autoPlay = true) {
     }
 
     if (autoPlay) {
-        audio.play().catch(e => console.log("Auto-play bloqueado por el navegador", e));
+        audio.play().catch(e => console.log("Auto-play bloqueado", e));
         playBtn.innerHTML = '<i class="bi bi-pause-fill fs-3 text-black"></i>';
     } else {
         playBtn.innerHTML = '<i class="bi bi-play-fill fs-3 text-black"></i>';
@@ -139,6 +140,9 @@ function reproducirCancion(ruta, titulo, artist, caratula, autoPlay = true) {
     
     if (document.getElementById('colaPanel').classList.contains('activo')) renderizarColaVisual();
     if (typeof actualizarPantallaBloqueo === 'function') actualizarPantallaBloqueo(titulo, artist, 'NebulaPlayer', caratula);
+
+    // CLAVE: Disparar la búsqueda de letras cada vez que cambia la canción
+    buscarLetra(artist, titulo);
 }
 
 function togglePlay() {
@@ -160,8 +164,7 @@ function siguienteCancion() {
     if (indiceActual >= listaDeReproduccion.length) indiceActual = 0; 
     const track = listaDeReproduccion[indiceActual];
     reproducirCancion(track.ruta, track.titulo, track.artista, track.caratula);
-    
-    guardarEstadoCola(); // Almacenamos el nuevo índice actual
+    guardarEstadoCola(); 
 }
 
 function cancionAnterior() {
@@ -172,13 +175,14 @@ function cancionAnterior() {
     if (indiceActual < 0) indiceActual = listaDeReproduccion.length - 1;
     const track = listaDeReproduccion[indiceActual];
     reproducirCancion(track.ruta, track.titulo, track.artista, track.caratula);
-    
-    guardarEstadoCola(); // Almacenamos el nuevo índice actual
+    guardarEstadoCola(); 
 }
 
+// ==========================================
+// 3. ALEATORIO Y TIEMPOS
+// ==========================================
 function mezclarColaActual() {
     if (indiceActual === -1 || listaDeReproduccion.length <= 1) return;
-
     const cancionActual = listaDeReproduccion[indiceActual];
     const restoDeCanciones = listaDeReproduccion.filter((_, index) => index !== indiceActual);
 
@@ -189,7 +193,6 @@ function mezclarColaActual() {
 
     listaDeReproduccion = [cancionActual, ...restoDeCanciones];
     indiceActual = 0;
-    
     guardarEstadoCola();
 }
 
@@ -207,19 +210,16 @@ function toggleShuffle() {
         shuffleBtn.className = "btn text-secondary fs-5 p-0 lh-1";
         if (indiceActual !== -1) {
             const rutaActual = listaDeReproduccion[indiceActual].ruta;
-            
             if (listaDeReproduccionOriginal.length > 0) {
                 listaDeReproduccion = [...listaDeReproduccionOriginal];
             } else {
                 actualizarColaReproduccion(); 
             }
-
             indiceActual = listaDeReproduccion.findIndex(c => c.ruta === rutaActual);
             if (document.getElementById('colaPanel').classList.contains('activo')) renderizarColaVisual();
         }
     }
-    
-    guardarEstadoCola(); // Almacenamos el cambio del modo shuffle en la lista
+    guardarEstadoCola(); 
 }
 
 function ajustarTiempo(valorPorcentaje) {
@@ -233,25 +233,28 @@ audio.addEventListener('timeupdate', () => {
         progressBar.value = porcentaje;
         timeCurrent.innerText = formatearTiempo(audio.currentTime);
         localStorage.setItem('nebula_track_tiempo', audio.currentTime);
+        
+        // CLAVE: Sincronizar el karaoke en tiempo real
+        sincronizarLetra(audio.currentTime);
     }
 });
 
 audio.addEventListener('loadedmetadata', () => { timeTotal.innerText = formatearTiempo(audio.duration); });
 audio.onended = function() { window.modoRepetirActivo ? (audio.currentTime = 0, audio.play()) : siguienteCancion(); };
 
-// GESTIÓN DEL PANEL DE COLA VISUAL
+// ==========================================
+// 4. PANEL DE COLA VISUAL Y ARRASTRE
+// ==========================================
 function togglePanelCola() {
     const panel = document.getElementById('colaPanel');
     const botonCola = document.getElementById('btn-abrir-cola');
     panel.classList.toggle('activo');
     if (panel.classList.contains('activo')) {
         botonCola.className = "btn text-success p-0 fs-5 lh-1";
-        
         if (listaDeReproduccion.length === 0) actualizarColaReproduccion();
-        
         renderizarColaVisual();
         inicializarDragAndDropCola(); 
-    } else botonCola.className = "btn text-secondary p-0 fs-5 lh-1";
+    } else botonCola.className = "btn text-secondary p-0 fs-5 lh-1 shadow-none";
 }
 
 function renderizarColaVisual() {
@@ -297,7 +300,7 @@ function renderizarColaVisual() {
 
 function quitarDeColaTemporal(indexEliminar) {
     listaDeReproduccion.splice(indexEliminar, 1);
-    guardarEstadoCola(); // Almacenamos tras eliminar un track de la cola
+    guardarEstadoCola(); 
     renderizarColaVisual();
 }
 
@@ -305,9 +308,7 @@ function inicializarDragAndDropCola() {
     const contenedorLista = document.getElementById('lista-cola-dinamica');
     if (!contenedorLista) return;
 
-    if (window.sortableCola) {
-        window.sortableCola.destroy();
-    }
+    if (window.sortableCola) window.sortableCola.destroy();
 
     window.sortableCola = new Sortable(contenedorLista, {
         handle: '.drag-handle',
@@ -327,19 +328,15 @@ function inicializarDragAndDropCola() {
 
             if (listaDeReproduccionOriginal.length > 0) {
                 const indexOrigAntiguo = listaDeReproduccionOriginal.findIndex(c => c.ruta === cancionMovida.ruta);
-                if (indexOrigAntiguo !== -1) {
-                    listaDeReproduccionOriginal.splice(indexOrigAntiguo, 1);
-                }
+                if (indexOrigAntiguo !== -1) listaDeReproduccionOriginal.splice(indexOrigAntiguo, 1);
                 
                 const vecinoArriba = listaDeReproduccion[indexRealNuevo - 1];
                 let indexOrigNuevo = 0;
-                if (vecinoArriba) {
-                    indexOrigNuevo = listaDeReproduccionOriginal.findIndex(c => c.ruta === vecinoArriba.ruta) + 1;
-                }
+                if (vecinoArriba) indexOrigNuevo = listaDeReproduccionOriginal.findIndex(c => c.ruta === vecinoArriba.ruta) + 1;
                 listaDeReproduccionOriginal.splice(indexOrigNuevo, 0, cancionMovida);
             }
 
-            guardarEstadoCola(); // Almacenamos el orden reajustado por el drag-and-drop
+            guardarEstadoCola(); 
             renderizarColaVisual();
         }
     });
@@ -347,15 +344,10 @@ function inicializarDragAndDropCola() {
 
 function irACancionActual() {
     if (!window.rutaEnReproduccion) return; 
-
     const indexVisual = filasFiltradasGlobal.findIndex(fila => fila.getAttribute('data-ruta') === window.rutaEnReproduccion);
-
     if (indexVisual !== -1) {
         const paginaDestino = Math.floor(indexVisual / cancionesPorPagina) + 1;
-        
-        if (paginaActual !== paginaDestino) {
-            cambiarPagina(paginaDestino);
-        }
+        if (paginaActual !== paginaDestino) cambiarPagina(paginaDestino);
 
         setTimeout(() => {
             const filaObjetivo = filasFiltradasGlobal[indexVisual];
@@ -371,22 +363,11 @@ function irACancionActual() {
     }
 }
 
-function reproducirDesdeCola(indice) {
-    if (indice >= 0 && indice < listaDeReproduccion.length) {
-        indiceActual = indice; 
-        const track = listaDeReproduccion[indiceActual];
-        reproducirCancion(track.ruta, track.titulo, track.artista, track.caratula);
-        guardarEstadoCola(); // Guardamos el nuevo índice tras saltar desde la cola
-    }
-}
-
 // ==========================================
-// SISTEMA DE ENCOLADO MANUAL (Añadir a la cola)
+// 5. ENCOLADO MANUAL (Añadir a la cola)
 // ==========================================
 function agregarAColaManual(rutaBuscada) {
-    if (listaDeReproduccion.length === 0) {
-        actualizarColaReproduccion();
-    }
+    if (listaDeReproduccion.length === 0) actualizarColaReproduccion();
 
     const fila = document.querySelector(`.target-row[data-ruta="${rutaBuscada}"]`);
     if (!fila) return;
@@ -425,13 +406,13 @@ function agregarAColaManual(rutaBuscada) {
         reproducirCancion(nuevoTrack.ruta, nuevoTrack.titulo, nuevoTrack.artista, nuevoTrack.caratula, false);
     }
 
-    guardarEstadoCola(); // Almacenamos tras inyectar la canción manual
+    guardarEstadoCola(); 
 
     if (document.getElementById('colaPanel') && document.getElementById('colaPanel').classList.contains('activo')) {
         renderizarColaVisual();
     }
 
-    mostrarNotificacionCola(`"${nuevoTrack.titulo}" se reproducirá a continuación`);
+    mostrarNotificacionCola(`🎶 "${nuevoTrack.titulo}" se reproducirá a continuación`);
 
     const menusAbiertos = document.querySelectorAll('.dropdown-menu.show');
     menusAbiertos.forEach(menu => {
@@ -476,4 +457,123 @@ function mostrarNotificacionCola(mensaje) {
         toast.style.transform = 'translate(-50%, 20px)';
         setTimeout(() => toast.style.display = 'none', 300);
     }, 2500);
+}
+
+// ==========================================
+// 6. MOTOR DE LETRAS SINCRONIZADAS (LRCLIB)
+// ==========================================
+let lyricsData = []; 
+let currentLyricIndex = -1;
+
+function togglePanelLetras() {
+    const panel = document.getElementById('letrasPanel');
+    const boton = document.getElementById('btn-abrir-letras');
+    panel.classList.toggle('activo');
+    if (panel.classList.contains('activo')) {
+        boton.className = "btn text-success p-0 fs-5 lh-1 ms-3";
+    } else {
+        boton.className = "btn text-secondary p-0 fs-5 lh-1 ms-3";
+    }
+}
+
+async function buscarLetra(artista, titulo) {
+    const contenedor = document.getElementById('letras-lista-dinamica');
+    if(!contenedor) return;
+
+    // AQUI ESTÁ EL ÍCONO DE CARGA Y EL TEXTO QUE PEDÍAS
+    contenedor.innerHTML = '<div class="text-center py-5 text-secondary"><div class="spinner-border text-danger mb-3" role="status"></div><br>Buscando letras en la red...</div>';
+    lyricsData = [];
+    currentLyricIndex = -1;
+
+    try {
+        const artistaLimpio = artista.split(',')[0].trim();
+        const tituloLimpio = titulo.replace(/\(.*\)/g, '').trim(); 
+
+        const res = await fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(artistaLimpio)}&track_name=${encodeURIComponent(tituloLimpio)}`);
+        
+        if (!res.ok) throw new Error('Letra no encontrada en la base de datos');
+        const data = await res.json();
+
+        if (data.syncedLyrics) {
+            parsearLRC(data.syncedLyrics);
+            renderizarLetras();
+        } else if (data.plainLyrics) {
+            contenedor.innerHTML = `<div class="text-center py-3"><span class="badge bg-secondary mb-3">Letra estática</span></div><div class="p-2 text-center text-secondary fs-6" style="white-space: pre-wrap; line-height: 2;">${data.plainLyrics}</div>`;
+        } else {
+            throw new Error('Sin contenido');
+        }
+    } catch (error) {
+        contenedor.innerHTML = '<div class="text-center py-5 text-secondary"><i class="bi bi-file-earmark-x fs-1 d-block mb-3 opacity-25"></i>Instrumental o letra no disponible.</div>';
+    }
+}
+
+function parsearLRC(lrcText) {
+    const lineas = lrcText.split('\n');
+    const regex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
+
+    lineas.forEach(linea => {
+        const match = linea.match(regex);
+        if (match) {
+            const minutos = parseInt(match[1]);
+            const segundos = parseInt(match[2]);
+            const milisegundos = match[3].length === 2 ? parseInt(match[3]) * 10 : parseInt(match[3]);
+            const tiempoEnSegundos = (minutos * 60) + segundos + (milisegundos / 1000);
+            const texto = match[4].trim();
+
+            if (texto) lyricsData.push({ time: tiempoEnSegundos, text: texto });
+        }
+    });
+}
+
+function renderizarLetras() {
+    const contenedor = document.getElementById('letras-lista-dinamica');
+    contenedor.innerHTML = '';
+
+    const padding = document.createElement('div');
+    padding.style.height = '40%';
+    contenedor.appendChild(padding);
+
+    lyricsData.forEach((linea, index) => {
+        const p = document.createElement('p');
+        p.className = 'lyric-line text-secondary fw-bold fs-5 mb-4 px-2';
+        p.id = `lyric-${index}`;
+        p.innerText = linea.text;
+        
+        p.onclick = () => {
+            const reproductor = document.getElementById('audio-player');
+            if(reproductor.duration) {
+                reproductor.currentTime = linea.time;
+                reproductor.play();
+            }
+        };
+        contenedor.appendChild(p);
+    });
+    
+    const paddingBottom = document.createElement('div');
+    paddingBottom.style.height = '60%';
+    contenedor.appendChild(paddingBottom);
+}
+
+function sincronizarLetra(tiempoActual) {
+    if (lyricsData.length === 0) return;
+
+    let nuevoIndice = -1;
+    for (let i = 0; i < lyricsData.length; i++) {
+        if (tiempoActual >= lyricsData[i].time) nuevoIndice = i;
+        else break;
+    }
+
+    if (nuevoIndice !== currentLyricIndex && nuevoIndice !== -1) {
+        if (currentLyricIndex !== -1) {
+            const pAnt = document.getElementById(`lyric-${currentLyricIndex}`);
+            if (pAnt) pAnt.classList.remove('active');
+        }
+
+        currentLyricIndex = nuevoIndice;
+        const pAct = document.getElementById(`lyric-${currentLyricIndex}`);
+        if (pAct) {
+            pAct.classList.add('active');
+            pAct.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
 }

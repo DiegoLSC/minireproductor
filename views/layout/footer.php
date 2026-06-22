@@ -49,6 +49,9 @@
         <button type="button" id="btn-abrir-cola" class="btn text-secondary p-0 fs-5 lh-1 shadow-none" onclick="togglePanelCola()" title="Ver cola">
             <i class="bi bi-view-list"></i>
         </button>
+        <button id="btn-abrir-letras" class="btn text-secondary p-0 fs-5 lh-1 ms-3" onclick="togglePanelLetras()" title="Ver Letras">
+            <i class="bi bi-card-text"></i>
+        </button>
     </div>
 
     </div> <div class="modal fade" id="artistaModal" tabindex="-1" aria-hidden="true">
@@ -410,6 +413,19 @@
                     <span class="text-secondary small" id="contador-logs">Cargando registros...</span>
                     <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Cerrar</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="letrasPanel" class="letras-panel-overlay">
+        <div class="d-flex justify-content-between align-items-center p-3 border-bottom border-secondary border-opacity-25">
+            <h5 class="m-0 text-white fw-bold"><i class="bi bi-card-text text-danger me-2"></i> Letras</h5>
+            <button class="btn btn-transparent text-white opacity-75 hover-opacity-100 fs-5 p-0" onclick="togglePanelLetras()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div id="letras-lista-dinamica" class="p-4 overflow-y-auto" style="height: calc(100% - 60px);">
+            <div class="text-center py-5 text-secondary">
+                <i class="bi bi-music-note fs-1 d-block mb-3 opacity-50"></i>
+                Reproduce una pista para buscar su letra
             </div>
         </div>
     </div>
