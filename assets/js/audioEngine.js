@@ -279,6 +279,9 @@ function renderizarColaVisual() {
         li.className = "list-group-item bg-black border-0 border-bottom border-secondary border-opacity-10 d-flex align-items-center justify-content-between p-2.5 text-white small song-row-cola hover-bg-dark";
         li.style.cursor = "pointer"; 
         
+        // MÉTODO INFALIBLE: Inyectar la función directamente como atributo HTML
+        li.setAttribute('onclick', `reproducirDesdeCola(${indexOrigen})`);
+        
         li.innerHTML = `
             <div class="d-flex align-items-center flex-grow-1 pe-2 text-truncate" style="max-width: 200px;">
                 <i class="bi bi-grip-vertical text-secondary me-2 drag-handle" style="cursor: grab; font-size: 1.2rem;" onclick="event.stopPropagation();"></i>
@@ -360,6 +363,15 @@ function irACancionActual() {
         }, 150); 
     } else {
         alert("La canción que está sonando no se encuentra en tu búsqueda actual.");
+    }
+}
+
+function reproducirDesdeCola(indice) {
+    if (indice >= 0 && indice < listaDeReproduccion.length) {
+        indiceActual = indice; 
+        const track = listaDeReproduccion[indiceActual];
+        reproducirCancion(track.ruta, track.titulo, track.artista, track.caratula);
+        guardarEstadoCola();
     }
 }
 
@@ -464,6 +476,7 @@ function mostrarNotificacionCola(mensaje) {
 // ==========================================
 let lyricsData = []; 
 let currentLyricIndex = -1;
+let idPeticionLetra = 0; // NUEVO: Controlador de tráfico para evitar que se crucen las letras
 
 function togglePanelLetras() {
     const panel = document.getElementById('letrasPanel');
@@ -480,7 +493,10 @@ async function buscarLetra(artista, titulo) {
     const contenedor = document.getElementById('letras-lista-dinamica');
     if(!contenedor) return;
 
-    // AQUI ESTÁ EL ÍCONO DE CARGA Y EL TEXTO QUE PEDÍAS
+    // Aumentamos el número de petición. Cada canción tiene un "ticket" único.
+    idPeticionLetra++;
+    const idTicketActual = idPeticionLetra; 
+
     contenedor.innerHTML = '<div class="text-center py-5 text-secondary"><div class="spinner-border text-danger mb-3" role="status"></div><br>Buscando letras en la red...</div>';
     lyricsData = [];
     currentLyricIndex = -1;
@@ -491,8 +507,14 @@ async function buscarLetra(artista, titulo) {
 
         const res = await fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(artistaLimpio)}&track_name=${encodeURIComponent(tituloLimpio)}`);
         
+        // LA MAGIA: Si el usuario cambió de canción mientras esperábamos, el ticket ya no coincide. Abortamos.
+        if (idTicketActual !== idPeticionLetra) return;
+
         if (!res.ok) throw new Error('Letra no encontrada en la base de datos');
         const data = await res.json();
+
+        // Doble validación por si el procesamiento del JSON demoró
+        if (idTicketActual !== idPeticionLetra) return;
 
         if (data.syncedLyrics) {
             parsearLRC(data.syncedLyrics);
@@ -503,7 +525,10 @@ async function buscarLetra(artista, titulo) {
             throw new Error('Sin contenido');
         }
     } catch (error) {
-        contenedor.innerHTML = '<div class="text-center py-5 text-secondary"><i class="bi bi-file-earmark-x fs-1 d-block mb-3 opacity-25"></i>Instrumental o letra no disponible.</div>';
+        // Solo mostramos el error si el usuario sigue en la misma canción
+        if (idTicketActual === idPeticionLetra) {
+            contenedor.innerHTML = '<div class="text-center py-5 text-secondary"><i class="bi bi-file-earmark-x fs-1 d-block mb-3 opacity-25"></i>Instrumental o letra no disponible.</div>';
+        }
     }
 }
 

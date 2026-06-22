@@ -435,7 +435,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="assets/js/apiServices.js"></script>
     <script src="assets/js/uiController.js?v=4"></script>
-    <script src="assets/js/audioEngine.js"></script>
+    <script src="assets/js/audioEngine.js?v=<?php echo time(); ?>"></script>
     <script src="assets/js/main.js"></script>
     <script src="assets/js/logsController.js?v=2"></script>
 </body>
