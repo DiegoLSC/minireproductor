@@ -103,16 +103,45 @@ class EditorBD {
     }
     
     public function agregarAPlaylist($pl_id, $can_id) {
-        $this->pdo->prepare("INSERT IGNORE INTO playlist_canciones (playlist_id, cancion_id) VALUES (?, ?)")->execute([$pl_id, $can_id]);
+        // 1. Verificar si hay duplicado
+        $check = $this->pdo->prepare("SELECT COUNT(*) FROM playlist_canciones WHERE playlist_id = ? AND cancion_id = ?");
+        $check->execute([$pl_id, $can_id]);
         
-        Logger::registrar($this->pdo, 'EDITAR', 'playlist_canciones', $pl_id, "Se vinculó una canción (ID: $can_id) a la playlist (ID: $pl_id).");
+        if ($check->fetchColumn() > 0) {
+            throw new Exception("duplicada"); 
+        }
+
+        // 2. Obtener nombres reales para el log
+        $stmtCan = $this->pdo->prepare("SELECT titulo FROM canciones WHERE id = ?");
+        $stmtCan->execute([$can_id]);
+        $titulo_cancion = $stmtCan->fetchColumn() ?: "Canción Desconocida";
+
+        $stmtPl = $this->pdo->prepare("SELECT nombre FROM playlists WHERE id = ?");
+        $stmtPl->execute([$pl_id]);
+        $nombre_playlist = $stmtPl->fetchColumn() ?: "Playlist Desconocida";
+
+        // 3. Insertar
+        $this->pdo->prepare("INSERT INTO playlist_canciones (playlist_id, cancion_id) VALUES (?, ?)")->execute([$pl_id, $can_id]);
+        
+        // 4. Registrar con nombres
+        Logger::registrar($this->pdo, 'EDITAR', 'playlist_canciones', $pl_id, "Se vinculó la pista '$titulo_cancion' a la playlist '$nombre_playlist'.");
     }
     
     public function quitarDePlaylist($pl_id, $can_id) {
-        // Al desvincular una canción específica de una playlist manualmente, sí corresponde un DELETE físico de la relación.
+        // 1. Obtener nombres reales para el log ANTES de borrar
+        $stmtCan = $this->pdo->prepare("SELECT titulo FROM canciones WHERE id = ?");
+        $stmtCan->execute([$can_id]);
+        $titulo_cancion = $stmtCan->fetchColumn() ?: "Canción Desconocida";
+
+        $stmtPl = $this->pdo->prepare("SELECT nombre FROM playlists WHERE id = ?");
+        $stmtPl->execute([$pl_id]);
+        $nombre_playlist = $stmtPl->fetchColumn() ?: "Playlist Desconocida";
+
+        // 2. Eliminar la relación física
         $this->pdo->prepare("DELETE FROM playlist_canciones WHERE playlist_id=? AND cancion_id=?")->execute([$pl_id, $can_id]);
         
-        Logger::registrar($this->pdo, 'EDITAR', 'playlist_canciones', $pl_id, "Se desvinculó una canción (ID: $can_id) de la playlist (ID: $pl_id).");
+        // 3. Registrar con nombres
+        Logger::registrar($this->pdo, 'EDITAR', 'playlist_canciones', $pl_id, "Se desvinculó la pista '$titulo_cancion' de la playlist '$nombre_playlist'.");
     }
 
     /* ================= CANCIONES ================= */

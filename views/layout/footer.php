@@ -197,7 +197,7 @@
                     <h5>Añadir a Playlist</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <form onsubmit="enviarFormularioAsincrono(event, 'api/insertar_elementos.php')">
+                <form id="formAgregarAPlaylist" onsubmit="agregarAPlaylistRealTime(event)">
                     <input type="hidden" name="accion" value="agregar_a_playlist">
                     <input type="hidden" name="cancion_id" id="id_cancion_playlist">
                     <div class="modal-body">
@@ -470,13 +470,32 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modalAlertaSistema" tabindex="-1" aria-hidden="true" style="z-index: 1100;">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content text-white" style="background-color: var(--bg-superficie); border: 2px solid var(--sistema-carmesí);">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-danger fw-bold m-0">
+                        <i class="bi bi-exclamation-circle-fill me-2"></i>Aviso
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p id="mensajeAlertaModal" class="fs-6 m-0 text-white-50 fw-medium"></p>
+                </div>
+                <div class="modal-footer border-secondary p-2 d-flex justify-content-center">
+                    <button type="button" class="btn btn-danger btn-sm fw-bold px-5 shadow-none" data-bs-dismiss="modal">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.4.0/dist/browser-id3-writer.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="assets/js/apiServices.js"></script>
     <script src="assets/js/uiController.js?v=4"></script>
     <script src="assets/js/audioEngine.js?v=<?php echo time(); ?>"></script>
-    <script src="assets/js/main.js"></script>
+    <script src="assets/js/main.js?v=<?php echo time(); ?>"></script>
     <script src="assets/js/logsController.js?v=2"></script>
 </body>
 </html>

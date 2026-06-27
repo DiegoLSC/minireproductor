@@ -210,16 +210,40 @@ function prepararEliminacion(tipo, id, btnElemento) {
 document.addEventListener('DOMContentLoaded', () => {
     const btnAceptar = document.getElementById('btnAceptarEliminacion');
     if (!btnAceptar) return;
-
+    
     btnAceptar.addEventListener('click', () => {
-        // Cierra el modal
+        // Cierra el modal de forma segura sin crashear el JS
         const modalEl = document.getElementById('modalConfirmarEliminacion');
-        bootstrap.Modal.getInstance(modalEl).hide();
-
-        // Ejecuta tu función AJAX original pasándole el tipo, id y el elemento visual
+        const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modalInstance.hide();
+        
+        // Ejecuta la eliminación
         eliminarProcedimientoAsincrono(_tipoAEliminar, _idAEliminar, _elementoVisualARemover);
     });
 });
+
+function prepararEliminacion(tipo, id, btnElemento) {
+    _tipoAEliminar = tipo;
+    _idAEliminar = id;
+    _elementoVisualARemover = btnElemento.closest('.target-row') || btnElemento.closest('tr') || btnElemento.closest('.card') || btnElemento.closest('.playlist-item');
+    
+    const mensajeEl = document.getElementById('mensajeEliminacionModal');
+    if (!mensajeEl) return;
+    
+    const configuracionTipos = {
+        'cancion':  { articulo: 'esta', nombre: 'pista' },
+        'playlist': { articulo: 'esta', nombre: 'playlist' },
+        'album':    { articulo: 'este', nombre: 'álbum' },
+        'artista':  { articulo: 'este', nombre: 'artista' }
+    };
+    
+    const config = configuracionTipos[tipo] || { articulo: 'este', nombre: tipo };
+    mensajeEl.innerText = `¿Estás seguro de que deseas eliminar ${config.articulo} ${config.nombre} permanentemente?`;
+    
+    // Abre el modal de forma segura
+    const modalConfirmacion = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmarEliminacion'));
+    modalConfirmacion.show();
+}
 
 // ==========================================
 // FUNCIÓN QUE EJECUTA LA ELIMINACIÓN REAL EN LA BD
@@ -274,5 +298,96 @@ async function eliminarProcedimientoAsincrono(tipo, id, elementoVisual) {
     } catch (error) {
         console.error("Error en la petición de eliminación:", error);
         alert("Ocurrió un error de conexión al intentar eliminar el elemento.");
+    }
+}
+
+async function quitarDePlaylistAsincrono(cancionId, playlistId, elementoBoton) {
+    // ELIMINADO EL IF DEL CONFIRM PARA QUE SEA DIRECTO
+    try {
+        const url = `api/eliminar_elementos.php?tabla=quitar_de_playlist&cancion_id=${cancionId}&playlist_id=${playlistId}`;
+        const respuesta = await fetch(url, { method: 'GET' });
+        
+        if (!respuesta.ok) throw new Error('Error de red');
+        const data = await respuesta.json();
+
+        if (data.status === 'success') {
+            if (typeof mostrarNotificacionCola === 'function') {
+                mostrarNotificacionCola('Canción removida de la playlist.');
+            }
+            
+            const elementoVisual = elementoBoton.closest('.target-row') || elementoBoton.closest('tr');
+            if (elementoVisual) {
+                elementoVisual.style.transition = "all 0.4s ease";
+                elementoVisual.style.opacity = "0";
+                elementoVisual.style.transform = "scale(0.95)";
+                setTimeout(() => elementoVisual.remove(), 400);
+            }
+        }
+    } catch (error) {
+        console.error("Error:", error);
+    }
+}
+
+async function agregarAPlaylistRealTime(event) {
+    event.preventDefault(); // Bloqueo absoluto de recarga
+    event.stopPropagation();
+    
+    const form = event.target;
+    const botonSubmit = form.querySelector('button[type="submit"]');
+    const textoOriginal = botonSubmit.innerHTML;
+    
+    botonSubmit.disabled = true;
+    botonSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
+
+    const formData = new FormData(form);
+
+    try {
+        const response = await fetch('api/insertar_elementos.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            // Cierra modal de añadir
+            const modalEl = document.getElementById('agregarAPlaylistModal');
+            bootstrap.Modal.getInstance(modalEl).hide();
+
+            // Inyecta la playlist a la fila en vivo
+            const selectPlaylist = form.querySelector('select[name="playlist_id"]');
+            const nombrePlaylist = selectPlaylist.options[selectPlaylist.selectedIndex].text;
+
+            if (window.filaCancionActiva) {
+                let playlistsActuales = window.filaCancionActiva.getAttribute('data-playlists') || '';
+                if (playlistsActuales.trim() !== '') {
+                    playlistsActuales += ', ' + nombrePlaylist;
+                } else {
+                    playlistsActuales = nombrePlaylist;
+                }
+                window.filaCancionActiva.setAttribute('data-playlists', playlistsActuales);
+            }
+
+            if (typeof mostrarNotificacionCola === 'function') {
+                mostrarNotificacionCola('¡Canción añadida a la playlist!');
+            }
+            form.reset();
+            
+        } else if (data.status === 'error' && data.message === 'duplicada') {
+            // EL NUEVO MODAL PARA DUPLICADOS (Sin recargar)
+            document.getElementById('mensajeAlertaModal').innerText = 'Esta canción ya pertenece a la playlist seleccionada.';
+            new bootstrap.Modal(document.getElementById('modalAlertaSistema')).show();
+            
+        } else {
+            document.getElementById('mensajeAlertaModal').innerText = "Error: " + (data.message || "No se pudo añadir");
+            new bootstrap.Modal(document.getElementById('modalAlertaSistema')).show();
+        }
+    } catch (error) {
+        console.error("Error en la petición:", error);
+        document.getElementById('mensajeAlertaModal').innerText = "Ocurrió un error al conectar con el servidor.";
+        new bootstrap.Modal(document.getElementById('modalAlertaSistema')).show();
+    } finally { // <- AQUÍ ESTABA EL ERROR DE SINTAXIS
+        botonSubmit.disabled = false;
+        botonSubmit.innerHTML = textoOriginal;
     }
 }

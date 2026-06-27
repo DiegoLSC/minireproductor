@@ -132,14 +132,34 @@ function cambiarPagina(nuevaPagina) {
 // ==========================================
 // GESTIÓN DEL SIDEBAR Y MODALES
 // ==========================================
-function filtrarPorPlaylist(nombrePlaylist) {
+function filtrarPorPlaylist(nombrePlaylist, idPlaylist = '') {
     filtroPlaylistActivo = nombrePlaylist;
     if (nombrePlaylist === "") document.getElementById('buscadorInput').value = "";
     filtrarBiblioteca();
+    
     const enlaces = document.querySelectorAll('#acordeonSidebar .nav-link, #acordeonSidebar a');
     enlaces.forEach(enlace => { enlace.classList.remove('text-success', 'fw-bold'); enlace.classList.add('text-secondary'); });
+    
     const eventoOrigen = window.event?.target;
-    if (eventoOrigen && eventoOrigen.tagName === 'A') { eventoOrigen.classList.remove('text-secondary'); eventoOrigen.classList.add('text-success', 'fw-bold'); }
+    if (eventoOrigen && eventoOrigen.tagName === 'A') { 
+        eventoOrigen.classList.remove('text-secondary'); 
+        eventoOrigen.classList.add('text-success', 'fw-bold'); 
+    }
+
+    // ==========================================
+    // MAGIA: MOSTRAR/OCULTAR BOTÓN "QUITAR DE PLAYLIST"
+    // ==========================================
+    const inputPlaylistActiva = document.getElementById('playlist_activa_id');
+    if (inputPlaylistActiva) inputPlaylistActiva.value = idPlaylist;
+
+    const botonesQuitar = document.querySelectorAll('.btn-quitar-playlist');
+    botonesQuitar.forEach(btn => {
+        if (nombrePlaylist && nombrePlaylist.trim() !== '') {
+            btn.classList.remove('d-none'); // Muestra el botón
+        } else {
+            btn.classList.add('d-none'); // Lo oculta en "Ver Todo"
+        }
+    });
 }
 
 function filtrarMenuCatalogo() {
