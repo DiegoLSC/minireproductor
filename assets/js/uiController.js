@@ -252,18 +252,24 @@ function inicializarBuscadorEtiquetas(config) {
     const contenedor = document.getElementById(idContenedor);
     if (!contenedor) return;
 
-    const listaArtistas = JSON.parse(contenedor.dataset.artistas || '[]');
+    // Guardamos la lista directamente en el objeto contenedor como referencia mutable
+    contenedor.listaArtistas = JSON.parse(contenedor.dataset.artistas || '[]');
     const searchInput = document.getElementById(idSearch);
     const resultsContainer = document.getElementById(idResults);
-
     if (!searchInput || !resultsContainer) return;
 
     searchInput.addEventListener('input', function() {
         const query = this.value.toLowerCase().trim();
         resultsContainer.innerHTML = '';
-        if (query.length === 0) { resultsContainer.style.display = 'none'; return; }
+        if (query.length === 0) {
+            resultsContainer.style.display = 'none';
+            return;
+        }
 
-        const filtrados = listaArtistas.filter(art => art.nombre.toLowerCase().includes(query) && !setGlobal.has(art.id.toString()));
+        // Leemos la lista actualizada desde el contenedor en tiempo real
+        const listaActual = contenedor.listaArtistas || [];
+        const filtrados = listaActual.filter(art => art.nombre.toLowerCase().includes(query) && !setGlobal.has(art.id.toString()));
+
         if (filtrados.length > 0) {
             resultsContainer.style.display = 'block';
             filtrados.forEach(art => {
@@ -272,18 +278,14 @@ function inicializarBuscadorEtiquetas(config) {
                 div.style.cursor = 'pointer';
                 div.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
                 div.textContent = art.nombre;
-                
                 div.addEventListener('click', function(e) {
-                    console.log(`[Buscador] Click en: ${art.nombre} (ID: ${art.id}) con prefijo: ${prefix}`);
-                    
                     if (prefix === 'alb') window.agregarEtiquetaAlbum(art.id, art.nombre);
                     else if (prefix === 'can') window.agregarEtiquetaCancion(art.id, art.nombre);
                     else if (prefix === 'sub') window.agregarEtiquetaSubir(art.id, art.nombre);
                     else if (prefix === 'nuevo_alb') window.agregarEtiquetaNuevoAlbum(art.id, art.nombre);
-                    
                     searchInput.value = '';
                     resultsContainer.style.display = 'none';
-                    searchInput.focus(); 
+                    searchInput.focus();
                 });
                 resultsContainer.appendChild(div);
             });
@@ -291,7 +293,8 @@ function inicializarBuscadorEtiquetas(config) {
     });
 
     document.addEventListener('click', function(e) {
-        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) resultsContainer.style.display = 'none';
+        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target))
+            resultsContainer.style.display = 'none';
     });
 }
 

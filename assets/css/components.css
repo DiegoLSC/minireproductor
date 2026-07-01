@@ -32,6 +32,12 @@
 .form-control:focus, .form-select:focus { border-color: var(--sistema-carmesí) !important; background-color: var(--bg-superficie-hover) !important; }
 .input-group { border: 1px solid rgba(255, 255, 255, 0.1) !important; background-color: #111111 !important; }
 
+/* SOLUCIÓN AL PLACEHOLDER OSCURO */
+.form-control::placeholder, .form-select::placeholder {
+    color: var(--texto-secundario) !important;
+    opacity: 0.8 !important;
+}
+
 .form-range::-webkit-slider-thumb { background: var(--carmesí-brillante) !important; }
 .form-range::-moz-range-thumb { background: var(--carmesí-brillante) !important; }
 

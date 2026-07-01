@@ -39,6 +39,7 @@
                     <?php else: ?>
                     <?php foreach($canciones as $index => $c): ?>
                     <tr class="song-row target-row" 
+                        id="fila_cancion_<?= $c['id'] ?>"
                         data-playlists="<?= htmlspecialchars($c['playlists_nombres']) ?>" 
                         data-ruta="<?= $c['ruta_archivo'] ?>"
                         data-titulo="<?= htmlspecialchars($c['titulo']) ?>"

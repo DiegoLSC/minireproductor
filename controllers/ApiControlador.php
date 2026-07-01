@@ -28,43 +28,39 @@ class ApiControlador {
         }
     }
 
-    // Centraliza la respuesta JSON para que no tengas que escribirla 20 veces
+    // Reemplazar ejecutarYResponder
     private function ejecutarYResponder($funcionSQL) {
         try {
-            $funcionSQL();
+            $dataPayload = $funcionSQL();
             http_response_code(200);
-            echo json_encode(["status" => "success"]);
+            echo json_encode(["status" => "success", "data" => $dataPayload]);
         } catch (Exception $e) {
             echo json_encode(["status" => "error", "message" => $e->getMessage()]);
         }
         exit;
     }
 
+    // Actualizar retornos en insertar() y editar()
     public function insertar($post, $files) {
         $this->ejecutarYResponder(function() use ($post, $files) {
             $acc = $post['accion'] ?? '';
-            
             if ($acc === 'crear_artista') {
                 $foto = $this->subirArchivo($files['foto'] ?? null, 'artistas', 'art') ?? 'assets/uploads/artistas/default.jpg';
-                $this->db->crearArtista($post['nombre'], $foto);
-            } 
-            elseif ($acc === 'crear_album') {
+                return $this->db->crearArtista($post['nombre'], $foto);
+            } elseif ($acc === 'crear_album') {
                 if (empty($post['artista_ids'])) throw new Exception("Faltan artistas");
                 $cover = $this->subirArchivo($files['caratula'] ?? null, 'caratulas', 'cov') ?? 'assets/uploads/caratulas/default.jpg';
-                $this->db->crearAlbum($post['titulo'], $post['anio'] ?: null, $cover, $post['artista_ids']);
-            } 
-            elseif ($acc === 'crear_playlist') {
+                return $this->db->crearAlbum($post['titulo'], $post['anio'] ?: null, $cover, $post['artista_ids']);
+            } elseif ($acc === 'crear_playlist') {
                 $cover = $this->subirArchivo($files['caratula'] ?? null, 'caratulas', 'pl') ?? 'assets/uploads/caratulas/default.jpg';
-                $this->db->crearPlaylist($post['nombre'], $post['descripcion'], $cover);
-            } 
-            elseif ($acc === 'subir_cancion') {
+                return $this->db->crearPlaylist($post['nombre'], $post['descripcion'], $cover);
+            } elseif ($acc === 'subir_cancion') {
                 if (empty($post['artista_ids'])) throw new Exception("Faltan artistas");
                 if (empty($files['archivo_mp3']['name'])) throw new Exception("Falta archivo MP3.");
                 $ruta = $this->subirArchivo($files['archivo_mp3'], 'musica', 'trk', ['mp3']);
-                $this->db->subirCancion($post['titulo'], $post['album_id'] ?: null, $ruta, $post['duracion'] ?? 0, $post['artista_ids']);
-            } 
-            elseif ($acc === 'agregar_a_playlist') {
-                $this->db->agregarAPlaylist($post['playlist_id'], $post['cancion_id']);
+                return $this->db->subirCancion($post['titulo'], $post['album_id'] ?: null, $ruta, $post['duracion'] ?? 0, $post['artista_ids']);
+            } elseif ($acc === 'agregar_a_playlist') {
+                return $this->db->agregarAPlaylist($post['playlist_id'], $post['cancion_id']);
             }
         });
     }
@@ -73,25 +69,21 @@ class ApiControlador {
         $this->ejecutarYResponder(function() use ($post, $files) {
             $acc = $post['accion'] ?? '';
             $id = intval($post['id']);
-            
             if ($acc === 'editar_artista') {
                 $foto = $this->subirArchivo($files['foto'] ?? null, 'artistas', 'art');
-                $this->db->editarArtista($id, $post['nombre'], $foto);
-            } 
-            elseif ($acc === 'editar_album') {
+                return $this->db->editarArtista($id, $post['nombre'], $foto);
+            } elseif ($acc === 'editar_album') {
                 if (empty($post['artista_ids'])) throw new Exception("Faltan artistas");
                 $cover = $this->subirArchivo($files['caratula'] ?? null, 'caratulas', 'cov');
-                $this->db->editarAlbum($id, $post['titulo'], $post['anio'] ?: null, $cover, $post['artista_ids']);
-            } 
-            elseif ($acc === 'editar_playlist') {
+                return $this->db->editarAlbum($id, $post['titulo'], $post['anio'] ?: null, $cover, $post['artista_ids']);
+            } elseif ($acc === 'editar_playlist') {
                 $cover = $this->subirArchivo($files['caratula'] ?? null, 'caratulas', 'pl');
-                $this->db->editarPlaylist($id, $post['nombre'], $post['descripcion'], $cover);
-            } 
-            elseif ($acc === 'editar_cancion') {
+                return $this->db->editarPlaylist($id, $post['nombre'], $post['descripcion'], $cover);
+            } elseif ($acc === 'editar_cancion') {
                 if (empty($post['artista_ids'])) throw new Exception("Faltan artistas");
                 $ruta = $this->subirArchivo($files['archivo_mp3'] ?? null, 'musica', 'trk', ['mp3']);
-                if ($ruta) $this->borrarArchivoFisico($post['ruta_actual'] ?? ''); // Borrar MP3 viejo
-                $this->db->editarCancion($id, $post['titulo'], $post['album_id'] ?: null, $ruta, $post['duracion'] ?? 0, $post['artista_ids']);
+                if ($ruta) $this->borrarArchivoFisico($post['ruta_actual'] ?? '');
+                return $this->db->editarCancion($id, $post['titulo'], $post['album_id'] ?: null, $ruta, $post['duracion'] ?? 0, $post['artista_ids']);
             }
         });
     }

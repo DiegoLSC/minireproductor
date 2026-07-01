@@ -7,30 +7,42 @@ function enviarFormularioAsincrono(event, urlApi) {
     event.preventDefault();
     const formulario = event.target;
     const botonSubmit = formulario.querySelector('button[type="submit"]');
-    
-    // Bloqueo Visual
     const textoOriginal = botonSubmit.innerHTML;
+
     botonSubmit.disabled = true;
     botonSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
 
     const formData = new FormData(formulario);
 
     fetch(urlApi, { method: 'POST', body: formData })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            location.reload(); // O recargar la tabla dinámicamente si tienes la función
-        } else alert("Error: " + data.message);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert("Ocurrió un error de conexión con el servidor.");
-    })
-    .finally(() => {
-        // Restauración
-        botonSubmit.disabled = false;
-        botonSubmit.innerHTML = textoOriginal;
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const modalActivo = document.querySelector('.modal.show');
+                if (modalActivo) {
+                    const instance = bootstrap.Modal.getInstance(modalActivo);
+                    if (instance) instance.hide();
+                }
+                formulario.reset();
+
+                // SPA: Enrutador de mutaciones en tiempo real forzado
+                if (typeof procesarMutacionSPA === 'function') {
+                    procesarMutacionSPA(formData.get('accion'), data.data);
+                } else {
+                    console.warn("Falta procesarMutacionSPA en main.js");
+                }
+            } else {
+                alert("Error: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("Ocurrió un error de conexión con el servidor.");
+        })
+        .finally(() => {
+            botonSubmit.disabled = false;
+            botonSubmit.innerHTML = textoOriginal;
+        });
 }
 
 
@@ -66,21 +78,18 @@ function subirCancionConProgreso(event, urlApi) {
     // Evento que se dispara continuamente mientras el archivo viaja a internet
     xhrSubidaActual.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable) {
-            // 1. Porcentaje puro
             const porcentaje = Math.round((e.loaded / e.total) * 100);
             barraProgreso.style.width = porcentaje + '%';
             porcentajeTexto.innerText = porcentaje + '%';
 
-            // 2. Cálculo de métricas y velocidad
             const subidoMB = (e.loaded / (1024 * 1024)).toFixed(1);
             const totalMB = (e.total / (1024 * 1024)).toFixed(1);
             
-            const tiempoTranscurrido = (Date.now() - tiempoInicio) / 1000; // en segundos
+            const tiempoTranscurrido = (Date.now() - tiempoInicio) / 1000;
             let textoTiempo = '';
 
-            // Solo calculamos el ETA si ya pasó medio segundo para evitar saltos locos al inicio
             if (tiempoTranscurrido > 0.5) {
-                const velocidadSubida = e.loaded / tiempoTranscurrido; // bytes por segundo
+                const velocidadSubida = e.loaded / tiempoTranscurrido;
                 const bytesRestantes = e.total - e.loaded;
                 const segundosRestantes = Math.max(0, bytesRestantes / velocidadSubida);
 
@@ -107,8 +116,22 @@ function subirCancionConProgreso(event, urlApi) {
                     porcentajeTexto.innerText = "100%";
                     barraProgreso.classList.remove('progress-bar-animated');
                     
-                    // Esperamos 1 segundo para que el usuario vea que llegó al 100% y recargamos
-                    setTimeout(() => location.reload(), 1000);
+                    // SPA: Cerrar modal y procesar en vivo
+                    setTimeout(() => {
+                        const modalActivo = document.querySelector('.modal.show');
+                        if (modalActivo) bootstrap.Modal.getInstance(modalActivo).hide();
+                        formulario.reset();
+                        
+                        // Restablecer interfaz de subida
+                        botonSubmit.classList.remove('d-none');
+                        botonCancelar.classList.add('d-none');
+                        contenedorProgreso.classList.add('d-none');
+
+                        if (typeof procesarMutacionSPA === 'function') {
+                            procesarMutacionSPA(formData.get('accion'), data.data);
+                        }
+                    }, 1000);
+
                 } else {
                     mostrarErrorSubida("Error del servidor: " + data.message);
                 }
@@ -120,17 +143,12 @@ function subirCancionConProgreso(event, urlApi) {
         }
     });
 
-    // Evento si se cae el internet
     xhrSubidaActual.addEventListener('error', () => mostrarErrorSubida("Fallo en la conexión a internet."));
-    
-    // Evento si el usuario apretó Cancelar
     xhrSubidaActual.addEventListener('abort', () => mostrarErrorSubida("Subida cancelada por el usuario."));
 
-    // Enviar a la ruta
     xhrSubidaActual.open('POST', urlApi, true);
     xhrSubidaActual.send(formData);
 
-    // Helper interno para limpiar en caso de error
     function mostrarErrorSubida(mensaje) {
         textoProgreso.innerText = mensaje;
         textoProgreso.classList.replace('text-secondary', 'text-danger');
@@ -138,7 +156,6 @@ function subirCancionConProgreso(event, urlApi) {
         barraProgreso.classList.remove('progress-bar-animated');
         botonCancelar.innerText = "Cerrar";
         
-        // Habilitamos el botón de volver a intentar en 3 segundos
         setTimeout(() => {
             botonSubmit.classList.remove('d-none');
             botonCancelar.classList.add('d-none');
@@ -149,28 +166,11 @@ function subirCancionConProgreso(event, urlApi) {
     }
 }
 
-// Función que detona el botón "Cancelar"
 function cancelarSubidaActual() {
     if (xhrSubidaActual) {
-        xhrSubidaActual.abort(); // Dispara automáticamente el evento 'abort' arriba
+        xhrSubidaActual.abort();
         xhrSubidaActual = null;
     }
-}
-
-function eliminarElementoAsincrono(tabla, id, botonClid) {
-    event.stopPropagation();
-    if (!confirm(`¿Estás seguro de que deseas eliminar este registro?`)) return;
-    
-    fetch(`api/eliminar_elementos.php?tabla=${tabla}&id=${id}`)
-    .then(response => {
-        if (response.ok) {
-            alert("¡El elemento ha sido eliminado con éxito!");
-            // ESTA LÍNEA ES LA CLAVE: Refrescamos la vista
-            location.reload();
-        } else { 
-            alert("Error: No se pudo eliminar el elemento."); 
-        }
-    }).catch(err => console.error(err));
 }
 
 // SISTEMA DE BACKUP
@@ -303,56 +303,5 @@ async function descargarCancionConMetadatos(boton, rutaAudio, tituloTrack, artis
         boton.querySelector('.texto-btn').innerText = textoOriginal;
         boton.querySelector('i').className = iconoOriginal;
         boton.disabled = false;
-    }
-
-    function cargarHistorialLogs() {
-        const tbody = document.getElementById('tabla-logs-body');
-        const contador = document.getElementById('contador-logs');
-        
-        if (!tbody) return;
-
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-5 text-secondary"><div class="spinner-border spinner-border-sm text-success me-2"></div>Cargando historial...</td></tr>`;
-
-        fetch('api/obtener_logs.php')
-            .then(response => response.json())
-            .then(data => {
-                if (data.estado === 'exito') {
-                    tbody.innerHTML = ''; 
-                    
-                    if (data.datos.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-5 text-secondary"><i class="bi bi-inbox d-block fs-3 mb-2 opacity-50"></i>No hay registros de auditoría.</td></tr>`;
-                        contador.innerText = "0 registros encontrados";
-                        return;
-                    }
-
-                    data.datos.forEach(log => {
-                        let badgeClass = 'bg-secondary';
-                        if (log.accion === 'INSERTAR') badgeClass = 'bg-success';
-                        if (log.accion === 'EDITAR') badgeClass = 'bg-primary';
-                        if (log.accion === 'ELIMINAR') badgeClass = 'bg-danger';
-
-                        const fechaObj = new Date(log.fecha_hora);
-                        const fechaFormat = fechaObj.toLocaleDateString() + ' ' + fechaObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-                        const tr = document.createElement('tr');
-                        tr.className = 'song-row';
-                        tr.innerHTML = `
-                            <td class="ps-4 text-secondary small align-middle">${fechaFormat}</td>
-                            <td class="align-middle"><span class="badge ${badgeClass} bg-opacity-25 text-white border border-light border-opacity-10">${log.accion}</span></td>
-                            <td class="text-white-50 small align-middle text-uppercase">${log.modulo}</td>
-                            <td class="text-white small align-middle pe-4">${log.descripcion}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                    
-                    contador.innerText = `Mostrando los últimos ${data.datos.length} registros`;
-                } else {
-                    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error: ${data.mensaje}</td></tr>`;
-                }
-            })
-            .catch(err => {
-                console.error("Error obteniendo logs:", err);
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-danger">Error de conexión al obtener el historial.</td></tr>`;
-            });
     }
 }
