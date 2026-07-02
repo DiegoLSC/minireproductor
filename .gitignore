@@ -1,6 +1,15 @@
-# Ignorar subidas de música e imágenes
-/uploads/
-/backups/
+# Ignorar archivos multimedia subidos dinámicamente
+/assets/uploads/musica/*
+/assets/uploads/artistas/*
+/assets/uploads/caratulas/*
+
+# Excepción: Mantener las imágenes por defecto en el repositorio
+!/assets/uploads/artistas/default.jpg
+!/assets/uploads/caratulas/default.jpg
+
+# Ignorar copias de seguridad generadas
+/backups/*.zip
+/backups/*.json
 
 # Ignorar credenciales de la base de datos
 /config/conexion.php

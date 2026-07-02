@@ -46,10 +46,10 @@
                 <input type="range" id="volume-slider" class="form-range" style="width:90px;" min="0" max="1" step="0.05" value="1">
             </div>
         </div>
-        <button type="button" id="btn-abrir-cola" class="btn text-secondary p-0 fs-5 lh-1 shadow-none" onclick="togglePanelCola()" title="Ver cola">
+        <button type="button" id="btn-abrir-cola" class="btn text-secondary p-0 fs-5 lh-1 shadow-none ms-4" onclick="togglePanelCola()" title="Ver cola">
             <i class="bi bi-view-list"></i>
         </button>
-        <button id="btn-abrir-letras" class="btn text-secondary p-0 fs-5 lh-1 ms-3" onclick="togglePanelLetras()" title="Ver Letras">
+        <button id="btn-abrir-letras" class="btn text-secondary p-0 fs-5 lh-1 ms-4" onclick="togglePanelLetras()" title="Ver Letras">
             <i class="bi bi-card-text"></i>
         </button>
     </div>

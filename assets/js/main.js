@@ -60,13 +60,17 @@ document.addEventListener('DOMContentLoaded', () => {
         volumeSlider.addEventListener('input', function() {
             const val = parseFloat(this.value);
             reproductor.volume = val;
+            localStorage.setItem('nebula_volumen', val);
+            
             if (val === 0) {
                 reproductor.muted = true;
                 actualizarIconoVolumen(true, 0);
+                localStorage.setItem('nebula_muted', 'true');
             } else {
                 reproductor.muted = false;
                 volumenAnterior = val; 
                 actualizarIconoVolumen(false, val);
+                localStorage.setItem('nebula_muted', 'false');
             }
         });
     }
@@ -75,8 +79,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loader) {
         setTimeout(function() {
             loader.style.opacity = '0'; 
-            setTimeout(() => { loader.style.visibility = 'hidden'; }, 500);
+            setTimeout(() => { 
+                loader.style.visibility = 'hidden'; 
+                // Forzar el enfoque en el buscador una vez que el loader desaparece
+                const buscador = document.getElementById('buscadorInput');
+                if (buscador) buscador.focus();
+            }, 500);
         }, 500); 
+    } else {
+        const buscador = document.getElementById('buscadorInput');
+        if (buscador) buscador.focus();
     }
 
     const modalLogsEl = document.getElementById('modalLogs');
@@ -124,6 +136,29 @@ function actualizarPantallaBloqueo(tituloTrack, artistaTrack, nombreAlbum, rutaI
 }
 
 function restaurarSesion() {
+    const audio = document.getElementById('audio-player');
+    const volumeSlider = document.getElementById('volume-slider');
+
+    // 1. Restaurar el Volumen
+    const volGuardado = localStorage.getItem('nebula_volumen');
+    const muteGuardado = localStorage.getItem('nebula_muted');
+
+    if (volGuardado !== null && audio && volumeSlider) {
+        const val = parseFloat(volGuardado);
+        audio.volume = val;
+        volumenAnterior = val > 0 ? val : 1;
+        if (muteGuardado !== 'true') {
+            volumeSlider.value = val;
+            actualizarIconoVolumen(false, val);
+        }
+    }
+    if (muteGuardado === 'true' && audio && volumeSlider) {
+        audio.muted = true;
+        volumeSlider.value = 0;
+        actualizarIconoVolumen(true, 0);
+    }
+
+    // 2. Restaurar la Canción
     const rutaGuardada = localStorage.getItem('nebula_track_ruta');
     if (rutaGuardada) {
         const titulo = localStorage.getItem('nebula_track_titulo');
@@ -131,7 +166,6 @@ function restaurarSesion() {
         const caratula = localStorage.getItem('nebula_track_caratula');
         const tiempoGuardado = localStorage.getItem('nebula_track_tiempo');
 
-        const audio = document.getElementById('audio-player');
         audio.src = rutaGuardada;
         window.rutaEnReproduccion = rutaGuardada;
         document.getElementById('current-title').innerText = titulo;
@@ -158,7 +192,7 @@ function restaurarSesion() {
         });
         actualizarPantallaBloqueo(titulo, artista, 'NebulaPlayer', caratula);
 
-        // [NUEVO] - Lógica visual para resaltar la fila activa tras recargar
+        // Resaltar en la tabla
         document.querySelectorAll('.target-row').forEach(fila => {
             fila.classList.remove('bg-dark-subtle', 'border-start', 'border-danger');
             const textoTitulo = fila.querySelector('.title-col span');
@@ -171,6 +205,31 @@ function restaurarSesion() {
             const textoTituloActivo = filaActiva.querySelector('.title-col span');
             if (textoTituloActivo) textoTituloActivo.classList.add('text-success');
         }
+    }
+}
+
+// ==========================================
+// CONTROL DE VOLUMEN (CON PERSISTENCIA)
+// ==========================================
+function toggleMute() {
+    const reproductor = document.getElementById('audio-player');
+    const volumeSlider = document.getElementById('volume-slider');
+    if (!reproductor || !volumeSlider) return;
+
+    if (reproductor.muted || parseFloat(volumeSlider.value) === 0) {
+        reproductor.muted = false;
+        let nuevoVol = volumenAnterior > 0 ? volumenAnterior : 1; 
+        reproductor.volume = nuevoVol;
+        volumeSlider.value = nuevoVol; 
+        actualizarIconoVolumen(false, nuevoVol);
+        localStorage.setItem('nebula_volumen', nuevoVol);
+        localStorage.setItem('nebula_muted', 'false');
+    } else {
+        volumenAnterior = parseFloat(volumeSlider.value);
+        reproductor.muted = true;
+        volumeSlider.value = 0; 
+        actualizarIconoVolumen(true, 0);
+        localStorage.setItem('nebula_muted', 'true');
     }
 }
 
@@ -243,11 +302,14 @@ async function eliminarProcedimientoAsincrono(tipo, id, elementoVisual) {
                     
                     setTimeout(() => {
                         elementoVisual.remove();
-                        const contador = document.getElementById('contador-dinamico');
-                        if (contador) {
-                            let total = parseInt(contador.innerText);
-                            if (!isNaN(total) && total > 0) {
-                                contador.innerText = `${total - 1} canciones totales`;
+                        recalcularIndicesTabla();
+                        if (typeof filtrarBiblioteca === 'function') {
+                            filtrarBiblioteca();
+                            // Sincronizar cola en tiempo real tras eliminar
+                            if (typeof actualizarColaReproduccion === 'function') {
+                                actualizarColaReproduccion();
+                                const panel = document.getElementById('colaPanel');
+                                if (panel && panel.classList.contains('activo')) renderizarColaVisual();
                             }
                         }
                     }, 400); 
@@ -323,7 +385,11 @@ async function quitarDePlaylistAsincrono(cancionId, playlistId, elementoBoton) {
                 elementoVisual.style.transition = "all 0.4s ease";
                 elementoVisual.style.opacity = "0";
                 elementoVisual.style.transform = "scale(0.95)";
-                setTimeout(() => elementoVisual.remove(), 400);
+                setTimeout(() => {
+                    elementoVisual.remove();
+                    recalcularIndicesTabla();
+                    if (typeof filtrarBiblioteca === 'function') filtrarBiblioteca();
+                }, 400);
             }
         }
     } catch (error) {
@@ -435,7 +501,18 @@ function procesarMutacionSPA(accion, data) {
 }
 
 // ==========================================
-// INYECTORES Y ACTUALIZADORES DOM (CON ORDEN NATURAL Y FALLBACKS)
+// RECALCULAR INDICES VISUALES
+// ==========================================
+function recalcularIndicesTabla() {
+    const filas = document.querySelectorAll('#tablaCanciones tbody .target-row');
+    filas.forEach((fila, index) => {
+        const celdaNumero = fila.querySelector('td:first-child');
+        if (celdaNumero) celdaNumero.innerText = index + 1;
+    });
+}
+
+// ==========================================
+// INYECTORES Y ACTUALIZADORES DOM 
 // ==========================================
 
 function inyectarPlaylistDOM(pl) {
@@ -708,7 +785,6 @@ function inyectarCancionDOM(c) {
         tbody.innerHTML = '';
     }
 
-    const totalRows = tbody.querySelectorAll('.target-row').length + 1;
     const mins = Math.floor(c.duracion / 60);
     const secs = c.duracion % 60;
     const duracionFmt = mins + ":" + (secs < 10 ? "0" : "") + secs;
@@ -717,6 +793,14 @@ function inyectarCancionDOM(c) {
     const iconoHTML = esDefault 
         ? `<div class="bg-secondary d-flex align-items-center justify-content-center rounded text-muted" style="width: 45px; height: 45px;"><i class="bi bi-music-note fs-4"></i></div>` 
         : `<img src="${c.caratula}" class="album-img" alt="Cover" loading="lazy">`;
+
+    const albumTexto = c.album === 'Single / Sencillo' ? 'Single' : c.album;
+    const albumClase = c.album === 'Single / Sencillo' ? 'text-muted font-monospace small' : 'text-secondary';
+    
+    const arts = c.artistas_nombres.split(', ');
+    const htmlArtistas = arts.map(nom => 
+        `<a href="#" onclick="document.getElementById('buscadorInput').value='${nom.replace(/'/g, "\\'")}'; filtrarBiblioteca(); return false;" class="text-info text-decoration-none hover-underline">${nom}</a>`
+    ).join('<span class="text-secondary">, </span>');
 
     const tr = document.createElement('tr');
     tr.className = 'song-row target-row';
@@ -730,7 +814,7 @@ function inyectarCancionDOM(c) {
     tr.setAttribute('onclick', 'reproducirDesdeFila(this)');
 
     tr.innerHTML = `
-        <td class="text-secondary">${totalRows}</td>
+        <td class="text-secondary"></td>
         <td class="title-col">
             <div class="d-flex align-items-center gap-3">
                 ${iconoHTML}
@@ -738,12 +822,12 @@ function inyectarCancionDOM(c) {
             </div>
         </td>
         <td class="album-col d-none d-md-table-cell">
-            <a href="#" onclick="document.getElementById('buscadorInput').value='${c.album === 'Single / Sencillo' ? 'Single' : c.album}'; filtrarBiblioteca(); return false;" class="${c.album === 'Single / Sencillo' ? 'text-muted font-monospace small' : 'text-secondary'} text-decoration-none hover-underline">
-                ${c.album}
+            <a href="#" onclick="document.getElementById('buscadorInput').value='${albumTexto.replace(/'/g, "\\'")}'; filtrarBiblioteca(); return false;" class="${albumClase} text-decoration-none hover-underline">
+                ${albumTexto}
             </a>
         </td>
         <td class="artist-col">
-            <span class="text-info">${c.artistas_nombres}</span>
+            ${htmlArtistas}
         </td>
         <td class="text-secondary font-monospace small d-none d-md-table-cell">${duracionFmt}</td>
         <td onclick="event.stopPropagation();">
@@ -788,7 +872,16 @@ function inyectarCancionDOM(c) {
         </td>`;
     
     tbody.insertBefore(tr, tbody.firstChild);
-    if (typeof filtrarBiblioteca === 'function') filtrarBiblioteca();
+    recalcularIndicesTabla();
+    if (typeof filtrarBiblioteca === 'function') {
+        filtrarBiblioteca();
+        // Sincronizar cola en tiempo real
+        if (typeof actualizarColaReproduccion === 'function') {
+            actualizarColaReproduccion();
+            const panel = document.getElementById('colaPanel');
+            if (panel && panel.classList.contains('activo')) renderizarColaVisual();
+        }
+    }
 }
 
 function actualizarCancionDOM(c) {
@@ -832,8 +925,10 @@ function actualizarCancionDOM(c) {
     
     const albumCell = tr.querySelector('.album-col a');
     if (albumCell) {
-        albumCell.innerText = c.album;
-        albumCell.setAttribute('onclick', `document.getElementById('buscadorInput').value='${c.album.replace(/'/g, "\\'")}'; filtrarBiblioteca(); return false;`);
+        const isSingle = c.album === 'Single / Sencillo';
+        albumCell.innerText = isSingle ? 'Single' : c.album;
+        albumCell.className = `${isSingle ? 'text-muted font-monospace small' : 'text-secondary'} text-decoration-none hover-underline`;
+        albumCell.setAttribute('onclick', `document.getElementById('buscadorInput').value='${(isSingle ? 'Single' : c.album).replace(/'/g, "\\'")}'; filtrarBiblioteca(); return false;`);
     }
     
     const artistCell = tr.querySelector('.artist-col');
@@ -875,7 +970,15 @@ function actualizarCancionDOM(c) {
         downloadBtn.setAttribute('onclick', `event.stopPropagation(); descargarCancionConMetadatos(this, '${rutaEscapada}', '${tituloEscapado}', '${artistasNombresEscapados}', '${albumEscapado}')`);
     }
 
-    if (typeof filtrarBiblioteca === 'function') filtrarBiblioteca();
+    if (typeof filtrarBiblioteca === 'function') {
+        filtrarBiblioteca();
+        // Sincronizar cola en tiempo real
+        if (typeof actualizarColaReproduccion === 'function') {
+            actualizarColaReproduccion();
+            const panel = document.getElementById('colaPanel');
+            if (panel && panel.classList.contains('activo')) renderizarColaVisual();
+        }
+    }
 }
 
 function insertarEnOrden(contenedor, nuevoElemento, selectorItems, selectorNombre) {
