@@ -38,24 +38,9 @@ class ApiControlador {
         exit;
     }
 
-    // ================= MOTOR ITUNES (MEJORADO CON PLAN B) =================
-    private function buscarCaratulaEnItunes($titulo, $artistas) {
-        // Limpiar título de palabras que confunden a iTunes (feat, videoclip, etc.)
-        $titulo_limpio = trim(preg_replace('/\(.*?\)|\[.*?\]|- .*/', '', $titulo));
-        
-        // Plan A: Buscar Título + Artista
-        $termino_completo = urlencode($titulo_limpio . ' ' . str_replace(',', ' ', $artistas));
-        $ruta = $this->hacerPeticionItunes($termino_completo);
-        
-        if ($ruta) return $ruta;
-
-        // Plan B: Si falló, buscar SOLO por el título limpio
-        $termino_corto = urlencode($titulo_limpio);
-        return $this->hacerPeticionItunes($termino_corto);
-    }
-
-    private function hacerPeticionItunes($termino) {
-        $url = "https://itunes.apple.com/search?term={$termino}&media=music&entity=song&limit=1";
+    // ================= MOTOR UNIVERSAL DE ITUNES =================
+    private function hacerPeticionItunes($termino, $entidad = 'song', $prefijo_archivo = 'cov') {
+        $url = "https://itunes.apple.com/search?term={$termino}&media=music&entity={$entidad}&limit=1";
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -72,15 +57,43 @@ class ApiControlador {
                 
                 $imgData = @file_get_contents($imgUrl);
                 if ($imgData) {
-                    if (!is_dir('../assets/uploads/caratulas')) mkdir('../assets/uploads/caratulas', 0777, true);
-                    $nombre = 'cov_auto_' . time() . '_' . rand(1000,9999) . '.jpg';
-                    $ruta = '../assets/uploads/caratulas/' . $nombre;
+                    $carpeta = ($prefijo_archivo === 'art') ? 'artistas' : 'caratulas';
+                    if (!is_dir('../assets/uploads/' . $carpeta)) mkdir('../assets/uploads/' . $carpeta, 0777, true);
+                    $nombre = $prefijo_archivo . '_auto_' . time() . '_' . rand(1000,9999) . '.jpg';
+                    $ruta = '../assets/uploads/' . $carpeta . '/' . $nombre;
                     file_put_contents($ruta, $imgData);
-                    return 'assets/uploads/caratulas/' . $nombre;
+                    return 'assets/uploads/' . $carpeta . '/' . $nombre;
                 }
             }
         }
         return null;
+    }
+
+    private function buscarCaratulaEnItunes($titulo, $artistas) {
+        $titulo_limpio = trim(preg_replace('/\(.*?\)|\[.*?\]|- .*/', '', $titulo));
+        $termino_completo = urlencode($titulo_limpio . ' ' . str_replace(',', ' ', $artistas));
+        $ruta = $this->hacerPeticionItunes($termino_completo, 'song', 'cov');
+        if ($ruta) return $ruta;
+
+        // Plan B para canciones
+        $termino_corto = urlencode($titulo_limpio);
+        return $this->hacerPeticionItunes($termino_corto, 'song', 'cov');
+    }
+
+    private function buscarCaratulaAlbumEnItunes($titulo_album, $artistas) {
+        $titulo_limpio = trim(preg_replace('/\(.*?\)|\[.*?\]|- .*/', '', $titulo_album));
+        $termino_completo = urlencode($titulo_limpio . ' ' . str_replace(',', ' ', $artistas));
+        $ruta = $this->hacerPeticionItunes($termino_completo, 'album', 'cov');
+        if ($ruta) return $ruta;
+
+        // Plan B para álbumes
+        $termino_corto = urlencode($titulo_limpio);
+        return $this->hacerPeticionItunes($termino_corto, 'album', 'cov');
+    }
+
+    private function buscarFotoArtistaEnItunes($nombre_artista) {
+        $termino = urlencode(trim($nombre_artista));
+        return $this->hacerPeticionItunes($termino, 'album', 'art');
     }
 
     public function insertar($post, $files) {
@@ -88,12 +101,28 @@ class ApiControlador {
             $acc = $post['accion'] ?? '';
             
             if ($acc === 'crear_artista') {
-                $foto = $this->subirArchivo($files['foto'] ?? null, 'artistas', 'art') ?? 'assets/uploads/artistas/default.jpg';
+                $foto = null;
+                if (!empty($files['foto']['name'])) {
+                    $foto = $this->subirArchivo($files['foto'], 'artistas', 'art');
+                } else {
+                    $foto = $this->buscarFotoArtistaEnItunes($post['nombre']);
+                }
+                $foto = $foto ?? 'assets/uploads/artistas/default.jpg';
                 return $this->db->crearArtista($post['nombre'], $foto);
             
             } elseif ($acc === 'crear_album') {
                 if (empty($post['artista_ids'])) throw new Exception("Faltan artistas");
-                $cover = $this->subirArchivo($files['caratula'] ?? null, 'caratulas', 'cov') ?? 'assets/uploads/caratulas/default.jpg';
+                
+                $cover = null;
+                if (!empty($files['caratula']['name'])) {
+                    $cover = $this->subirArchivo($files['caratula'], 'caratulas', 'cov');
+                } else {
+                    // CORRECCIÓN: Los artistas ya vienen como arreglo desde el formulario
+                    $nombres_artistas = $this->db->obtenerNombresArtistasPorIds($post['artista_ids']);
+                    $cover = $this->buscarCaratulaAlbumEnItunes($post['titulo'], $nombres_artistas);
+                }
+                $cover = $cover ?? 'assets/uploads/caratulas/default.jpg';
+                
                 return $this->db->crearAlbum($post['titulo'], $post['anio'] ?: null, $cover, $post['artista_ids']);
             
             } elseif ($acc === 'crear_playlist') {
@@ -107,7 +136,8 @@ class ApiControlador {
                 
                 $caratula_cancion = null;
                 if (empty($post['album_id'])) {
-                    $nombres_artistas = $this->db->obtenerNombresArtistasPorIds(explode(',', $post['artista_ids']));
+                    // CORRECCIÓN: Evitamos el 'explode' que rompía el PHP
+                    $nombres_artistas = $this->db->obtenerNombresArtistasPorIds($post['artista_ids']);
                     $caratula_cancion = $this->buscarCaratulaEnItunes($post['titulo'], $nombres_artistas);
                 }
                 
@@ -122,12 +152,11 @@ class ApiControlador {
             } elseif ($acc === 'procesar_portada_individual') {
                 $id = intval($post['cancion_id']);
                 $titulo = $post['titulo'];
-                $art_ids = $post['artista_ids'];
+                $art_ids = $post['artista_ids']; // Aquí sí llega como string de la base de datos
                 $nombres = $this->db->obtenerNombresArtistasPorIds(explode(',', $art_ids));
                 
                 $ruta_img = $this->buscarCaratulaEnItunes($titulo, $nombres);
                 
-                // Ahora devolvemos la ruta de la imagen para que JS la inyecte
                 if ($ruta_img) {
                     $this->db->actualizarCaratulaCancion($id, $ruta_img);
                     return ["actualizada" => true, "ruta" => $ruta_img];

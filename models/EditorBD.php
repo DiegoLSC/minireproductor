@@ -170,10 +170,14 @@ class EditorBD {
     }
     
     public function editarCancion($id, $titulo, $alb_id, $ruta, $duracion, $arts) {
+        // Lógica inteligente: Si se asigna un álbum, limpiamos la carátula individual 
+        // para que la base de datos herede automáticamente la carátula del Álbum.
+        $set_caratula = $alb_id ? ", caratula=NULL" : "";
+
         if($ruta) {
-            $this->pdo->prepare("UPDATE canciones SET titulo=?, album_id=?, ruta_archivo=?, duracion=? WHERE id=?")->execute([$titulo, $alb_id, $ruta, $duracion, $id]);
+            $this->pdo->prepare("UPDATE canciones SET titulo=?, album_id=?, ruta_archivo=?, duracion=? $set_caratula WHERE id=?")->execute([$titulo, $alb_id, $ruta, $duracion, $id]);
         } else {
-            $this->pdo->prepare("UPDATE canciones SET titulo=?, album_id=? WHERE id=?")->execute([$titulo, $alb_id, $id]);
+            $this->pdo->prepare("UPDATE canciones SET titulo=?, album_id=? $set_caratula WHERE id=?")->execute([$titulo, $alb_id, $id]);
         }
         
         $this->pdo->prepare("DELETE FROM cancion_artistas WHERE cancion_id=?")->execute([$id]);

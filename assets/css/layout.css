@@ -11,12 +11,51 @@
     padding: 32px; overflow-y: auto; height: 100%;
 }
 
-/* PLAYER BAR */
+/* assets/css/layout.css */
+
+/* PLAYER BAR (Contenedor relativo para el centrado absoluto del medio) */
 .player-bar {
     height: 90px; min-height: 90px;
     background-color: #0d0d0d;
     border-top: 1px solid var(--borde-carmesí);
     width: 100vw; padding: 0 32px; z-index: 1030;
+    position: relative !important; /* Marco de referencia obligatorio */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* ===================================================
+   ALINEACIÓN Y CENTRADO DE ESCRITORIO (MIN-WIDTH: 769px)
+   =================================================== */
+@media (min-width: 769px) {
+    /* BLOQUE CENTRAL: Botones de control y barra de progreso */
+    .player-bar > div:nth-child(2) {
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important; /* Centrado matemático perfecto */
+        width: 45% !important;
+        max-width: 580px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        z-index: 1035;
+        margin: 0 !important;
+    }
+
+    /* BLOQUE DERECHO: Control de volumen */
+    .player-bar > div:nth-child(3) {
+        margin-left: auto !important; /* Empuja el volumen limpiamente a la derecha */
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+    }
+
+    /* Ajuste fino de los botones laterales derechos para que queden pegados al volumen */
+    #btn-abrir-cola, #btn-abrir-letras {
+        margin-left: 20px !important;
+    }
 }
 
 /* =========================================
