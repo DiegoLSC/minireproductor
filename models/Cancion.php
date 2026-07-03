@@ -9,14 +9,13 @@ class Cancion {
     }
 
     public function obtenerTodas($orden = 'DESC') {
-        // Asegurarnos de que el orden sea seguro
         $orden = ($orden === 'ASC') ? 'ASC' : 'DESC';
 
         $query = "
             SELECT 
                 c.id, c.titulo, c.ruta_archivo, c.album_id, c.fecha_subida, c.duracion,
                 IFNULL(alb.titulo, 'Single / Sencillo') AS album, 
-                IFNULL(alb.caratula, 'assets/uploads/caratulas/default.jpg') AS caratula,
+                IFNULL(c.caratula, IFNULL(alb.caratula, 'assets/uploads/caratulas/default.jpg')) AS caratula,
                 
                 (SELECT GROUP_CONCAT(art.nombre SEPARATOR ', ') 
                  FROM cancion_artistas ca 

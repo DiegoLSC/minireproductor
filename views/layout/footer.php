@@ -470,6 +470,24 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modalConfirmarEscaneo" tabindex="-1" aria-hidden="true" style="z-index: 1095;">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger fw-bold m-0"><i class="bi bi-magic me-2"></i>Auto-Portadas</h5>
+                    <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p id="mensajeConfirmarEscaneo" class="fs-6 m-0"></p>
+                </div>
+                <div class="modal-footer p-2 d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-white fw-bold flex-grow-1 shadow-none" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger btn-sm fw-bold flex-grow-1 shadow-none" id="btnAceptarEscaneo">Sí, Buscar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="modalAlertaSistema" tabindex="-1" aria-hidden="true" style="z-index: 1100;">
         <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content text-white" style="background-color: var(--bg-superficie); border: 2px solid var(--sistema-carmesí);">
@@ -489,13 +507,38 @@
         </div>
     </div>
 
+    <!-- WIDGET FLOTANTE: PROGRESO DE AUTO-PORTADAS -->
+    <div id="widgetProgresoItunes" class="bg-dark text-white border border-danger rounded shadow-lg d-none" style="position: fixed; bottom: 20px; right: 20px; width: 320px; z-index: 9999;">
+        <div id="widgetProgresoItunesHeader" class="d-flex justify-content-between align-items-center p-2 border-bottom border-secondary" style="cursor: grab; background-color: #1a1111; border-top-left-radius: inherit; border-top-right-radius: inherit;">
+            <span class="fw-bold small text-danger"><i class="bi bi-magic me-2"></i>Buscando Portadas</span>
+            <div>
+                <button type="button" class="btn btn-sm btn-link text-white-50 hover-text-white p-0 shadow-none me-3" id="btnPausarEscaneo" title="Pausar">
+                    <i class="bi bi-pause-fill fs-5"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-link text-white-50 hover-text-white p-0 shadow-none" onclick="cerrarWidgetEscaneo()" title="Cerrar">
+                    <i class="bi bi-x-lg fs-6"></i>
+                </button>
+            </div>
+        </div>
+        <div class="p-3">
+            <div id="itunes-status-text" class="small mb-2 text-white-50 text-truncate">Preparando...</div>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span id="itunes-count" class="badge bg-secondary">0 / 0</span>
+                <span id="itunes-percent" class="small text-danger fw-bold">0%</span>
+            </div>
+            <div class="progress bg-black border border-secondary border-opacity-25" style="height: 10px;">
+                <div id="itunes-progress" class="progress-bar bg-danger progress-bar-striped progress-bar-animated" style="width: 0%;"></div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.4.0/dist/browser-id3-writer.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="assets/js/apiServices.js"></script>
-    <script src="assets/js/uiController.js?v=4"></script>
+    <script src="assets/js/uiController.js?v=<?php echo time(); ?>"></script>
     <script src="assets/js/audioEngine.js?v=<?php echo time(); ?>"></script>
     <script src="assets/js/main.js?v=<?php echo time(); ?>"></script>
-    <script src="assets/js/logsController.js?v=2"></script>
+    <script src="assets/js/logsController.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>

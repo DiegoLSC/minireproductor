@@ -1,7 +1,5 @@
 <?php
 // models/EditorBD.php
-
-// Requerimos el Logger para que esté disponible en toda la clase
 require_once __DIR__ . '/Logger.php';
 
 class EditorBD {
@@ -39,11 +37,9 @@ class EditorBD {
         $foto = $data['foto'] ?? null;
         $nombre = $data['nombre'] ?? 'Desconocido';
 
-        // SOFT DELETE: Cambiamos el estado a 0. No tocamos las tablas pivote para conservar el historial.
         $this->pdo->prepare("UPDATE artistas SET estado = 0 WHERE id=?")->execute([$id]);
-        
         Logger::registrar($this->pdo, 'ELIMINAR', 'artistas', $id, "Se eliminó lógicamente al artista '$nombre'.");
-        return $foto; // Se sigue retornando la ruta por consistencia, pero el controlador no la borrará físicamente.
+        return $foto; 
     }
 
     /* ================= ÁLBUMES ================= */
@@ -97,9 +93,7 @@ class EditorBD {
         $caratula = $data['caratula'] ?? null;
         $titulo = $data['titulo'] ?? 'Desconocido';
 
-        // SOFT DELETE: Cambiamos estado a 0. Mantenemos las canciones vinculadas y los pivotes para la restauración limpia.
         $this->pdo->prepare("UPDATE albumes SET estado = 0 WHERE id=?")->execute([$id]);
-        
         Logger::registrar($this->pdo, 'ELIMINAR', 'albumes', $id, "Se eliminó lógicamente el álbum '$titulo'.");
         return $caratula;
     }
@@ -127,22 +121,15 @@ class EditorBD {
         $stmt->execute([$id]); 
         $nombre = $stmt->fetchColumn() ?: 'Desconocida';
 
-        // SOFT DELETE: Cambiamos estado a 0. Preservamos las canciones dentro de playlist_canciones.
         $this->pdo->prepare("UPDATE playlists SET estado = 0 WHERE id=?")->execute([$id]);
-        
         Logger::registrar($this->pdo, 'ELIMINAR', 'playlists', $id, "Se eliminó lógicamente la playlist '$nombre'.");
     }
     
     public function agregarAPlaylist($pl_id, $can_id) {
-        // 1. Verificar si hay duplicado
         $check = $this->pdo->prepare("SELECT COUNT(*) FROM playlist_canciones WHERE playlist_id = ? AND cancion_id = ?");
         $check->execute([$pl_id, $can_id]);
-        
-        if ($check->fetchColumn() > 0) {
-            throw new Exception("duplicada"); 
-        }
+        if ($check->fetchColumn() > 0) throw new Exception("duplicada"); 
 
-        // 2. Obtener nombres reales para el log
         $stmtCan = $this->pdo->prepare("SELECT titulo FROM canciones WHERE id = ?");
         $stmtCan->execute([$can_id]);
         $titulo_cancion = $stmtCan->fetchColumn() ?: "Canción Desconocida";
@@ -151,15 +138,11 @@ class EditorBD {
         $stmtPl->execute([$pl_id]);
         $nombre_playlist = $stmtPl->fetchColumn() ?: "Playlist Desconocida";
 
-        // 3. Insertar
         $this->pdo->prepare("INSERT INTO playlist_canciones (playlist_id, cancion_id) VALUES (?, ?)")->execute([$pl_id, $can_id]);
-        
-        // 4. Registrar con nombres
         Logger::registrar($this->pdo, 'EDITAR', 'playlist_canciones', $pl_id, "Se vinculó la pista '$titulo_cancion' a la playlist '$nombre_playlist'.");
     }
     
     public function quitarDePlaylist($pl_id, $can_id) {
-        // 1. Obtener nombres reales para el log ANTES de borrar
         $stmtCan = $this->pdo->prepare("SELECT titulo FROM canciones WHERE id = ?");
         $stmtCan->execute([$can_id]);
         $titulo_cancion = $stmtCan->fetchColumn() ?: "Canción Desconocida";
@@ -168,16 +151,13 @@ class EditorBD {
         $stmtPl->execute([$pl_id]);
         $nombre_playlist = $stmtPl->fetchColumn() ?: "Playlist Desconocida";
 
-        // 2. Eliminar la relación física
         $this->pdo->prepare("DELETE FROM playlist_canciones WHERE playlist_id=? AND cancion_id=?")->execute([$pl_id, $can_id]);
-        
-        // 3. Registrar con nombres
         Logger::registrar($this->pdo, 'EDITAR', 'playlist_canciones', $pl_id, "Se desvinculó la pista '$titulo_cancion' de la playlist '$nombre_playlist'.");
     }
 
-    /* ================= CANCIONES ================= */
-    public function subirCancion($titulo, $alb_id, $ruta, $duracion, $arts) {
-        $this->pdo->prepare("INSERT INTO canciones (album_id, titulo, ruta_archivo, duracion) VALUES (?, ?, ?, ?)")->execute([$alb_id, $titulo, $ruta, $duracion]);
+    /* ================= CANCIONES Y ITUNES ================= */
+    public function subirCancion($titulo, $alb_id, $ruta, $duracion, $arts, $caratula = null) {
+        $this->pdo->prepare("INSERT INTO canciones (album_id, titulo, ruta_archivo, duracion, caratula) VALUES (?, ?, ?, ?, ?)")->execute([$alb_id, $titulo, $ruta, $duracion, $caratula]);
         $id = $this->pdo->lastInsertId();
         
         $stmt = $this->pdo->prepare("INSERT INTO cancion_artistas (cancion_id, artist_id) VALUES (?, ?)");
@@ -209,7 +189,7 @@ class EditorBD {
     private function obtenerDetallesCancion($id) {
         $query = "SELECT c.id, c.titulo, c.ruta_archivo, c.album_id, c.fecha_subida, c.duracion,
                   IFNULL(alb.titulo, 'Single / Sencillo') AS album,
-                  IFNULL(alb.caratula, 'assets/uploads/caratulas/default.jpg') AS caratula,
+                  IFNULL(c.caratula, IFNULL(alb.caratula, 'assets/uploads/caratulas/default.jpg')) AS caratula,
                   (SELECT GROUP_CONCAT(art.nombre SEPARATOR ', ') FROM cancion_artistas ca INNER JOIN artistas art ON ca.artist_id = art.id WHERE ca.cancion_id = c.id) AS artistas_nombres,
                   (SELECT GROUP_CONCAT(art.id SEPARATOR ',') FROM cancion_artistas ca INNER JOIN artistas art ON ca.artist_id = art.id WHERE ca.cancion_id = c.id) AS artistas_ids,
                   IFNULL((SELECT GROUP_CONCAT(pl.nombre SEPARATOR ', ') FROM playlist_canciones plc INNER JOIN playlists pl ON plc.playlist_id = pl.id WHERE plc.cancion_id = c.id), '') AS playlists_nombres
@@ -223,26 +203,42 @@ class EditorBD {
         $stmt = $this->pdo->prepare("SELECT ruta_archivo, titulo FROM canciones WHERE id=?"); 
         $stmt->execute([$id]); 
         $data = $stmt->fetch();
-        $archivo = $data['ruta_archivo'] ?? null;
-        $titulo = $data['titulo'] ?? 'Desconocida';
-
-        // SOFT DELETE: Pasamos el estado de la canción a 0. No eliminamos relaciones físicas.
-        $this->pdo->prepare("UPDATE canciones SET estado = 0 WHERE id=?")->execute([$id]);
         
-        Logger::registrar($this->pdo, 'ELIMINAR', 'canciones', $id, "Se eliminó lógicamente la canción '$titulo'.");
-        return $archivo;
+        $this->pdo->prepare("UPDATE canciones SET estado = 0 WHERE id=?")->execute([$id]);
+        Logger::registrar($this->pdo, 'ELIMINAR', 'canciones', $id, "Se eliminó lógicamente la canción '{$data['titulo']}'.");
+        return $data['ruta_archivo'] ?? null;
+    }
+
+    // Funciones Helper para el escáner de iTunes
+    public function obtenerNombresArtistasPorIds($ids) {
+        if (empty($ids)) return "";
+        $in = str_repeat('?,', count($ids) - 1) . '?';
+        $stmt = $this->pdo->prepare("SELECT nombre FROM artistas WHERE id IN ($in)");
+        $stmt->execute($ids);
+        $nombres = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        return implode(' ', $nombres);
+    }
+
+    public function obtenerCancionesSinCaratula() {
+        $query = "SELECT c.id, c.titulo, 
+                  (SELECT GROUP_CONCAT(artist_id) FROM cancion_artistas WHERE cancion_id = c.id) as artista_ids
+                  FROM canciones c 
+                  WHERE c.album_id IS NULL AND (c.caratula IS NULL OR c.caratula = '') AND c.estado = 1";
+        return $this->pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function actualizarCaratulaCancion($id, $caratula) {
+        $this->pdo->prepare("UPDATE canciones SET caratula = ? WHERE id = ?")->execute([$caratula, $id]);
     }
 
     /* ================= BACKUP ================= */
     public function exportarBaseDatos() {
-        // Mantenemos el SELECT * para que el Backup salve también los elementos inactivos (estado = 0)
         $tablas = ['canciones', 'artistas', 'albumes', 'playlists', 'playlist_canciones', 'cancion_artistas', 'albumes_artistas'];
         $db_data = [];
         foreach($tablas as $tabla) {
             $stmt = $this->pdo->query("SELECT * FROM $tabla");
             $db_data[$tabla] = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
-        
         Logger::registrar($this->pdo, 'EXPORTAR', 'sistema', null, "Se generó un backup de toda la base de datos.");
         return $db_data;
     }

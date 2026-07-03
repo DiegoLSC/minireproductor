@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="assets/css/base.css" rel="stylesheet">
     <link href="assets/css/layout.css?v=<?php echo time(); ?>" rel="stylesheet">
-    <link href="assets/css/components.css" rel="stylesheet">
+    <link href="assets/css/components.css?v=<?php echo time(); ?>" rel="stylesheet">
 </head>
 <body>
     <div id="pantalla-carga" class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center flex-column" style="background-color: #050505; z-index: 1060; transition: opacity 0.5s ease, visibility 0.5s ease;">
@@ -30,14 +30,11 @@
             
             <div class="sidebar" id="sidebar">
                 
-                <!-- NUEVO ENCABEZADO CON HAMBURGUESA Y ANIMACIÓN ARMONIOSA -->
                 <div class="d-flex align-items-center mb-4 mt-2 px-2" style="height: 38px;">
-                    <!-- Botón Hamburguesa SIEMPRE visible -->
                     <button type="button" class="btn text-secondary border-0 p-0 shadow-none hover-scale d-flex align-items-center justify-content-center flex-shrink-0" onclick="toggleSidebar()" title="Alternar Menú" style="width: 38px; height: 38px;">
                         <i class="bi bi-list text-white-50 hover-text-white" style="font-size: 1.8rem;"></i>
                     </button>
                     
-                    <!-- Logo y Texto que se contraen -->
                     <div class="d-flex align-items-center flex-grow-1 ms-2 ocultar-al-contraer overflow-hidden" onclick="window.location='index.php'" style="cursor:pointer;">
                         <i class="bi bi-music-note-beamed text-danger fs-4 me-2 flex-shrink-0"></i>
                         <span class="fw-bold text-white fs-5 text-truncate" style="letter-spacing: 0.5px;">NebulaPlayer</span>
@@ -63,6 +60,12 @@
                     <button class="btn btn-danger btn-sm rounded-pill text-center fw-bold shadow-sm d-flex align-items-center justify-content-center mx-2 py-2 mb-2" data-bs-toggle="modal" data-bs-target="#cancionModal">
                         <i class="bi bi-cloud-upload-fill me-2 fs-6 text-white"></i>
                         <span class="ocultar-al-contraer">Subir Canción</span>
+                    </button>
+                    
+                    <!-- BOTÓN AUTO-PORTADAS INTEGRADO AL ESTILO -->
+                    <button type="button" class="btn btn-outline-secondary border-opacity-25 btn-sm rounded-pill fw-medium d-flex align-items-center justify-content-center mx-2 mb-2 text-secondary hover-bg-carmesi" onclick="iniciarEscaneoItunes()" title="Buscar Portadas de Sencillos">
+                        <i class="bi bi-magic me-2"></i>
+                        <span class="ocultar-al-contraer">Auto-Portadas</span>
                     </button>
                     
                     <div class="d-flex gap-2 mx-2 mt-1">

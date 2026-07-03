@@ -5,10 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
     inicializarControlesNativos();
     restaurarSesion();
 
-    // ==========================================
-    // LIMPIEZA DE MODALES AL CERRAR
-    // ==========================================
-
     const modalSubir = document.getElementById('cancionModal');
     if (modalSubir) {
         modalSubir.addEventListener('hidden.bs.modal', function () {
@@ -30,10 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('album_artist_results').style.display = 'none';
         });
     }
-
-    // ==========================================
-    // ESTRUCTURA Y COMPORTAMIENTO UI
-    // ==========================================
 
     const sidebar = document.getElementById('sidebar');
     if (sidebar && window.innerWidth > 768 && localStorage.getItem('sidebarContraido') === 'true') {
@@ -81,7 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loader.style.opacity = '0'; 
             setTimeout(() => { 
                 loader.style.visibility = 'hidden'; 
-                // Forzar el enfoque en el buscador una vez que el loader desaparece
                 const buscador = document.getElementById('buscadorInput');
                 if (buscador) buscador.focus();
             }, 500);
@@ -99,11 +90,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // LISTENER PARA EL NUEVO MODAL DE ESCANEO
+    const btnAceptarEscaneo = document.getElementById('btnAceptarEscaneo');
+    if (btnAceptarEscaneo) {
+        btnAceptarEscaneo.addEventListener('click', () => {
+            const modalEl = document.getElementById('modalConfirmarEscaneo');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) modalInstance.hide();
+            
+            ejecutarEscaneoItunesEnLote();
+        });
+    }
 });
 
-// ==========================================
-// ATAJOS DE TECLADO Y CONTROLES
-// ==========================================
 document.addEventListener('keydown', function(event) {
     const elementoActivo = document.activeElement.tagName;
     if (elementoActivo === 'INPUT' || elementoActivo === 'TEXTAREA' || elementoActivo === 'SELECT') return;
@@ -139,7 +139,6 @@ function restaurarSesion() {
     const audio = document.getElementById('audio-player');
     const volumeSlider = document.getElementById('volume-slider');
 
-    // 1. Restaurar el Volumen
     const volGuardado = localStorage.getItem('nebula_volumen');
     const muteGuardado = localStorage.getItem('nebula_muted');
 
@@ -158,7 +157,6 @@ function restaurarSesion() {
         actualizarIconoVolumen(true, 0);
     }
 
-    // 2. Restaurar la Canción
     const rutaGuardada = localStorage.getItem('nebula_track_ruta');
     if (rutaGuardada) {
         const titulo = localStorage.getItem('nebula_track_titulo');
@@ -192,7 +190,6 @@ function restaurarSesion() {
         });
         actualizarPantallaBloqueo(titulo, artista, 'NebulaPlayer', caratula);
 
-        // Resaltar en la tabla
         document.querySelectorAll('.target-row').forEach(fila => {
             fila.classList.remove('bg-dark-subtle', 'border-start', 'border-danger');
             const textoTitulo = fila.querySelector('.title-col span');
@@ -208,9 +205,6 @@ function restaurarSesion() {
     }
 }
 
-// ==========================================
-// CONTROL DE VOLUMEN (CON PERSISTENCIA)
-// ==========================================
 function toggleMute() {
     const reproductor = document.getElementById('audio-player');
     const volumeSlider = document.getElementById('volume-slider');
@@ -305,7 +299,6 @@ async function eliminarProcedimientoAsincrono(tipo, id, elementoVisual) {
                         recalcularIndicesTabla();
                         if (typeof filtrarBiblioteca === 'function') {
                             filtrarBiblioteca();
-                            // Sincronizar cola en tiempo real tras eliminar
                             if (typeof actualizarColaReproduccion === 'function') {
                                 actualizarColaReproduccion();
                                 const panel = document.getElementById('colaPanel');
@@ -875,7 +868,6 @@ function inyectarCancionDOM(c) {
     recalcularIndicesTabla();
     if (typeof filtrarBiblioteca === 'function') {
         filtrarBiblioteca();
-        // Sincronizar cola en tiempo real
         if (typeof actualizarColaReproduccion === 'function') {
             actualizarColaReproduccion();
             const panel = document.getElementById('colaPanel');
@@ -972,7 +964,6 @@ function actualizarCancionDOM(c) {
 
     if (typeof filtrarBiblioteca === 'function') {
         filtrarBiblioteca();
-        // Sincronizar cola en tiempo real
         if (typeof actualizarColaReproduccion === 'function') {
             actualizarColaReproduccion();
             const panel = document.getElementById('colaPanel');
@@ -1171,3 +1162,197 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// ==========================================
+// MOTOR DE BÚSQUEDA DE CARÁTULAS (iTUNES) - WIDGET FLOTANTE
+// ==========================================
+
+let _cancionesParaEscanearItunes = [];
+window._escaneoItunesActivo = false;
+window._indiceEscaneoItunes = 0;
+window._actualizadasItunes = 0;
+
+// Inicializador del Drag and Drop (Arrastre)
+document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('widgetProgresoItunes');
+    const header = document.getElementById('widgetProgresoItunesHeader');
+    if (!el || !header) return;
+    
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    header.onmousedown = (e) => {
+        e.preventDefault();
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = () => {
+            document.onmouseup = null;
+            document.onmousemove = null;
+            header.style.cursor = "grab";
+        };
+        document.onmousemove = (e) => {
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            el.style.top = (el.offsetTop - pos2) + "px";
+            el.style.left = (el.offsetLeft - pos1) + "px";
+            el.style.bottom = "auto";
+            el.style.right = "auto";
+        };
+        header.style.cursor = "grabbing";
+    };
+});
+
+function cerrarWidgetEscaneo() {
+    window._escaneoItunesActivo = false;
+    document.getElementById('widgetProgresoItunes').classList.add('d-none');
+}
+
+async function iniciarEscaneoItunes() {
+    const toastEl = document.getElementById('backupToast');
+    const toastBody = document.getElementById('backupToastMensaje');
+    const toast = new bootstrap.Toast(toastEl, { autohide: true });
+
+    toastBody.innerHTML = `<span class="spinner-border spinner-border-sm text-secondary me-2" role="status"></span> Analizando biblioteca...`;
+    toast.show();
+
+    try {
+        const formData = new FormData();
+        formData.append('accion', 'obtener_sencillos_sin_portada');
+        
+        const req = await fetch('api/insertar_elementos.php', { method: 'POST', body: formData });
+        const res = await req.json();
+
+        if (res.status !== 'success') throw new Error(res.message);
+        
+        _cancionesParaEscanearItunes = res.data;
+        if (_cancionesParaEscanearItunes.length === 0) {
+            toastBody.innerHTML = `<i class="bi bi-check-circle-fill text-success fs-5 me-2"></i> Todos tus sencillos ya tienen portada.`;
+            setTimeout(() => bootstrap.Toast.getInstance(toastEl).hide(), 3000);
+            return;
+        }
+
+        // Ocultar toast y abrir confirmación
+        bootstrap.Toast.getInstance(toastEl).hide();
+        document.getElementById('mensajeConfirmarEscaneo').innerText = `Se encontraron ${_cancionesParaEscanearItunes.length} sencillos sin portada.\n\n¿Deseas iniciar la búsqueda automática en Apple Music?`;
+        
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmarEscaneo'));
+        modal.show();
+
+    } catch (error) {
+        console.error(error);
+        toastBody.innerHTML = `<i class="bi bi-x-circle-fill text-danger fs-5 me-2"></i> Error al conectar con el servidor.`;
+    }
+}
+
+async function ejecutarEscaneoItunesEnLote() {
+    const total = _cancionesParaEscanearItunes.length;
+    if (total === 0) return;
+
+    // Resetear variables si el escaneo empieza de cero tras haber terminado
+    if (window._indiceEscaneoItunes >= total) {
+        window._indiceEscaneoItunes = 0;
+        window._actualizadasItunes = 0;
+    }
+
+    window._escaneoItunesActivo = true;
+
+    // Mostrar Widget
+    const widget = document.getElementById('widgetProgresoItunes');
+    const statusText = document.getElementById('itunes-status-text');
+    const progress = document.getElementById('itunes-progress');
+    const count = document.getElementById('itunes-count');
+    const percent = document.getElementById('itunes-percent');
+    const btnPausar = document.getElementById('btnPausarEscaneo');
+
+    widget.classList.remove('d-none');
+    btnPausar.classList.remove('d-none');
+    progress.classList.add('progress-bar-animated');
+    
+    // Configurar Botón Pausar/Reanudar
+    btnPausar.innerHTML = '<i class="bi bi-pause-fill fs-5"></i>';
+    btnPausar.title = "Pausar";
+    btnPausar.onclick = () => {
+        window._escaneoItunesActivo = false;
+        btnPausar.innerHTML = '<i class="bi bi-play-fill fs-5"></i>';
+        btnPausar.title = "Reanudar";
+        statusText.innerHTML = "<span class='text-warning'><i class='bi bi-pause-circle me-1'></i>Pausado. Haz clic en 'Play' para continuar.</span>";
+        progress.classList.remove('progress-bar-animated');
+        btnPausar.onclick = ejecutarEscaneoItunesEnLote; // Al re-clicar, llama a esta misma función para seguir donde se quedó
+    };
+
+    // Bucle de Escaneo
+    for (let i = window._indiceEscaneoItunes; i < total; i++) {
+        if (!window._escaneoItunesActivo) return; // Si pausamos, se rompe el bucle silenciosamente
+
+        const cancion = _cancionesParaEscanearItunes[i];
+        window._indiceEscaneoItunes = i; // Guardamos el progreso
+        
+        statusText.innerHTML = `Buscando: <span class="fw-bold">${cancion.titulo}</span>...`;
+
+        const fd = new FormData();
+        fd.append('accion', 'procesar_portada_individual');
+        fd.append('cancion_id', cancion.id);
+        fd.append('titulo', cancion.titulo);
+        fd.append('artista_ids', cancion.artista_ids);
+
+        try {
+            const scanReq = await fetch('api/insertar_elementos.php', { method: 'POST', body: fd });
+            const scanRes = await scanReq.json();
+
+            if (scanRes.status === 'success' && scanRes.data.actualizada) {
+                window._actualizadasItunes++;
+                const nuevaRuta = scanRes.data.ruta;
+                
+                // Inyectar en el DOM en vivo
+                const tr = document.getElementById('fila_cancion_' + cancion.id);
+                if (tr) {
+                    tr.setAttribute('data-caratula', nuevaRuta);
+                    const container = tr.querySelector('.title-col .d-flex');
+                    if (container) {
+                        let divFallback = container.querySelector('.bg-secondary');
+                        if (divFallback) {
+                            const newImg = document.createElement('img');
+                            newImg.src = nuevaRuta;
+                            newImg.className = 'album-img';
+                            newImg.alt = 'Cover';
+                            newImg.loading = 'lazy';
+                            divFallback.replaceWith(newImg);
+                        }
+                    }
+                    
+                    if (window.rutaEnReproduccion === tr.getAttribute('data-ruta')) {
+                        const currentCover = document.getElementById('current-cover');
+                        const iconContainer = document.getElementById('player-icon-container');
+                        if (currentCover && iconContainer) {
+                            currentCover.src = nuevaRuta;
+                            currentCover.classList.remove('d-none');
+                            iconContainer.classList.add('d-none');
+                            if ('mediaSession' in navigator) {
+                                actualizarPantallaBloqueo(tr.getAttribute('data-titulo'), tr.getAttribute('data-artista'), 'Single', nuevaRuta);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Error al buscar:", cancion.id);
+        }
+
+        window._indiceEscaneoItunes++; // Se logró procesar
+        const procesadas = window._indiceEscaneoItunes;
+        const porcentajeVal = Math.round((procesadas / total) * 100);
+        
+        progress.style.width = porcentajeVal + '%';
+        percent.innerText = porcentajeVal + '%';
+        count.innerText = `${procesadas} / ${total}`;
+    }
+
+    // Finalización exitosa
+    if (window._indiceEscaneoItunes >= total) {
+        window._escaneoItunesActivo = false;
+        progress.classList.remove('progress-bar-animated');
+        btnPausar.classList.add('d-none'); 
+        statusText.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>¡Finalizado! ${window._actualizadasItunes} portadas nuevas encontradas.</span>`;
+    }
+}

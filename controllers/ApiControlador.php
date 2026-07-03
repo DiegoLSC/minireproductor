@@ -9,7 +9,6 @@ class ApiControlador {
         $this->db = new EditorBD($pdo); 
     }
 
-    // Unificador mágico para subir imágenes y mp3 a sus carpetas correctas
     private function subirArchivo($file, $carpeta, $prefijo, $exts_validas = null) {
         if (empty($file['name'])) return null;
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
@@ -28,7 +27,6 @@ class ApiControlador {
         }
     }
 
-    // Reemplazar ejecutarYResponder
     private function ejecutarYResponder($funcionSQL) {
         try {
             $dataPayload = $funcionSQL();
@@ -40,27 +38,101 @@ class ApiControlador {
         exit;
     }
 
-    // Actualizar retornos en insertar() y editar()
+    // ================= MOTOR ITUNES (MEJORADO CON PLAN B) =================
+    private function buscarCaratulaEnItunes($titulo, $artistas) {
+        // Limpiar título de palabras que confunden a iTunes (feat, videoclip, etc.)
+        $titulo_limpio = trim(preg_replace('/\(.*?\)|\[.*?\]|- .*/', '', $titulo));
+        
+        // Plan A: Buscar Título + Artista
+        $termino_completo = urlencode($titulo_limpio . ' ' . str_replace(',', ' ', $artistas));
+        $ruta = $this->hacerPeticionItunes($termino_completo);
+        
+        if ($ruta) return $ruta;
+
+        // Plan B: Si falló, buscar SOLO por el título limpio
+        $termino_corto = urlencode($titulo_limpio);
+        return $this->hacerPeticionItunes($termino_corto);
+    }
+
+    private function hacerPeticionItunes($termino) {
+        $url = "https://itunes.apple.com/search?term={$termino}&media=music&entity=song&limit=1";
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'NebulaPlayer/1.0'); 
+        $response = curl_exec($ch);
+        curl_close($ch);
+        
+        if ($response) {
+            $data = json_decode($response, true);
+            if (!empty($data['results']) && isset($data['results'][0]['artworkUrl100'])) {
+                // Forzar resolución a 600x600 px nativos de Apple
+                $imgUrl = str_replace('100x100bb', '600x600bb', $data['results'][0]['artworkUrl100']);
+                
+                $imgData = @file_get_contents($imgUrl);
+                if ($imgData) {
+                    if (!is_dir('../assets/uploads/caratulas')) mkdir('../assets/uploads/caratulas', 0777, true);
+                    $nombre = 'cov_auto_' . time() . '_' . rand(1000,9999) . '.jpg';
+                    $ruta = '../assets/uploads/caratulas/' . $nombre;
+                    file_put_contents($ruta, $imgData);
+                    return 'assets/uploads/caratulas/' . $nombre;
+                }
+            }
+        }
+        return null;
+    }
+
     public function insertar($post, $files) {
         $this->ejecutarYResponder(function() use ($post, $files) {
             $acc = $post['accion'] ?? '';
+            
             if ($acc === 'crear_artista') {
                 $foto = $this->subirArchivo($files['foto'] ?? null, 'artistas', 'art') ?? 'assets/uploads/artistas/default.jpg';
                 return $this->db->crearArtista($post['nombre'], $foto);
+            
             } elseif ($acc === 'crear_album') {
                 if (empty($post['artista_ids'])) throw new Exception("Faltan artistas");
                 $cover = $this->subirArchivo($files['caratula'] ?? null, 'caratulas', 'cov') ?? 'assets/uploads/caratulas/default.jpg';
                 return $this->db->crearAlbum($post['titulo'], $post['anio'] ?: null, $cover, $post['artista_ids']);
+            
             } elseif ($acc === 'crear_playlist') {
                 $cover = $this->subirArchivo($files['caratula'] ?? null, 'caratulas', 'pl') ?? 'assets/uploads/caratulas/default.jpg';
                 return $this->db->crearPlaylist($post['nombre'], $post['descripcion'], $cover);
+            
             } elseif ($acc === 'subir_cancion') {
                 if (empty($post['artista_ids'])) throw new Exception("Faltan artistas");
                 if (empty($files['archivo_mp3']['name'])) throw new Exception("Falta archivo MP3.");
                 $ruta = $this->subirArchivo($files['archivo_mp3'], 'musica', 'trk', ['mp3']);
-                return $this->db->subirCancion($post['titulo'], $post['album_id'] ?: null, $ruta, $post['duracion'] ?? 0, $post['artista_ids']);
+                
+                $caratula_cancion = null;
+                if (empty($post['album_id'])) {
+                    $nombres_artistas = $this->db->obtenerNombresArtistasPorIds(explode(',', $post['artista_ids']));
+                    $caratula_cancion = $this->buscarCaratulaEnItunes($post['titulo'], $nombres_artistas);
+                }
+                
+                return $this->db->subirCancion($post['titulo'], $post['album_id'] ?: null, $ruta, $post['duracion'] ?? 0, $post['artista_ids'], $caratula_cancion);
+            
             } elseif ($acc === 'agregar_a_playlist') {
                 return $this->db->agregarAPlaylist($post['playlist_id'], $post['cancion_id']);
+            
+            } elseif ($acc === 'obtener_sencillos_sin_portada') {
+                return $this->db->obtenerCancionesSinCaratula();
+                
+            } elseif ($acc === 'procesar_portada_individual') {
+                $id = intval($post['cancion_id']);
+                $titulo = $post['titulo'];
+                $art_ids = $post['artista_ids'];
+                $nombres = $this->db->obtenerNombresArtistasPorIds(explode(',', $art_ids));
+                
+                $ruta_img = $this->buscarCaratulaEnItunes($titulo, $nombres);
+                
+                // Ahora devolvemos la ruta de la imagen para que JS la inyecte
+                if ($ruta_img) {
+                    $this->db->actualizarCaratulaCancion($id, $ruta_img);
+                    return ["actualizada" => true, "ruta" => $ruta_img];
+                }
+                return ["actualizada" => false];
             }
         });
     }
@@ -69,6 +141,7 @@ class ApiControlador {
         $this->ejecutarYResponder(function() use ($post, $files) {
             $acc = $post['accion'] ?? '';
             $id = intval($post['id']);
+            
             if ($acc === 'editar_artista') {
                 $foto = $this->subirArchivo($files['foto'] ?? null, 'artistas', 'art');
                 return $this->db->editarArtista($id, $post['nombre'], $foto);
@@ -93,8 +166,6 @@ class ApiControlador {
             $tabla = $get['tabla'] ?? '';
             $id = intval($get['id'] ?? 0);
             
-            // SOFT DELETE ACTIVO: Ya no usamos $this->borrarArchivoFisico() 
-            // Conservamos los mp3 y portadas en el servidor por si se desea restaurar.
             if ($tabla === 'cancion') $this->db->eliminarCancion($id);
             elseif ($tabla === 'artista') $this->db->eliminarArtista($id);
             elseif ($tabla === 'album') $this->db->eliminarAlbum($id);
@@ -112,11 +183,8 @@ class ApiControlador {
         try {
             switch ($accion) {
                 case 'estado':
-                    if (file_exists($archivo_estado)) {
-                        echo file_get_contents($archivo_estado);
-                    } else {
-                        echo json_encode(["estado" => "inactivo"]);
-                    }
+                    if (file_exists($archivo_estado)) echo file_get_contents($archivo_estado);
+                    else echo json_encode(["estado" => "inactivo"]);
                     exit;
 
                 case 'limpiar':
@@ -125,27 +193,19 @@ class ApiControlador {
                     exit;
 
                 case 'iniciar':
-                    // 1. Configuraciones críticas
                     ignore_user_abort(true);
                     set_time_limit(0); 
                     ini_set('memory_limit', '512M'); 
-
                     file_put_contents($archivo_estado, json_encode(["estado" => "procesando"]));
-
-                    // 2. Pedimos los datos al Modelo
                     $db_data = $this->db->exportarBaseDatos();
                     file_put_contents($archivo_db, json_encode($db_data, JSON_PRETTY_PRINT));
 
-                    // 3. Crear el ZIP (APUNTANDO A ASSETS)
                     $zip = new ZipArchive();
                     if ($zip->open($archivo_zip, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
-                        
                         $zip->addFile($archivo_db, 'configuracion_y_datos.json');
-                        
-                        $dir_uploads = '../assets/uploads'; // <-- Ruta nueva
+                        $dir_uploads = '../assets/uploads'; 
                         if (is_dir($dir_uploads)) {
                             $archivos = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir_uploads), RecursiveIteratorIterator::LEAVES_ONLY);
-                            
                             foreach ($archivos as $name => $file) {
                                 if (!$file->isDir()) {
                                     $ruta_fisica = $file->getRealPath();
