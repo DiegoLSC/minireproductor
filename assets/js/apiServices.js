@@ -15,7 +15,12 @@ function enviarFormularioAsincrono(event, urlApi) {
     const formData = new FormData(formulario);
 
     fetch(urlApi, { method: 'POST', body: formData })
-        .then(response => response.json())
+        .then(async response => {
+            const texto = await response.text();
+            console.log("Respuesta del servidor:");
+            console.log(texto);
+            return JSON.parse(texto);
+        })
         .then(data => {
             if (data.status === 'success') {
                 const modalActivo = document.querySelector('.modal.show');

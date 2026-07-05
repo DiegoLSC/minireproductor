@@ -190,7 +190,7 @@ class EditorBD {
         return $this->obtenerDetallesCancion($id);
     }
 
-    private function obtenerDetallesCancion($id) {
+    public function obtenerDetallesCancion($id) {
         $query = "SELECT c.id, c.titulo, c.ruta_archivo, c.album_id, c.fecha_subida, c.duracion,
                   IFNULL(alb.titulo, 'Single / Sencillo') AS album,
                   IFNULL(c.caratula, IFNULL(alb.caratula, 'assets/uploads/caratulas/default.jpg')) AS caratula,

@@ -46,6 +46,8 @@
                         data-artista="<?= htmlspecialchars($c['artistas_nombres']) ?>"
                         data-caratula="<?= $c['caratula'] ?>"
                         data-fecha="<?= $c['fecha_subida'] ?>"
+                        data-album-id="<?= $c['album_id'] ?? '' ?>"
+                        data-artistas-ids="<?= $c['artistas_ids'] ?? '' ?>"
                         onclick="reproducirDesdeFila(this)">
                     
                         <td class="text-secondary"><?= $index + 1 ?></td>
@@ -80,9 +82,12 @@
                         <td class="artist-col" onclick="event.stopPropagation();">
                             <?php 
                             $artistas_lista = explode(', ', $c['artistas_nombres'] ?? 'Artista Desconocido');
+                            $artistas_ids_lista = explode(',', $c['artistas_ids'] ?? '');
                             foreach($artistas_lista as $i => $nom_art): 
+                                $id_art = $artistas_ids_lista[$i] ?? '';
                             ?>
                                 <a href="#" 
+                                data-artista-id="<?= htmlspecialchars($id_art) ?>"
                                 onclick="document.getElementById('buscadorInput').value='<?= htmlspecialchars(addslashes($nom_art)) ?>'; filtrarBiblioteca(); return false;" 
                                 class="text-info text-decoration-none hover-underline">
                                     <?= htmlspecialchars($nom_art) ?>
@@ -163,4 +168,4 @@
                 </ul>
         </nav>
     </div>
-                            </div>
+</div>
