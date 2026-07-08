@@ -59,8 +59,10 @@ function filtrarBiblioteca() {
         const artistas = quitarTildes(fila.querySelector('.artist-col').innerText.toLowerCase());
         const playlistsAsociadas = quitarTildes(fila.getAttribute('data-playlists').toLowerCase());
         
-        const coincideTexto = titulo.includes(textoFiltro) || album.includes(textoFiltro) || artistas.includes(textoFiltro) || playlistsAsociadas.includes(textoFiltro);
+        // CORRECCIÓN: Ahora el texto del buscador solo escanea Título, Álbum y Artistas.
+        const coincideTexto = titulo.includes(textoFiltro) || album.includes(textoFiltro) || artistas.includes(textoFiltro);
         
+        // El filtro de la playlist se mantiene estrictamente aislado para el menú lateral
         const coincidePlaylist = (filtroPlaylistActivo === "") || playlistsAsociadas.includes(quitarTildes(filtroPlaylistActivo.toLowerCase()));
         
         if (coincideTexto && coincidePlaylist) filasFiltradasGlobal.push(fila);

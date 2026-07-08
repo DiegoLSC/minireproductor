@@ -134,14 +134,14 @@
                                     <li>
                                         <button type="button" class="dropdown-item text-white rounded small py-1.5" data-bs-toggle="modal" data-bs-target="#editCancionModal" 
                                             onclick="
-                                                cargarModalCancion(<?= $c['id'] ?>, '<?= addslashes($c['titulo']) ?>', '<?= $c['album_id'] ?? '' ?>', <?= $c['duracion'] ?? 0 ?>, '<?= addslashes($c['ruta_archivo'] ?? '') ?>'); 
-                                                cargarEtiquetasEdicion('<?= $c['artistas_ids'] ?? '' ?>', '<?= addslashes($c['artistas_nombres'] ?? '') ?>');
+                                                cargarModalCancion(<?= $c['id'] ?>, '<?= htmlspecialchars(addslashes($c['titulo']), ENT_QUOTES, 'UTF-8') ?>', '<?= $c['album_id'] ?? '' ?>', <?= $c['duracion'] ?? 0 ?>, '<?= htmlspecialchars(addslashes($c['ruta_archivo'] ?? ''), ENT_QUOTES, 'UTF-8') ?>'); 
+                                                cargarEtiquetasEdicion('<?= $c['artistas_ids'] ?? '' ?>', '<?= htmlspecialchars(addslashes($c['artistas_nombres'] ?? ''), ENT_QUOTES, 'UTF-8') ?>');
                                             ">
                                             <i class="bi bi-pencil me-2 text-warning"></i> Editar detalles
                                         </button>
                                     </li>
                                     <li>
-                                        <button type="button" class="dropdown-item text-white rounded small py-1.5" onclick="event.stopPropagation(); descargarCancionConMetadatos(this, '<?= htmlspecialchars($c['ruta_archivo']) ?>', '<?= addslashes($c['titulo']) ?>', '<?= addslashes($c['artistas_nombres'] ?? '') ?>', '<?= addslashes($c['titulo_album'] ?? 'Single') ?>')">
+                                        <button type="button" class="dropdown-item text-white rounded small py-1.5" onclick="event.stopPropagation(); descargarCancionConMetadatos(this, '<?= htmlspecialchars(addslashes($c['ruta_archivo']), ENT_QUOTES, 'UTF-8') ?>', '<?= htmlspecialchars(addslashes($c['titulo']), ENT_QUOTES, 'UTF-8') ?>', '<?= htmlspecialchars(addslashes($c['artistas_nombres'] ?? ''), ENT_QUOTES, 'UTF-8') ?>', '<?= htmlspecialchars(addslashes($c['album'] ?? 'Single'), ENT_QUOTES, 'UTF-8') ?>')">
                                             <i class="bi bi-download me-2 text-success"></i> <span class="texto-btn">Descargar pista</span>
                                         </button>
                                     </li>

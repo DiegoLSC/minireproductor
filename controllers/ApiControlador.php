@@ -14,7 +14,8 @@ class ApiControlador {
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if ($exts_validas && !in_array($ext, $exts_validas)) throw new Exception("Formato inválido.");
         
-        $nombre = $prefijo . '_' . time() . '.' . $ext;
+        // Añadimos rand() para que los nombres de los archivos nunca choquen
+        $nombre = $prefijo . '_' . time() . '_' . rand(1000,9999) . '.' . $ext;
         $ruta = '../assets/uploads/' . $carpeta . '/' . $nombre;
         
         if (move_uploaded_file($file['tmp_name'], $ruta)) return 'assets/uploads/' . $carpeta . '/' . $nombre;
