@@ -25,6 +25,12 @@
     justify-content: space-between;
 }
 
+/* Elevar controles sobre el visualizador de audio */
+.player-bar > div:not(#visualizador-fondo) {
+    position: relative;
+    z-index: 10;
+}
+
 /* ===================================================
    ALINEACIÓN Y CENTRADO DE ESCRITORIO (MIN-WIDTH: 769px)
    =================================================== */

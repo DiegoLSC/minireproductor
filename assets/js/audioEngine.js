@@ -651,3 +651,105 @@ function sincronizarLetra(tiempoActual) {
         }
     }
 }
+
+// ==========================================
+// 7. VISUALIZADOR DE AUDIO DE FONDO (CRIMSON VELVET)
+// ==========================================
+let audioContext;
+let analizador;
+let canvasVisualizador;
+let ctxVisualizador;
+let sourceConectado = false;
+let idAnimacionVisualizador;
+
+function inicializarVisualizador() {
+    canvasVisualizador = document.getElementById('visualizador-fondo');
+    if (!canvasVisualizador) return;
+    
+    ctxVisualizador = canvasVisualizador.getContext('2d');
+    
+    // Ajustar el canvas al tamaño real de la barra
+    const ajustarCanvas = () => {
+        canvasVisualizador.width = canvasVisualizador.offsetWidth;
+        canvasVisualizador.height = canvasVisualizador.offsetHeight;
+    };
+    
+    window.addEventListener('resize', ajustarCanvas);
+    ajustarCanvas();
+}
+
+function conectarFuenteAudio() {
+    // La Web Audio API requiere interacción del usuario para iniciar
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analizador = audioContext.createAnalyser();
+        // Controlamos la "suavidad" de las barras
+        analizador.smoothingTimeConstant = 0.85;
+        // La cantidad de barras (256 es un buen número para música)
+        analizador.fftSize = 256;
+    }
+
+    if (!sourceConectado && audio) {
+        try {
+            const source = audioContext.createMediaElementSource(audio);
+            source.connect(analizador);
+            analizador.connect(audioContext.destination);
+            sourceConectado = true;
+            dibujarVisualizador();
+        } catch (e) {
+            console.log("Visualizador: La fuente de audio ya estaba conectada.");
+        }
+    }
+
+    // Reanudar contexto si estaba suspendido (política de navegadores)
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+}
+
+function dibujarVisualizador() {
+    if (!canvasVisualizador || !ctxVisualizador) return;
+
+    idAnimacionVisualizador = requestAnimationFrame(dibujarVisualizador);
+
+    const bufferLength = analizador.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    analizador.getByteFrequencyData(dataArray);
+
+    ctxVisualizador.clearRect(0, 0, canvasVisualizador.width, canvasVisualizador.height);
+
+    // Ignorar las frecuencias más altas (ruido) y bajas (bajos extremos mudos)
+    const inicio = 5; 
+    const fin = bufferLength - 30; 
+    const barrasUtiles = fin - inicio;
+
+    const barWidth = (canvasVisualizador.width / barrasUtiles) * 1.5;
+    let x = 0;
+
+    for (let i = inicio; i < fin; i++) {
+        // Obtenemos el volumen de esa frecuencia específica (de 0 a 255)
+        const valor = dataArray[i];
+        
+        // Calculamos la altura de la barra relativa al alto del canvas
+        const porcentajeAlto = valor / 255;
+        const barHeight = porcentajeAlto * canvasVisualizador.height;
+
+        // Color Carmesí del sistema (--sistema-carmesí = #dc2626)
+        // Hacemos que los picos fuertes sean más brillantes y las bases más oscuras
+        const alpha = 0.5 + (porcentajeAlto * 0.5);
+        ctxVisualizador.fillStyle = `rgba(220, 38, 38, ${alpha})`;
+
+        // Dibujamos la barra desde abajo hacia arriba
+        ctxVisualizador.fillRect(x, canvasVisualizador.height - barHeight, barWidth, barHeight);
+
+        x += barWidth + 1; // 1px de separación entre barras
+    }
+}
+
+// Inicializar el canvas apenas cargue el DOM
+document.addEventListener('DOMContentLoaded', inicializarVisualizador);
+
+// Conectar el audio en el primer "Play" para respetar políticas de seguridad
+document.getElementById('play-btn').addEventListener('click', conectarFuenteAudio);
+// También intentamos conectar si se reproduce desde la tabla
+document.getElementById('tablaCanciones').addEventListener('click', conectarFuenteAudio);

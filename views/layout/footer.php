@@ -1,6 +1,6 @@
 </div>
 
-<div class="player-bar d-flex align-items-center justify-content-between">
+<div class="player-bar d-flex align-items-center justify-content-between position-relative">
     <div class="d-flex align-items-center gap-3" style="width: 25%;">
         <div id="player-icon-container" class="bg-secondary d-flex align-items-center justify-content-center rounded text-muted border border-secondary" style="width: 55px; height: 55px; min-width: 55px;">
             <i class="bi bi-music-note fs-3"></i>
@@ -45,6 +45,8 @@
     <button id="btn-abrir-letras" class="btn text-secondary p-0 fs-5 lh-1 ms-4" onclick="togglePanelLetras()" title="Ver Letras">
         <i class="bi bi-card-text"></i>
     </button>
+
+    <canvas id="visualizador-fondo" class="position-absolute top-0 start-0 w-100 h-100" style="z-index: 0; pointer-events: none; opacity: 0.15;"></canvas>
 </div>
 
 <!-- ============================================== -->
