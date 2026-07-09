@@ -3,51 +3,49 @@
 // ==========================================
 // FORMULARIOS LIGEROS (Textos, Ediciones pequeñas)
 // ==========================================
-function enviarFormularioAsincrono(event, urlApi) {
+async function enviarFormularioAsincrono(event, url) {
     event.preventDefault();
-    const formulario = event.target;
-    const botonSubmit = formulario.querySelector('button[type="submit"]');
-    const textoOriginal = botonSubmit.innerHTML;
-
-    botonSubmit.disabled = true;
-    botonSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
-
-    const formData = new FormData(formulario);
-
-    fetch(urlApi, { method: 'POST', body: formData })
-        .then(async response => {
-            const texto = await response.text();
-            console.log("Respuesta del servidor:");
-            console.log(texto);
-            return JSON.parse(texto);
-        })
-        .then(data => {
-            if (data.status === 'success') {
-                const modalActivo = document.querySelector('.modal.show');
-                if (modalActivo) {
-                    const instance = bootstrap.Modal.getInstance(modalActivo);
-                    if (instance) instance.hide();
-                }
-                formulario.reset();
-
-                // SPA: Enrutador de mutaciones en tiempo real forzado
-                if (typeof procesarMutacionSPA === 'function') {
-                    procesarMutacionSPA(formData.get('accion'), data.data);
-                } else {
-                    console.warn("Falta procesarMutacionSPA en main.js");
-                }
-            } else {
-                alert("Error: " + data.message);
+    const form = event.target;
+    const btnSubmit = form.querySelector('button[type="submit"]');
+    const textoOriginal = btnSubmit.innerHTML;
+    
+    // Estado de carga
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
+    
+    const formData = new FormData(form);
+    
+    try {
+        const response = await fetch(url, { method: 'POST', body: formData });
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            // Cerrar el modal de edición/creación automáticamente
+            const modalActual = bootstrap.Modal.getInstance(form.closest('.modal'));
+            if (modalActual) modalActual.hide();
+            
+            form.reset();
+            
+            // Actualizar la interfaz en tiempo real
+            if (typeof procesarMutacionSPA === 'function') {
+                procesarMutacionSPA(formData.get('accion'), data.data);
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert("Ocurrió un error de conexión con el servidor.");
-        })
-        .finally(() => {
-            botonSubmit.disabled = false;
-            botonSubmit.innerHTML = textoOriginal;
-        });
+        } else {
+            // RECHAZADO: Mostrar el Modal de Alerta del Sistema
+            document.getElementById('mensajeAlertaModal').innerText = data.message;
+            const alertaModal = new bootstrap.Modal(document.getElementById('modalAlertaSistema'));
+            alertaModal.show();
+        }
+    } catch (error) {
+        console.error("Error en la petición:", error);
+        document.getElementById('mensajeAlertaModal').innerText = "Ocurrió un error crítico de conexión con el servidor.";
+        const alertaModal = new bootstrap.Modal(document.getElementById('modalAlertaSistema'));
+        alertaModal.show();
+    } finally {
+        // Restaurar el botón
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = textoOriginal;
+    }
 }
 
 

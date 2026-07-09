@@ -164,6 +164,9 @@ class ApiControlador {
             $acc = $post['accion'] ?? '';
             
             if ($acc === 'crear_artista') {
+                // 1. INYECTAR LA VALIDACIÓN AQUÍ
+                $this->db->validarArtistaUnico($post['nombre']);
+
                 $foto = null;
                 if (!empty($files['foto']['name'])) $foto = $this->subirArchivo($files['foto'], 'artistas', 'art');
                 elseif (!empty($post['url_imagen_online'])) $foto = $this->descargarImagenDesdeUrl($post['url_imagen_online'], 'artistas', 'art');
@@ -268,9 +271,13 @@ class ApiControlador {
             $id = intval($post['id']);
             
             if ($acc === 'editar_artista') {
+                // 1. INYECTAR LA VALIDACIÓN AQUÍ (Pasando el $id para que ignore su propio nombre)
+                $this->db->validarArtistaUnico($post['nombre'], $id);
+
                 $foto = null;
                 if (!empty($files['foto']['name'])) $foto = $this->subirArchivo($files['foto'], 'artistas', 'art');
                 elseif (!empty($post['url_imagen_online'])) $foto = $this->descargarImagenDesdeUrl($post['url_imagen_online'], 'artistas', 'art');
+                
                 return $this->db->editarArtista($id, $post['nombre'], $foto);
                 
             } elseif ($acc === 'editar_album') {

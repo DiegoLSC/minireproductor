@@ -4,7 +4,7 @@
     <div class="d-flex gap-3 mb-4 align-items-center">
         <div class="input-group border border-secondary rounded-pill overflow-hidden bg-dark flex-grow-1 position-relative">
             <span class="input-group-text bg-dark border-0 text-secondary"><i class="bi bi-search fs-5"></i></span>
-            <input type="text" id="buscadorInput" class="form-control bg-dark text-white border-0 shadow-none py-2 pe-5" placeholder="¿Qué quieres escuchar hoy? (Canción, artista, álbum...)" oninput="filtrarBiblioteca()" autofocus>
+            <input type="text" id="buscadorInput" class="form-control bg-dark text-white border-0 shadow-none py-2 pe-5" placeholder="¿Qué quieres escuchar hoy? (Canción, artista, álbum...)" oninput="filtrarBiblioteca()">
             <button type="button" id="btn-limpiar-busqueda" class="btn btn-link text-secondary hover-text-white border-0 text-decoration-none shadow-none d-none position-absolute top-50 end-0 translate-middle-y me-2" style="z-index: 10;" onclick="limpiarBuscador()" title="Borrar búsqueda">
                 <i class="bi bi-x-lg"></i>
             </button>

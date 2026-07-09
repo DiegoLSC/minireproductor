@@ -246,5 +246,19 @@ class EditorBD {
         Logger::registrar($this->pdo, 'EXPORTAR', 'sistema', null, "Se generó un backup de toda la base de datos.");
         return $db_data;
     }
+
+    public function validarArtistaUnico($nombre, $id_ignorar = 0) {
+        // Busca si el nombre ya existe, excluyendo el ID actual (útil para cuando editas)
+        $sql = "SELECT id FROM artistas WHERE LOWER(TRIM(nombre)) = LOWER(TRIM(:nombre)) AND id != :id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':nombre' => $nombre,
+            ':id' => $id_ignorar
+        ]);
+        
+        if ($stmt->fetch()) {
+            throw new Exception("El artista '" . trim($nombre) . "' ya existe en el catálogo.");
+        }
+    }
 }
 ?>

@@ -97,8 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loader.style.opacity = '0';
             setTimeout(() => {
                 loader.style.visibility = 'hidden';
-                const buscador = document.getElementById('buscadorInput');
-                if (buscador) buscador.focus();
             }, 500);
         }, 500);
     } else {
@@ -740,55 +738,67 @@ function inyectarAlbumDOM(album) {
 }
 
 function actualizarAlbumDOM(album) {
-    const iLis = document.querySelectorAll(`[id^="li_alb_menu_${album.id}"]`);
     const esDefault = !album.caratula || album.caratula.includes('default.jpg') || album.caratula.trim() === '';
     const cacheBuster = esDefault ? '' : '?v=' + new Date().getTime();
-    
-    iLis.forEach(li => {
-        const sp = li.querySelector('span.text-white-50');
-        if (sp) sp.innerText = album.titulo;
-        
-        let img = li.querySelector('img');
-        let divFallback = li.querySelector('.bg-secondary');
-        
-        if (esDefault) {
-            if (img) {
-                const newDiv = document.createElement('div');
-                newDiv.className = 'bg-secondary d-flex align-items-center justify-content-center rounded text-muted';
-                newDiv.style.cssText = 'width: 20px; height: 20px; min-width: 20px;';
-                newDiv.innerHTML = '<i class="bi bi-disc" style="font-size: 0.7rem;"></i>';
-                img.replaceWith(newDiv);
-            }
-        } else {
-            if (img) {
-                img.src = album.caratula + cacheBuster;
-            } else if (divFallback) {
-                const newImg = document.createElement('img');
-                newImg.src = album.caratula + cacheBuster;
-                newImg.style.cssText = 'width: 20px; height: 20px; object-fit: cover;';
-                newImg.className = 'rounded';
-                divFallback.replaceWith(newImg);
-            }
-        }
-        
-        const editBtn = li.querySelector('[data-bs-target="#editAlbumModal"]');
-        if (editBtn) {
-            editBtn.setAttribute('data-titulo', album.titulo);
-            if(album.artistas_nombres !== undefined) editBtn.setAttribute('data-artistas-nombres', album.artistas_nombres);
-            if(album.artistas_ids !== undefined) editBtn.setAttribute('data-artistas-ids', album.artistas_ids);
-            editBtn.setAttribute('onclick', `cargarModalAlbum(${album.id}, this.getAttribute('data-titulo'), '${album.anio || ''}'); cargarEtiquetasEdicionAlbum(this.getAttribute('data-artistas-ids'), this.getAttribute('data-artistas-nombres'));`);
-        }
-        
+
+    // 1. ELIMINAR EL ÁLBUM DEL MENÚ ACTUAL (Para poder moverlo a su nuevo artista)
+    document.querySelectorAll(`[id^="li_alb_menu_${album.id}"]`).forEach(li => {
         const ul = li.parentNode;
-        ul.removeChild(li);
-        insertarEnOrden(ul, li, '.item-con-opciones', 'span.text-white-50');
+        li.remove();
+        // Si el artista se quedó sin álbumes, mostramos el mensaje de "Sin álbumes"
+        if (ul && ul.querySelectorAll('li.item-con-opciones').length === 0) {
+            if (!ul.querySelector('.fst-italic')) {
+                ul.innerHTML = `<li class="text-muted small p-1 ps-2 fst-italic" style="font-size: 0.75rem;">Sin álbumes</li>`;
+            }
+        }
     });
 
+    // 2. VOLVER A CREAR EL ÁLBUM EN LOS ARTISTAS CORRESPONDIENTES
+    const idsArt = album.artistas_ids ? album.artistas_ids.split(',') : [];
+    const iconoHTML = esDefault 
+        ? `<div class="bg-secondary d-flex align-items-center justify-content-center rounded text-muted" style="width: 20px; height: 20px; min-width: 20px;"><i class="bi bi-disc" style="font-size: 0.7rem;"></i></div>` 
+        : `<img src="${album.caratula}${cacheBuster}" style="width: 20px; height: 20px; object-fit: cover;" class="rounded" alt="Alb">`;
+
+    // Protegemos los textos por si tienen comillas dobles
+    const tituloEsc = album.titulo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+    const artsNombresEsc = (album.artistas_nombres || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
+    idsArt.forEach(idArt => {
+        const ul = document.querySelector(`#lista_albumes_art_${idArt.trim()}`);
+        if (ul) {
+            const emptyNotice = ul.querySelector('.fst-italic');
+            if (emptyNotice) emptyNotice.remove();
+            
+            const li = document.createElement('li');
+            li.className = "d-flex align-items-center justify-content-between text-secondary p-1 ps-2 hover-bg-dark rounded item-con-opciones";
+            li.id = `li_alb_menu_${album.id}`;
+            
+            li.innerHTML = `
+                <div class="d-flex align-items-center gap-2 text-truncate flex-grow-1" style="cursor:pointer;" data-titulo="${tituloEsc}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-titulo'); filtrarBiblioteca();">
+                    ${iconoHTML}
+                    <span class="text-white-50 text-truncate" style="font-size: 0.85rem;">${album.titulo}</span>
+                </div>
+                <div class="dropdown btn-opciones ms-2">
+                    <button class="btn btn-link text-secondary p-0 border-0 shadow-none" type="button" data-bs-toggle="dropdown" data-bs-boundary="window" aria-expanded="false" onclick="event.stopPropagation();">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
+                        <li><a class="dropdown-item small" href="#" data-titulo="${tituloEsc}" data-artistas-nombres="${artsNombresEsc}" data-artistas-ids="${album.artistas_ids}" data-bs-toggle="modal" data-bs-target="#editAlbumModal" onclick="cargarModalAlbum(${album.id}, this.getAttribute('data-titulo'), '${album.anio || ''}'); cargarEtiquetasEdicionAlbum(this.getAttribute('data-artistas-ids'), this.getAttribute('data-artistas-nombres'));"><i class="bi bi-pencil text-warning me-2"></i>Editar Álbum</a></li>
+                        <li><hr class="dropdown-divider border-secondary"></li>
+                        <li><a class="dropdown-item small text-danger" href="#" onclick="event.preventDefault(); event.stopPropagation(); prepararEliminacion('album', ${album.id}, this)"><i class="bi bi-trash3 text-danger me-2"></i>Eliminar Álbum</a></li>
+                    </ul>
+                </div>
+            `;
+            insertarEnOrden(ul, li, '.item-con-opciones', 'span.text-white-50');
+        }
+    });
+
+    // 3. ACTUALIZAR LAS CANCIONES EN LA TABLA PRINCIPAL (Por si cambió el nombre o la carátula)
     document.querySelectorAll(`#tablaCanciones tbody .target-row[data-album-id="${album.id}"]`).forEach(tr => {
         const albumCellA = tr.querySelector('.album-col a');
         if (albumCellA) {
             albumCellA.innerText = album.titulo;
-            albumCellA.setAttribute('onclick', `document.getElementById('buscadorInput').value='${album.titulo.replace(/'/g, "\\'")}'; filtrarBiblioteca(); return false;`);
+            albumCellA.setAttribute('onclick', `document.getElementById('buscadorInput').value='${tituloEsc}'; filtrarBiblioteca(); return false;`);
         }
 
         const container = tr.querySelector('.title-col .d-flex');
@@ -809,6 +819,7 @@ function actualizarAlbumDOM(album) {
             }
         }
 
+        // Si la canción del álbum está sonando ahora mismo, actualizar el reproductor
         if (window.rutaEnReproduccion === tr.getAttribute('data-ruta') && album.caratula) {
             const currentCover = document.getElementById('current-cover');
             const iconContainer = document.getElementById('player-icon-container');
@@ -824,10 +835,12 @@ function actualizarAlbumDOM(album) {
         }
     });
     
+    // 4. ACTUALIZAR LOS MENÚS DESPLEGABLES DE LOS FORMULARIOS
     document.querySelectorAll(`select[name="album_id"] option[value="${album.id}"]`).forEach(opt => {
         opt.innerText = `${album.titulo} (${album.artistas_nombres || ''})`;
     });
     
+    // Refrescar el buscador visualmente
     if (typeof filtrarBiblioteca === 'function') filtrarBiblioteca();
 }
 
