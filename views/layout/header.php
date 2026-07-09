@@ -57,12 +57,6 @@
                     <button class="btn btn-danger btn-sm rounded-pill text-center fw-bold shadow-sm d-flex align-items-center justify-content-center mx-2 py-2 mb-2" data-bs-toggle="modal" data-bs-target="#cancionModal">
                         <i class="bi bi-cloud-upload-fill me-2 fs-6 text-white"></i>
                         <span class="ocultar-al-contraer">Subir Canción</span>
-                    </button>
-
-                    <button type="button" class="btn btn-outline-secondary border-opacity-25 btn-sm rounded-pill fw-medium d-flex align-items-center justify-content-center mx-2 mb-2 text-secondary hover-bg-carmesi" onclick="iniciarEscaneoItunes()" title="Buscar Portadas de Sencillos">
-                        <i class="bi bi-magic me-2"></i>
-                        <span class="ocultar-al-contraer">Auto-Portadas</span>
-                    </button>
 
                     <div class="d-flex gap-2 mx-2 mt-1">
                         <button type="button" class="btn btn-outline-secondary border-opacity-25 btn-sm rounded-pill fw-medium d-flex align-items-center justify-content-center flex-fill text-secondary hover-bg-carmesi" onclick="iniciarBackup()" title="Descargar Backup">
