@@ -13,3 +13,18 @@
 
 # Ignorar credenciales de la base de datos
 /config/conexion.php
+
+# =========================================
+# ARCHIVOS DEL SISTEMA Y EDITOR (Agregados)
+# =========================================
+# Archivos de Windows / Mac
+Thumbs.db
+.DS_Store
+
+# Archivos de editores de código (VS Code, etc)
+.vscode/
+.idea/
+
+# Logs de errores del servidor
+error_log
+*.log
