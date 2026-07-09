@@ -493,42 +493,85 @@ async function buscarLetra(artista, titulo) {
     const contenedor = document.getElementById('letras-lista-dinamica');
     if(!contenedor) return;
 
-    // Aumentamos el número de petición. Cada canción tiene un "ticket" único.
     idPeticionLetra++;
-    const idTicketActual = idPeticionLetra; 
-
+    const idTicketActual = idPeticionLetra;
+    
     contenedor.innerHTML = '<div class="text-center py-5 text-secondary"><div class="spinner-border text-danger mb-3" role="status"></div><br>Buscando letras en la red...</div>';
     lyricsData = [];
     currentLyricIndex = -1;
 
     try {
-        const artistaLimpio = artista.split(',')[0].trim();
-        const tituloLimpio = titulo.replace(/\(.*\)/g, '').trim(); 
+        // 1. LIMPIEZA EXTREMA DEL ARTISTA (Tomamos estrictamente el primero)
+        let artistaLimpio = artista.split(',')[0].split('&')[0].split(' y ')[0].trim();
 
-        const res = await fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(artistaLimpio)}&track_name=${encodeURIComponent(tituloLimpio)}`);
-        
-        // LA MAGIA: Si el usuario cambió de canción mientras esperábamos, el ticket ya no coincide. Abortamos.
+        // 2. LIMPIEZA EXTREMA DEL TÍTULO (Destruimos cualquier basura de YouTube/MP3)
+        let tituloLimpio = titulo.toLowerCase()
+            // Elimina TODO lo que esté entre paréntesis, corchetes o llaves
+            .replace(/\(.*?\)/g, '')
+            .replace(/\[.*?\]/g, '')
+            .replace(/\{.*?\}/g, '')
+            // Elimina palabras clave basura que la gente pone en los títulos
+            .replace(/official/g, '')
+            .replace(/oficial/g, '')
+            .replace(/video/g, '')
+            .replace(/audio/g, '')
+            .replace(/lyric/g, '')
+            .replace(/letra/g, '')
+            .replace(/remastered/g, '')
+            .replace(/remasterizado/g, '')
+            .replace(/feat/g, '')
+            .replace(/ft/g, '')
+            // Elimina guiones y todo lo que esté después de un guion (Suele ser el artista repetido)
+            .split('-')[0]
+            .trim();
+
+        // 3. INTENTO PRINCIPAL: Búsqueda exacta cruzando Artista + Título
+        const urlBusqueda = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artistaLimpio)}&track_name=${encodeURIComponent(tituloLimpio)}`;
+        let res = await fetch(urlBusqueda);
+
         if (idTicketActual !== idPeticionLetra) return;
 
-        if (!res.ok) throw new Error('Letra no encontrada en la base de datos');
-        const data = await res.json();
-
-        // Doble validación por si el procesamiento del JSON demoró
-        if (idTicketActual !== idPeticionLetra) return;
-
-        if (data.syncedLyrics) {
-            parsearLRC(data.syncedLyrics);
-            renderizarLetras();
-        } else if (data.plainLyrics) {
-            contenedor.innerHTML = `<div class="text-center py-3"><span class="badge bg-secondary mb-3">Letra estática</span></div><div class="p-2 text-center text-secondary fs-6" style="white-space: pre-wrap; line-height: 2;">${data.plainLyrics}</div>`;
-        } else {
-            throw new Error('Sin contenido');
+        // 4. PLAN B (FALBACK): Si falla la búsqueda exacta, usamos el motor general de LRCLIB
+        if (!res.ok || res.status === 404) {
+            const urlFallback = `https://lrclib.net/api/search?q=${encodeURIComponent(artistaLimpio + ' ' + tituloLimpio)}`;
+            const resFallback = await fetch(urlFallback);
+            
+            if (idTicketActual !== idPeticionLetra) return;
+            
+            if (!resFallback.ok) throw new Error('Letra no encontrada en la base de datos');
+            const arrayFallback = await resFallback.json();
+            
+            if (arrayFallback && arrayFallback.length > 0) {
+                // Tomamos el primer resultado del motor de búsqueda
+                const data = arrayFallback[0];
+                renderizarDatosLetra(data, contenedor);
+                return;
+            } else {
+                throw new Error('Sin contenido');
+            }
         }
+
+        // Si el intento principal funciona:
+        const data = await res.json();
+        if (idTicketActual !== idPeticionLetra) return;
+        renderizarDatosLetra(data, contenedor);
+
     } catch (error) {
-        // Solo mostramos el error si el usuario sigue en la misma canción
         if (idTicketActual === idPeticionLetra) {
             contenedor.innerHTML = '<div class="text-center py-5 text-secondary"><i class="bi bi-file-earmark-x fs-1 d-block mb-3 opacity-25"></i>Instrumental o letra no disponible.</div>';
         }
+    }
+}
+
+// Función auxiliar para mantener limpio el código principal
+function renderizarDatosLetra(data, contenedor) {
+    if (data.syncedLyrics) {
+        parsearLRC(data.syncedLyrics);
+        renderizarLetras();
+    } else if (data.plainLyrics) {
+        contenedor.innerHTML = `<div class="text-center py-3"><span class="badge bg-secondary mb-3">Letra estática</span></div><div class="p-2 text-center text-secondary fs-6" style="white-space: pre-wrap; line-height: 2;">${data.plainLyrics}</div>`;
+    } else {
+        throw new Error('Sin contenido');
     }
 }
 
