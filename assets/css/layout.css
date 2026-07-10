@@ -69,14 +69,16 @@
 ========================================= */
 
 .sidebar {
-    width: 280px; min-width: 280px;
+    width: 280px;
+    min-width: 280px;
     background-color: var(--bg-absoluto);
     border-right: 1px solid var(--borde-carmesí);
-    padding: 24px 16px; overflow-y: auto; overflow-x: hidden; height: 100%;
-    /* Transiciones suaves en las dimensiones críticas */
-    transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
-                min-width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
-                padding 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    /* AQUI ESTÁ EL CAMBIO: Arriba, Derecha, Abajo (colchón), Izquierda */
+    padding: 24px 16px 150px 16px; 
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+    transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), min-width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), padding 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
 
 /* En vez de apagar display:none, lo encogemos y desvanecemos con elegancia */

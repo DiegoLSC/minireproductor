@@ -5,6 +5,20 @@ document.addEventListener('DOMContentLoaded', () => {
     inicializarControlesNativos();
     restaurarSesion();
 
+    // ==========================================
+    // FORZAR MENÚS DESPLEGABLES SOBRE TODO EL SISTEMA
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+            bootstrap.Dropdown.Default.popperConfig = function (defaultConfig) {
+                return {
+                    ...defaultConfig,
+                    strategy: 'fixed' // Esto hace que el menú escape del scroll lateral
+                };
+            };
+        }
+    });
+
     const modalSubir = document.getElementById('cancionModal');
     if (modalSubir) {
         modalSubir.addEventListener('hidden.bs.modal', function () {

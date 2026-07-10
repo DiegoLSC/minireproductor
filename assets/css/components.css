@@ -17,8 +17,11 @@
     background-color: var(--bg-superficie-ligero) !important;
     border: 1px solid var(--borde-carmesí) !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.95) !important;
-    border-radius: 8px !important; padding: 6px 0 !important;
+    border-radius: 8px !important;
+    padding: 6px 0 !important;
+    z-index: 9999 !important; /* <--- AÑADE ESTA LÍNEA */
 }
+
 .dropdown-item {
     color: var(--texto-secundario) !important; font-size: 0.85rem !important; padding: 8px 20px !important;
     transition: background-color 0.2s ease, color 0.2s ease !important; display: flex; align-items: center;
@@ -45,12 +48,6 @@
 .accordion-item { background-color: transparent !important; border: none !important; }
 .accordion-button { font-size: 0.85rem !important; letter-spacing: 0.05em; padding: 12px 0 !important; }
 .accordion-button:not(.collapsed) { background-color: transparent !important; color: var(--carmesí-brillante) !important; }
-
-#dropArtistas .accordion-body, #dropPlaylists .accordion-body { max-height: 55vh; overflow-y: auto; overflow-x: hidden; }
-#dropArtistas .accordion-body::-webkit-scrollbar, #dropPlaylists .accordion-body::-webkit-scrollbar { width: 6px; }
-#dropArtistas .accordion-body::-webkit-scrollbar-track, #dropPlaylists .accordion-body::-webkit-scrollbar-track { background: var(--bg-superficie); border-radius: 10px; }
-#dropArtistas .accordion-body::-webkit-scrollbar-thumb, #dropPlaylists .accordion-body::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-#dropArtistas .accordion-body::-webkit-scrollbar-thumb:hover, #dropPlaylists .accordion-body::-webkit-scrollbar-thumb:hover { background: var(--sistema-carmesí); }
 
 /* MODALES NEÓN */
 .modal-content {
