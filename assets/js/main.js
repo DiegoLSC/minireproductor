@@ -1,7 +1,7 @@
 // assets/js/main.js
 
 document.addEventListener('DOMContentLoaded', () => {
-    filtrarBiblioteca();
+    filtrarBiblioteca(true);
     inicializarControlesNativos();
     restaurarSesion();
 
@@ -316,7 +316,7 @@ async function eliminarProcedimientoAsincrono(tipo, id, elementoVisual) {
                         elementoVisual.remove();
                         recalcularIndicesTabla();
                         if (typeof filtrarBiblioteca === 'function') {
-                            filtrarBiblioteca();
+                            filtrarBiblioteca(true);
                             if (typeof actualizarColaReproduccion === 'function') {
                                 actualizarColaReproduccion();
                                 const panel = document.getElementById('colaPanel');
@@ -394,7 +394,7 @@ async function quitarDePlaylistAsincrono(cancionId, playlistId, elementoBoton) {
                 setTimeout(() => {
                     elementoVisual.remove();
                     recalcularIndicesTabla();
-                    if (typeof filtrarBiblioteca === 'function') filtrarBiblioteca();
+                    if (typeof filtrarBiblioteca === 'function') filtrarBiblioteca(true);
                 }, 400);
             }
         }
@@ -587,7 +587,7 @@ function inyectarArtistaDOM(artista) {
                     <i class="bi bi-three-dots-vertical"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
-                    <li><a class="dropdown-item small" href="#" data-nombre="${artista.nombre}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-nombre'); filtrarBiblioteca(); return false;"><i class="bi bi-search text-success me-2"></i>Buscar todas sus canciones</a></li>
+                    <li><a class="dropdown-item small" href="#" data-nombre="${artista.nombre}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-nombre'); filtrarBiblioteca(true); return false;"><i class="bi bi-search text-success me-2"></i>Buscar todas sus canciones</a></li>
                     <li><a class="dropdown-item small" href="#" data-bs-toggle="modal" data-bs-target="#editArtistaModal" data-nombre="${artista.nombre}" onclick="document.getElementById('edit_art_id').value='${artista.id}'; document.getElementById('edit_art_nombre').value=this.getAttribute('data-nombre');"><i class="bi bi-pencil text-warning me-2"></i>Editar Artista</a></li>
                     <li><hr class="dropdown-divider border-secondary"></li>
                     <li><a class="dropdown-item small text-danger" href="#" onclick="event.preventDefault(); event.stopPropagation(); prepararEliminacion('artista', ${artista.id}, this)"><i class="bi bi-trash3 text-danger me-2"></i>Eliminar Artista</a></li>
@@ -667,7 +667,7 @@ function actualizarArtistaDOM(artista) {
             const enlaceArtista = tr.querySelector(`.artist-col a[data-artista-id="${artista.id}"]`);
             if (enlaceArtista) {
                 enlaceArtista.innerText = artista.nombre;
-                enlaceArtista.setAttribute('onclick', `document.getElementById('buscadorInput').value='${artista.nombre.replace(/'/g, "\\'")}'; filtrarBiblioteca(); return false;`);
+                enlaceArtista.setAttribute('onclick', `document.getElementById('buscadorInput').value='${artista.nombre.replace(/'/g, "\\'")}'; filtrarBiblioteca(true); return false;`);
             }
             const todosLosNombres = Array.from(tr.querySelectorAll('.artist-col a')).map(a => a.innerText.trim()).join(', ');
             tr.setAttribute('data-artista', todosLosNombres);
@@ -714,7 +714,7 @@ function inyectarAlbumDOM(album) {
             li.className = "d-flex align-items-center justify-content-between text-secondary p-1 ps-2 hover-bg-dark rounded item-con-opciones";
             li.id = `li_alb_menu_${album.id}`;
             li.innerHTML = `
-                <div class="d-flex align-items-center gap-2 text-truncate flex-grow-1" style="cursor:pointer;" data-titulo="${album.titulo}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-titulo'); filtrarBiblioteca();">
+                <div class="d-flex align-items-center gap-2 text-truncate flex-grow-1" style="cursor:pointer;" data-titulo="${album.titulo}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-titulo'); filtrarBiblioteca(true);">
                     ${iconoHTML}
                     <span class="text-white-50 text-truncate" style="font-size: 0.85rem;">${album.titulo}</span>
                 </div>
@@ -774,7 +774,7 @@ function actualizarAlbumDOM(album) {
             li.id = `li_alb_menu_${album.id}`;
             
             li.innerHTML = `
-                <div class="d-flex align-items-center gap-2 text-truncate flex-grow-1" style="cursor:pointer;" data-titulo="${tituloEsc}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-titulo'); filtrarBiblioteca();">
+                <div class="d-flex align-items-center gap-2 text-truncate flex-grow-1" style="cursor:pointer;" data-titulo="${tituloEsc}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-titulo'); filtrarBiblioteca(true);">
                     ${iconoHTML}
                     <span class="text-white-50 text-truncate" style="font-size: 0.85rem;">${album.titulo}</span>
                 </div>
@@ -798,7 +798,7 @@ function actualizarAlbumDOM(album) {
         const albumCellA = tr.querySelector('.album-col a');
         if (albumCellA) {
             albumCellA.innerText = album.titulo;
-            albumCellA.setAttribute('onclick', `document.getElementById('buscadorInput').value='${tituloEsc}'; filtrarBiblioteca(); return false;`);
+            albumCellA.setAttribute('onclick', `document.getElementById('buscadorInput').value='${tituloEsc}'; filtrarBiblioteca(true); return false;`);
         }
 
         const container = tr.querySelector('.title-col .d-flex');
@@ -841,7 +841,7 @@ function actualizarAlbumDOM(album) {
     });
     
     // Refrescar el buscador visualmente
-    if (typeof filtrarBiblioteca === 'function') filtrarBiblioteca();
+    if (typeof filtrarBiblioteca === 'function') filtrarBiblioteca(true);
 }
 
 function inyectarCancionDOM(c) {
@@ -867,7 +867,7 @@ function inyectarCancionDOM(c) {
     const idsArt = (c.artistas_ids || '').split(',');
     const arts = (c.artistas_nombres || '').split(', ');
     const htmlArtistas = arts.map((nom, idx) => 
-        `<a href="#" data-artista-id="${idsArt[idx] ? idsArt[idx].trim() : ''}" onclick="document.getElementById('buscadorInput').value='${nom.replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; filtrarBiblioteca(); return false;" class="text-info text-decoration-none hover-underline">${nom}</a>`
+        `<a href="#" data-artista-id="${idsArt[idx] ? idsArt[idx].trim() : ''}" onclick="document.getElementById('buscadorInput').value='${nom.replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; filtrarBiblioteca(true); return false;" class="text-info text-decoration-none hover-underline">${nom}</a>`
     ).join('<span class="text-secondary">, </span>');
 
     const tituloEsc = c.titulo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
@@ -897,7 +897,7 @@ function inyectarCancionDOM(c) {
             </div>
         </td>
         <td class="album-col d-none d-md-table-cell">
-            <a href="#" onclick="document.getElementById('buscadorInput').value='${albEsc}'; filtrarBiblioteca(); return false;" class="${albumClase} text-decoration-none hover-underline">
+            <a href="#" onclick="document.getElementById('buscadorInput').value='${albEsc}'; filtrarBiblioteca(true); return false;" class="${albumClase} text-decoration-none hover-underline">
                 ${albumTexto}
             </a>
         </td>
@@ -950,7 +950,7 @@ function inyectarCancionDOM(c) {
     recalcularIndicesTabla();
     
     if (typeof filtrarBiblioteca === 'function') {
-        filtrarBiblioteca();
+        filtrarBiblioteca(true);
         if (typeof actualizarColaReproduccion === 'function') {
             actualizarColaReproduccion();
             const panel = document.getElementById('colaPanel');
@@ -1007,7 +1007,7 @@ function actualizarCancionDOM(c) {
         const isSingle = c.album === 'Single / Sencillo';
         albumCell.innerText = isSingle ? 'Single' : c.album;
         albumCell.className = `${isSingle ? 'text-muted font-monospace small' : 'text-secondary'} text-decoration-none hover-underline`;
-        albumCell.setAttribute('onclick', `document.getElementById('buscadorInput').value='${(isSingle ? 'Single' : c.album).replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; filtrarBiblioteca(); return false;`);
+        albumCell.setAttribute('onclick', `document.getElementById('buscadorInput').value='${(isSingle ? 'Single' : c.album).replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; filtrarBiblioteca(true); return false;`);
     }
     
     const artistCell = tr.querySelector('.artist-col');
@@ -1015,7 +1015,7 @@ function actualizarCancionDOM(c) {
         const idsArt = (c.artistas_ids || '').split(',');
         const arts = (c.artistas_nombres || '').split(', ');
         artistCell.innerHTML = arts.map((nom, idx) => 
-            `<a href="#" data-artista-id="${idsArt[idx] ? idsArt[idx].trim() : ''}" onclick="document.getElementById('buscadorInput').value='${nom.replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; filtrarBiblioteca(); return false;" class="text-info text-decoration-none hover-underline">${nom}</a>`
+            `<a href="#" data-artista-id="${idsArt[idx] ? idsArt[idx].trim() : ''}" onclick="document.getElementById('buscadorInput').value='${nom.replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; filtrarBiblioteca(true); return false;" class="text-info text-decoration-none hover-underline">${nom}</a>`
         ).join('<span class="text-secondary">, </span>');
     }
     
@@ -1055,7 +1055,7 @@ function actualizarCancionDOM(c) {
     }
     
     if (typeof filtrarBiblioteca === 'function') {
-        filtrarBiblioteca();
+        filtrarBiblioteca(true);
         if (typeof actualizarColaReproduccion === 'function') {
             actualizarColaReproduccion();
             const panel = document.getElementById('colaPanel');

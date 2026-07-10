@@ -34,17 +34,17 @@ function ordenarBibliotecaAsincrona(tipoOrden) {
     filas.forEach(fila => tablaBody.appendChild(fila));
     document.getElementById('btn-orden-desc').className = tipoOrden === 'desc' ? "btn btn-sm btn-success" : "btn btn-sm btn-outline-secondary text-white";
     document.getElementById('btn-orden-asc').className = tipoOrden === 'asc' ? "btn btn-sm btn-success" : "btn btn-sm btn-outline-secondary text-white";
-    filtrarBiblioteca(); 
+    filtrarBiblioteca(true); 
 }
 
 function limpiarBuscador() {
     const input = document.getElementById('buscadorInput');
     input.value = ''; 
-    filtrarBiblioteca(); 
+    filtrarBiblioteca(true); 
     input.focus(); 
 }
 
-function filtrarBiblioteca() {
+function filtrarBiblioteca(mantenerPagina = false) {
     const textoFiltro = quitarTildes(document.getElementById('buscadorInput').value.toLowerCase());
     
     const btnLimpiar = document.getElementById('btn-limpiar-busqueda');
@@ -57,22 +57,35 @@ function filtrarBiblioteca() {
         const titulo = quitarTildes(fila.querySelector('.title-col').innerText.toLowerCase());
         const album = quitarTildes(fila.querySelector('.album-col').innerText.toLowerCase());
         const artistas = quitarTildes(fila.querySelector('.artist-col').innerText.toLowerCase());
-        const playlistsAsociadas = quitarTildes(fila.getAttribute('data-playlists').toLowerCase());
+        const playlistsAsociadas = quitarTildes(fila.getAttribute('data-playlists') ? fila.getAttribute('data-playlists').toLowerCase() : "");
         
-        // CORRECCIÓN: Ahora el texto del buscador solo escanea Título, Álbum y Artistas.
         const coincideTexto = titulo.includes(textoFiltro) || album.includes(textoFiltro) || artistas.includes(textoFiltro);
-        
-        // El filtro de la playlist se mantiene estrictamente aislado para el menú lateral
-        const coincidePlaylist = (filtroPlaylistActivo === "") || playlistsAsociadas.includes(quitarTildes(filtroPlaylistActivo.toLowerCase()));
+        const coincidePlaylist = (typeof filtroPlaylistActivo === 'undefined' || filtroPlaylistActivo === "") || playlistsAsociadas.includes(quitarTildes(filtroPlaylistActivo.toLowerCase()));
         
         if (coincideTexto && coincidePlaylist) filasFiltradasGlobal.push(fila);
         fila.style.display = 'none'; 
     });
 
     const badgeContador = document.getElementById('contador-dinamico');
-    if (badgeContador) badgeContador.innerText = filtroPlaylistActivo === "" ? `${filasFiltradasGlobal.length} canciones totales` : `${filasFiltradasGlobal.length} en "${filtroPlaylistActivo}"`;
+    if (badgeContador) badgeContador.innerText = (typeof filtroPlaylistActivo === 'undefined' || filtroPlaylistActivo === "") ? `${filasFiltradasGlobal.length} canciones totales` : `${filasFiltradasGlobal.length} en "${filtroPlaylistActivo}"`;
     
-    paginaActual = 1; 
+    // SOLUCIÓN: Lógica condicional de paginación
+    if (!mantenerPagina) {
+        // Si es una búsqueda nueva, te manda a la página 1
+        paginaActual = 1; 
+    } else {
+        // Si estás editando/borrando, te deja en la misma página.
+        // Además, incluye una protección por si borras el ÚLTIMO elemento de la página 10 y esta queda vacía.
+        const limite = typeof cancionesPorPagina !== 'undefined' ? cancionesPorPagina : 50; 
+        const maxPaginas = Math.ceil(filasFiltradasGlobal.length / limite);
+        
+        if (paginaActual > maxPaginas && maxPaginas > 0) {
+            paginaActual = maxPaginas; // Te retrocede una página automáticamente
+        } else if (maxPaginas === 0) {
+            paginaActual = 1;
+        }
+    }
+    
     renderizarPaginaActual();
 }
 
@@ -137,7 +150,7 @@ function cambiarPagina(nuevaPagina) {
 function filtrarPorPlaylist(nombrePlaylist, idPlaylist = '') {
     filtroPlaylistActivo = nombrePlaylist;
     if (nombrePlaylist === "") document.getElementById('buscadorInput').value = "";
-    filtrarBiblioteca();
+    filtrarBiblioteca(true);
     
     const enlaces = document.querySelectorAll('#acordeonSidebar .nav-link, #acordeonSidebar a');
     enlaces.forEach(enlace => { enlace.classList.remove('text-success', 'fw-bold'); enlace.classList.add('text-secondary'); });
