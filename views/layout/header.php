@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NebulaPlayer - Panel de Control</title>
+    <script src="assets/js/theme-init.js?v=<?php echo time(); ?>"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="assets/css/base.css" rel="stylesheet">
@@ -59,16 +60,6 @@
                         <span class="ocultar-al-contraer">Subir Canción</span>
                     </button>
 
-                    <div class="d-flex gap-2 mx-2 mt-1">
-                        <button type="button" class="btn btn-outline-secondary border-opacity-25 btn-sm rounded-pill fw-medium d-flex align-items-center justify-content-center flex-fill text-secondary hover-bg-carmesi" onclick="iniciarBackup()" title="Descargar Backup">
-                            <i class="bi bi-box-seam me-2"></i>
-                            <span class="ocultar-al-contraer">Backup</span>
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary border-opacity-25 btn-sm rounded-pill fw-medium d-flex align-items-center justify-content-center flex-fill text-secondary hover-bg-carmesi" onclick="document.getElementById('input-subir-backup').click()" title="Sincronizar Backup">
-                            <i class="bi bi-arrow-repeat me-2"></i>
-                            <span class="ocultar-al-contraer">Restaurar</span>
-                        </button>
-                    </div>
                     <input type="file" id="input-subir-backup" class="d-none" accept=".zip" onchange="procesarSubidaBackup(this)">
                 </div>
 
@@ -84,23 +75,24 @@
                         </h2>
                         <div id="dropPlaylists" class="accordion-collapse collapse" data-bs-parent="#acordeonSidebar">
                             <div class="accordion-body px-1 py-2">
-                                <ul class="nav flex-column gap-1 small">
-                                    <li>
-                                        <a href="#" class="nav-link text-white-50 p-1 hover-text-white" onclick="filtrarPorPlaylist('', '')">
-                                            <i class="bi bi-globe me-2 text-secondary"></i> Ver Todo
-                                        </a>
+                                <ul class="nav flex-column gap-1 small"> 
+                                    <li id="li_pl_menu_todas" class="playlist-activa"> 
+                                        <a href="#" class="nav-link text-white-50 p-1 hover-text-white" onclick="filtrarPorPlaylist('', ''); return false;"> 
+                                            <i class="bi bi-globe me-2 text-secondary"></i> Ver Todo 
+                                        </a> 
                                     </li>
-                                    <?php foreach($playlists as $pl): ?>
-                                    <li class="d-flex align-items-center justify-content-between p-1 rounded hover-bg-dark item-con-opciones" id="li_pl_menu_<?= $pl['id'] ?>">
-                                        <a href="#" class="text-secondary text-truncate flex-grow-1 text-decoration-none me-1 hover-text-white" data-nombre="<?= htmlspecialchars($pl['nombre'], ENT_QUOTES, 'UTF-8') ?>" onclick="filtrarPorPlaylist(this.getAttribute('data-nombre'), <?= $pl['id'] ?>)">
-                                            <i class="bi bi-music-note-list me-2 text-secondary"></i><span class="texto-nombre"><?= htmlspecialchars($pl['nombre']) ?></span>
-                                        </a>
-                                        <div class="d-flex gap-1 btn-opciones">
-                                            <span style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#editPlaylistModal" data-nombre="<?= htmlspecialchars($pl['nombre'], ENT_QUOTES, 'UTF-8') ?>" data-desc="<?= htmlspecialchars($pl['descripcion'] ?? '', ENT_QUOTES, 'UTF-8') ?>" onclick="document.getElementById('edit_pl_id').value='<?= $pl['id'] ?>'; document.getElementById('edit_pl_nombre').value=this.getAttribute('data-nombre'); document.getElementById('edit_pl_desc').value=this.getAttribute('data-desc');"><i class="bi bi-pencil small text-warning opacity-75 hover-opacity-100"></i></span>
-                                            <span style="cursor:pointer;" onclick="event.stopPropagation(); prepararEliminacion('playlist', <?= $pl['id'] ?>, this)"><i class="bi bi-trash3 small text-danger opacity-75 hover-opacity-100"></i></span>
-                                        </div>
-                                    </li>
-                                    <?php endforeach; ?>
+                                    
+                                    <?php foreach($playlists as $pl): ?> 
+                                    <li class="d-flex align-items-center justify-content-between p-1 rounded hover-bg-dark item-con-opciones" id="li_pl_menu_<?= $pl['id'] ?>"> 
+                                        <a href="#" class="text-secondary text-truncate flex-grow-1 text-decoration-none me-1 hover-text-white" data-nombre="<?= htmlspecialchars($pl['nombre'], ENT_QUOTES, 'UTF-8') ?>" onclick="filtrarPorPlaylist(this.getAttribute('data-nombre'), <?= $pl['id'] ?>); return false;">
+                                            <i class="bi bi-music-note-list me-2 text-secondary"></i><span class="texto-nombre"><?= htmlspecialchars($pl['nombre']) ?></span> 
+                                        </a> 
+                                        <div class="d-flex gap-1 btn-opciones"> 
+                                            <span style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#editPlaylistModal" data-nombre="<?= htmlspecialchars($pl['nombre'], ENT_QUOTES, 'UTF-8') ?>" data-desc="<?= htmlspecialchars($pl['descripcion'] ?? '', ENT_QUOTES, 'UTF-8') ?>" onclick="document.getElementById('edit_pl_id').value='<?= $pl['id'] ?>'; document.getElementById('edit_pl_nombre').value=this.getAttribute('data-nombre'); document.getElementById('edit_pl_desc').value=this.getAttribute('data-desc');"><i class="bi bi-pencil small text-warning opacity-75 hover-opacity-100"></i></span> 
+                                            <span style="cursor:pointer;" onclick="event.stopPropagation(); prepararEliminacion('playlist', <?= $pl['id'] ?>, this)"><i class="bi bi-trash3 small text-danger opacity-75 hover-opacity-100"></i></span> 
+                                        </div> 
+                                    </li> 
+                                    <?php endforeach; ?> 
                                 </ul>
                             </div>
                         </div>
@@ -191,11 +183,58 @@
                         </div>
                     </div>
                 </div>
-                <hr class="border-secondary opacity-25 my-3 mx-2">
-                <div class="nav-item w-100 mb-2 px-2">
-                    <button type="button" class="btn btn-transparent text-secondary w-100 text-start px-2 py-2 d-flex align-items-center hover-bg-carmesi rounded" data-bs-toggle="modal" data-bs-target="#modalLogs">
-                        <i class="bi bi-shield-check fs-5 me-3"></i>
-                        <span class="fw-medium text-truncate ocultar-al-contraer">Registro de Actividad</span>
-                    </button>
+                <hr class="border-secondary opacity-25 my-3 mx-2"> 
+<div class="nav-item w-100 mb-2 px-2 dropdown dropup"> 
+    
+    <button type="button" class="btn btn-transparent text-secondary w-100 d-flex align-items-center justify-content-center py-2 hover-bg-carmesi rounded shadow-none" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" title="Configuración del Sistema"> 
+        <i class="bi bi-gear-fill fs-5 flex-shrink-0"></i> 
+    </button> 
+    
+    <div class="dropdown-menu dropdown-menu-dark shadow-lg border border-secondary border-opacity-25 p-2 mb-2" id="menuConfigAcordeon" style="width: 250px; z-index: 1060;"> 
+        
+        <a class="dropdown-item d-flex justify-content-between align-items-center rounded py-2 text-white btn-config-item" data-bs-toggle="collapse" href="#collapseSeguridad" role="button" aria-expanded="false">
+            <span><i class="bi bi-shield-check text-danger me-2"></i>Seguridad</span>
+            <i class="bi bi-chevron-right small text-secondary flecha-giratoria"></i>
+        </a>
+        <div class="collapse" id="collapseSeguridad" data-bs-parent="#menuConfigAcordeon">
+            <div class="p-2 mb-2 bg-black border border-secondary border-opacity-25 rounded mt-1">
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100 text-start text-white border-opacity-25 hover-bg-dark rounded py-2 small shadow-none" data-bs-toggle="modal" data-bs-target="#modalLogs" onclick="document.body.click()"> 
+                    <i class="bi bi-list-nested me-2 text-secondary"></i> Ver Auditoría 
+                </button>
+            </div>
+        </div>
+
+        <a class="dropdown-item d-flex justify-content-between align-items-center rounded py-2 text-white btn-config-item" data-bs-toggle="collapse" href="#collapseInterfaz" role="button" aria-expanded="false">
+            <span><i class="bi bi-palette text-danger me-2"></i>Interfaz</span>
+            <i class="bi bi-chevron-right small text-secondary flecha-giratoria"></i>
+        </a>
+        <div class="collapse" id="collapseInterfaz" data-bs-parent="#menuConfigAcordeon">
+            <div class="p-2 mb-2 bg-black border border-secondary border-opacity-25 rounded mt-1">
+                <div class="d-flex gap-2 justify-content-between py-1 px-1"> 
+                    <span class="color-dot bg-carmesi" data-color="carmesi" title="Rojo Carmesí" onclick="cambiarTemaColor('carmesi')"></span> 
+                    <span class="color-dot bg-emerald" data-color="emerald" title="Verde Esmeralda" onclick="cambiarTemaColor('emerald')"></span> 
+                    <span class="color-dot bg-ocean" data-color="ocean" title="Azul Océano" onclick="cambiarTemaColor('ocean')"></span> 
+                    <span class="color-dot bg-amethyst" data-color="amethyst" title="Morado Amatista" onclick="cambiarTemaColor('amethyst')"></span> 
+                    <span class="color-dot bg-amber" data-color="amber" title="Dorado Ámbar" onclick="cambiarTemaColor('amber')"></span> 
                 </div>
+            </div>
+        </div>
+
+        <a class="dropdown-item d-flex justify-content-between align-items-center rounded py-2 text-white btn-config-item" data-bs-toggle="collapse" href="#collapseDatos" role="button" aria-expanded="false">
+            <span><i class="bi bi-box-seam text-danger me-2"></i>Datos</span>
+            <i class="bi bi-chevron-right small text-secondary flecha-giratoria"></i>
+        </a>
+        <div class="collapse" id="collapseDatos" data-bs-parent="#menuConfigAcordeon">
+            <div class="p-2 mb-1 bg-black border border-secondary border-opacity-25 rounded mt-1 d-flex flex-column gap-2">
+                <button type="button" class="btn btn-sm btn-success fw-bold py-1.5 shadow-none w-100" onclick="iniciarBackup(); document.body.click()"> 
+                    <i class="bi bi-download me-1"></i> Respaldar 
+                </button> 
+                <button type="button" class="btn btn-sm btn-outline-secondary text-white border-opacity-25 fw-bold py-1.5 shadow-none w-100" onclick="document.getElementById('input-subir-backup').click(); document.body.click()"> 
+                    <i class="bi bi-upload me-1"></i> Restaurar 
+                </button>
+            </div>
+        </div>
+
+    </div> 
+</div>
             </div>

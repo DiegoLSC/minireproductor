@@ -1,30 +1,70 @@
-// assets/js/main.js
+// ==========================================
+// 1. MOTOR DE TEMAS (MOVIDO AL INICIO PARA EVITAR PARPADEO)
+// ==========================================
+const mapasDeColorTemas = {
+    carmesi:  { base: '#dc2626', rgb: '220, 38, 38', hover: '#b91c1c', brillante: '#ef4444', pastel: '#fca5a5' },
+    emerald:  { base: '#16a34a', rgb: '22, 163, 74', hover: '#15803d', brillante: '#22c55e', pastel: '#86efac' },
+    ocean:    { base: '#2563eb', rgb: '37, 99, 235', hover: '#1d4ed8', brillante: '#3b82f6', pastel: '#93c5fd' },
+    amethyst: { base: '#9333ea', rgb: '147, 51, 234', hover: '#7e22ce', brillante: '#a855f7', pastel: '#d8b4fe' },
+    amber:    { base: '#d97706', rgb: '217, 119, 6', hover: '#b45309', brillante: '#f59e0b', pastel: '#fde68a' }
+};
 
+function cambiarTemaColor(nombreTema) {
+    const paleta = mapasDeColorTemas[nombreTema];
+    if (!paleta) return;
+    const root = document.documentElement;
+    root.style.setProperty('--sistema-carmesí', paleta.base);
+    root.style.setProperty('--sistema-carmesí-rgb', paleta.rgb);
+    root.style.setProperty('--carmesí-hover', paleta.hover);
+    root.style.setProperty('--carmesí-brillante', paleta.brillante);
+    root.style.setProperty('--carmesí-pastel', paleta.pastel);
+    localStorage.setItem('nebula_tema_color', nombreTema);
+    document.querySelectorAll('.color-dot').forEach(burbuja => {
+        burbuja.classList.toggle('active', burbuja.getAttribute('data-color') === nombreTema);
+    });
+}
+
+// ==========================================
+// 2. INICIALIZACIÓN PRINCIPAL
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-    filtrarBiblioteca(true);
+    // 2.1 Aplicar el color ANTES de mostrar nada
+    const temaPersistido = localStorage.getItem('nebula_tema_color') || 'carmesi';
+    cambiarTemaColor(temaPersistido);
+
+    // 2.2 Encender el spinner (ya con el color correcto inyectado)
+// 2.2 Encender y Apagar el loader
+    const loader = document.getElementById('pantalla-carga');
+    if (loader) {
+        // Al cargar la página, el loader ya es visible por el CSS. 
+        // Solo lanzamos el temporizador para ocultarlo cuando todo esté listo.
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                loader.addEventListener('transitionend', () => {
+                    loader.style.visibility = 'hidden';
+                }, { once: true });
+            }, 500);
+        });
+    }
+
+    // 2.3 Cargar el resto de tus funciones
+    if (typeof filtrarBiblioteca === 'function') filtrarBiblioteca(true);
     inicializarControlesNativos();
     restaurarSesion();
 
-    // ==========================================
-    // FORZAR MENÚS DESPLEGABLES SOBRE TODO EL SISTEMA
-    // ==========================================
-    document.addEventListener('DOMContentLoaded', () => {
-        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-            bootstrap.Dropdown.Default.popperConfig = function (defaultConfig) {
-                return {
-                    ...defaultConfig,
-                    strategy: 'fixed' // Esto hace que el menú escape del scroll lateral
-                };
-            };
-        }
-    });
+    if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+        bootstrap.Dropdown.Default.popperConfig = function (defaultConfig) {
+            return { ...defaultConfig, strategy: 'fixed' };
+        };
+    }
 
     const modalSubir = document.getElementById('cancionModal');
     if (modalSubir) {
         modalSubir.addEventListener('hidden.bs.modal', function () {
             document.getElementById('subir_can_selected_artists').innerHTML = '';
             document.getElementById('subir_can_hidden_inputs').innerHTML = '';
-            window.subirArtistasSeleccionados.clear();
+            if (window.subirArtistasSeleccionados) window.subirArtistasSeleccionados.clear();
             document.getElementById('subir_can_artist_search').value = '';
             document.getElementById('subir_can_artist_results').style.display = 'none';
         });
@@ -41,23 +81,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ==============================================================
-    // NUEVO: LIMPIAR PREVISUALIZACIONES AL CERRAR MODALES DE EDICIÓN
-    // ==============================================================
     const modalesEdicion = ['editCancionModal', 'editArtistaModal', 'editAlbumModal'];
     modalesEdicion.forEach(modalId => {
         const modalEl = document.getElementById(modalId);
         if (modalEl) {
             modalEl.addEventListener('hidden.bs.modal', function () {
-                // 1. Limpiar el input de archivo (por si seleccionó algo de su PC)
                 const fileInput = this.querySelector('input[type="file"]');
                 if (fileInput) fileInput.value = '';
-
-                // 2. Limpiar la URL web oculta
                 const hiddenUrl = this.querySelector('.hidden-url-online');
                 if (hiddenUrl) hiddenUrl.value = '';
-
-                // 3. Ocultar y vaciar la imagen de previsualización
                 const previewContainer = this.querySelector('.preview-container');
                 const previewImg = this.querySelector('.preview-img');
                 if (previewContainer) previewContainer.classList.add('d-none');
@@ -94,28 +126,15 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('nebula_volumen', val);
             if (val === 0) {
                 reproductor.muted = true;
-                actualizarIconoVolumen(true, 0);
+                if(typeof actualizarIconoVolumen === 'function') actualizarIconoVolumen(true, 0);
                 localStorage.setItem('nebula_muted', 'true');
             } else {
                 reproductor.muted = false;
                 volumenAnterior = val;
-                actualizarIconoVolumen(false, val);
+                if(typeof actualizarIconoVolumen === 'function') actualizarIconoVolumen(false, val);
                 localStorage.setItem('nebula_muted', 'false');
             }
         });
-    }
-
-    const loader = document.getElementById('pantalla-carga');
-    if (loader) {
-        setTimeout(function() {
-            loader.style.opacity = '0';
-            setTimeout(() => {
-                loader.style.visibility = 'hidden';
-            }, 500);
-        }, 500);
-    } else {
-        const buscador = document.getElementById('buscadorInput');
-        if (buscador) buscador.focus();
     }
 
     const modalLogsEl = document.getElementById('modalLogs');
@@ -127,34 +146,110 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // LISTENER PARA EL NUEVO MODAL DE ESCANEO
     const btnAceptarEscaneo = document.getElementById('btnAceptarEscaneo');
     if (btnAceptarEscaneo) {
         btnAceptarEscaneo.addEventListener('click', () => {
             const modalEl = document.getElementById('modalConfirmarEscaneo');
             const modalInstance = bootstrap.Modal.getInstance(modalEl);
             if (modalInstance) modalInstance.hide();
-            ejecutarEscaneoItunesEnLote();
+            if(typeof ejecutarEscaneoItunesEnLote === 'function') ejecutarEscaneoItunesEnLote();
         });
     }
+
+    if(typeof inicializarBuscadorEtiquetas === 'function') {
+        inicializarBuscadorEtiquetas({
+            idContenedor: 'contenedor_buscador_artistas',
+            idSearch: 'album_artist_search',
+            idResults: 'album_artist_results',
+            idSelected: 'album_selected_artists',
+            idHidden: 'album_hidden_inputs',
+            setGlobal: window.crearAlbArtistasSeleccionados,
+            prefix: 'nuevo_alb'
+        });
+        inicializarBuscadorEtiquetas({
+            idContenedor: 'subir_can_contenedor_buscador',
+            idSearch: 'subir_can_artist_search',
+            idResults: 'subir_can_artist_results',
+            idSelected: 'subir_can_selected_artists',
+            idHidden: 'subir_can_hidden_inputs',
+            setGlobal: window.subirArtistasSeleccionados,
+            prefix: 'sub'
+        });
+        inicializarBuscadorEtiquetas({
+            idContenedor: 'edit_can_contenedor_buscador',
+            idSearch: 'edit_can_artist_search',
+            idResults: 'edit_can_artist_results',
+            idSelected: 'edit_can_selected_artists',
+            idHidden: 'edit_can_hidden_inputs',
+            setGlobal: window.editArtistasSeleccionados,
+            prefix: 'can'
+        });
+        inicializarBuscadorEtiquetas({
+            idContenedor: 'edit_alb_contenedor_buscador',
+            idSearch: 'edit_alb_artist_search',
+            idResults: 'edit_alb_artist_results',
+            idSelected: 'edit_alb_selected_artists',
+            idHidden: 'edit_alb_hidden_inputs',
+            setGlobal: window.editAlbArtistasSeleccionados,
+            prefix: 'alb'
+        });
+    }
+
+    document.body.addEventListener('click', function(e) {
+        const itemCola = e.target.closest('[data-index]');
+        const perteneceACola = e.target.closest('#colaPanel') || e.target.closest('#lista-cola-dinamica');
+        if (itemCola && perteneceACola) {
+            if (e.target.closest('.btn-eliminar-cola') || e.target.tagName.toLowerCase() === 'button' || e.target.classList.contains('bi-x') || e.target.closest('i.bi-x-lg')) {
+                return;
+            }
+            const indiceStr = itemCola.getAttribute('data-index');
+            const indice = parseInt(indiceStr);
+            if (!isNaN(indice) && typeof reproducirDesdeCola === 'function') {
+                reproducirDesdeCola(indice);
+            }
+        }
+    });
 });
 
+// ==========================================
+// 3. EVENTOS DE TECLADO
+// ==========================================
 document.addEventListener('keydown', function(event) {
     const elementoActivo = document.activeElement.tagName;
     if (elementoActivo === 'INPUT' || elementoActivo === 'TEXTAREA' || elementoActivo === 'SELECT') return;
-    
-    if (event.shiftKey && event.code === 'KeyN') { event.preventDefault(); document.getElementById('next-btn')?.click(); return; }
-    if (event.shiftKey && event.code === 'KeyP') { event.preventDefault(); document.getElementById('prev-btn')?.click(); return; }
-    if (event.code === 'Space') { event.preventDefault(); document.getElementById('play-btn')?.click(); return; }
-    if (event.code === 'KeyM') { event.preventDefault(); toggleMute(); return; }
+    if (event.shiftKey && event.code === 'KeyN') {
+        event.preventDefault();
+        document.getElementById('next-btn')?.click();
+        return;
+    }
+    if (event.shiftKey && event.code === 'KeyP') {
+        event.preventDefault();
+        document.getElementById('prev-btn')?.click();
+        return;
+    }
+    if (event.code === 'Space') {
+        event.preventDefault();
+        document.getElementById('play-btn')?.click();
+        return;
+    }
+    if (event.code === 'KeyM') {
+        event.preventDefault();
+        if(typeof toggleMute === 'function') toggleMute();
+        return;
+    }
 });
 
+// ==========================================
+// 4. FUNCIONES DE AUDIO Y SESIÓN
+// ==========================================
 function inicializarControlesNativos() {
     if ('mediaSession' in navigator) {
-        navigator.mediaSession.setActionHandler('play', togglePlay);
-        navigator.mediaSession.setActionHandler('pause', togglePlay);
-        navigator.mediaSession.setActionHandler('previoustrack', cancionAnterior);
-        navigator.mediaSession.setActionHandler('nexttrack', siguienteCancion);
+        if(typeof togglePlay === 'function') {
+            navigator.mediaSession.setActionHandler('play', togglePlay);
+            navigator.mediaSession.setActionHandler('pause', togglePlay);
+        }
+        if(typeof cancionAnterior === 'function') navigator.mediaSession.setActionHandler('previoustrack', cancionAnterior);
+        if(typeof siguienteCancion === 'function') navigator.mediaSession.setActionHandler('nexttrack', siguienteCancion);
     }
 }
 
@@ -175,66 +270,63 @@ function actualizarPantallaBloqueo(tituloTrack, artistaTrack, nombreAlbum, rutaI
 function restaurarSesion() {
     const audio = document.getElementById('audio-player');
     const volumeSlider = document.getElementById('volume-slider');
-    
     const volGuardado = localStorage.getItem('nebula_volumen');
     const muteGuardado = localStorage.getItem('nebula_muted');
-    
     if (volGuardado !== null && audio && volumeSlider) {
         const val = parseFloat(volGuardado);
         audio.volume = val;
         volumenAnterior = val > 0 ? val : 1;
         if (muteGuardado !== 'true') {
             volumeSlider.value = val;
-            actualizarIconoVolumen(false, val);
+            if(typeof actualizarIconoVolumen === 'function') actualizarIconoVolumen(false, val);
         }
     }
-    
     if (muteGuardado === 'true' && audio && volumeSlider) {
         audio.muted = true;
         volumeSlider.value = 0;
-        actualizarIconoVolumen(true, 0);
+        if(typeof actualizarIconoVolumen === 'function') actualizarIconoVolumen(true, 0);
     }
-    
     const rutaGuardada = localStorage.getItem('nebula_track_ruta');
     if (rutaGuardada) {
         const titulo = localStorage.getItem('nebula_track_titulo');
         const artista = localStorage.getItem('nebula_track_artista');
         const caratula = localStorage.getItem('nebula_track_caratula');
         const tiempoGuardado = localStorage.getItem('nebula_track_tiempo');
-        
         audio.src = rutaGuardada;
         window.rutaEnReproduccion = rutaGuardada;
-        document.getElementById('current-title').innerText = titulo;
-        document.getElementById('current-artist').innerText = artista;
+        const cTitle = document.getElementById('current-title');
+        const cArtist = document.getElementById('current-artist');
+        if(cTitle) cTitle.innerText = titulo;
+        if(cArtist) cArtist.innerText = artista;
         
         const coverImg = document.getElementById('current-cover');
         const iconContainer = document.getElementById('player-icon-container');
-        if (!caratula || caratula.includes('default.jpg') || caratula.trim() === '') {
-            coverImg.classList.add('d-none');
-            iconContainer.classList.remove('d-none');
-        } else {
-            coverImg.src = caratula;
-            coverImg.classList.remove('d-none');
-            iconContainer.classList.add('d-none');
+        if(coverImg && iconContainer) {
+            if (!caratula || caratula.includes('default.jpg') || caratula.trim() === '') {
+                coverImg.classList.add('d-none');
+                iconContainer.classList.remove('d-none');
+            } else {
+                coverImg.src = caratula;
+                coverImg.classList.remove('d-none');
+                iconContainer.classList.add('d-none');
+            }
         }
-        
         audio.addEventListener('loadedmetadata', function onMetaLoad() {
             if (tiempoGuardado) {
                 audio.currentTime = parseFloat(tiempoGuardado);
-                document.getElementById('progress-bar').value = (audio.currentTime / audio.duration) * 100;
-                document.getElementById('time-current').innerText = formatearTiempo(audio.currentTime);
+                const pBar = document.getElementById('progress-bar');
+                const tCur = document.getElementById('time-current');
+                if(pBar) pBar.value = (audio.currentTime / audio.duration) * 100;
+                if(tCur && typeof formatearTiempo === 'function') tCur.innerText = formatearTiempo(audio.currentTime);
             }
             audio.removeEventListener('loadedmetadata', onMetaLoad);
         });
-        
         actualizarPantallaBloqueo(titulo, artista, 'NebulaPlayer', caratula);
-        
         document.querySelectorAll('.target-row').forEach(fila => {
             fila.classList.remove('bg-dark-subtle', 'border-start', 'border-danger');
             const textoTitulo = fila.querySelector('.title-col span');
             if (textoTitulo) textoTitulo.classList.remove('text-success');
         });
-        
         const filaActiva = Array.from(document.querySelectorAll('.target-row')).find(f => f.getAttribute('data-ruta') === rutaGuardada);
         if (filaActiva) {
             filaActiva.classList.add('bg-dark-subtle', 'border-start', 'border-danger');
@@ -248,26 +340,25 @@ function toggleMute() {
     const reproductor = document.getElementById('audio-player');
     const volumeSlider = document.getElementById('volume-slider');
     if (!reproductor || !volumeSlider) return;
-    
     if (reproductor.muted || parseFloat(volumeSlider.value) === 0) {
         reproductor.muted = false;
         let nuevoVol = volumenAnterior > 0 ? volumenAnterior : 1;
         reproductor.volume = nuevoVol;
         volumeSlider.value = nuevoVol;
-        actualizarIconoVolumen(false, nuevoVol);
+        if(typeof actualizarIconoVolumen === 'function') actualizarIconoVolumen(false, nuevoVol);
         localStorage.setItem('nebula_volumen', nuevoVol);
         localStorage.setItem('nebula_muted', 'false');
     } else {
         volumenAnterior = parseFloat(volumeSlider.value);
         reproductor.muted = true;
         volumeSlider.value = 0;
-        actualizarIconoVolumen(true, 0);
+        if(typeof actualizarIconoVolumen === 'function') actualizarIconoVolumen(true, 0);
         localStorage.setItem('nebula_muted', 'true');
     }
 }
 
 // ==========================================
-// CONTROL DE ELIMINACIÓN CENTRALIZADO PREMIUM SPA
+// 5. CONTROL DE ELIMINACIÓN Y LISTAS
 // ==========================================
 let _tipoAEliminar = '';
 let _idAEliminar = 0;
@@ -277,20 +368,16 @@ function prepararEliminacion(tipo, id, btnElemento) {
     _tipoAEliminar = tipo;
     _idAEliminar = id;
     _elementoVisualARemover = btnElemento.closest('.target-row') || btnElemento.closest('tr') || btnElemento.closest('.accordion-item') || btnElemento.closest('li.item-con-opciones');
-    
     const mensajeEl = document.getElementById('mensajeEliminacionModal');
     if (!mensajeEl) return;
-    
     const configuracionTipos = {
         'cancion':  { articulo: 'esta', nombre: 'pista' },
         'playlist': { articulo: 'esta', nombre: 'playlist' },
         'album':    { articulo: 'este', nombre: 'álbum' },
         'artista':  { articulo: 'este', nombre: 'artista' }
     };
-    
     const config = configuracionTipos[tipo] || { articulo: 'este', nombre: tipo };
     mensajeEl.innerText = `¿Estás seguro de que deseas eliminar ${config.articulo} ${config.nombre} permanentemente?`;
-    
     const modalConfirmacion = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmarEliminacion'));
     modalConfirmacion.show();
 }
@@ -298,7 +385,6 @@ function prepararEliminacion(tipo, id, btnElemento) {
 document.addEventListener('DOMContentLoaded', () => {
     const btnAceptar = document.getElementById('btnAceptarEliminacion');
     if (!btnAceptar) return;
-    
     btnAceptar.addEventListener('click', () => {
         const modalEl = document.getElementById('modalConfirmarEliminacion');
         const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
@@ -311,16 +397,12 @@ async function eliminarProcedimientoAsincrono(tipo, id, elementoVisual) {
     try {
         const url = `api/eliminar_elementos.php?tabla=${tipo}&id=${id}`;
         const respuesta = await fetch(url, { method: 'GET' });
-        
         if (!respuesta.ok) throw new Error('Error en la respuesta del servidor');
-        
         const data = await respuesta.json();
-        
         if (data.status === 'success') {
             if (typeof mostrarNotificacionCola === 'function') {
                 mostrarNotificacionCola('Elemento eliminado correctamente.');
             }
-            
             if (tipo === 'cancion') {
                 if (elementoVisual && elementoVisual.classList.contains('target-row')) {
                     elementoVisual.style.transition = "all 0.4s ease";
@@ -334,7 +416,7 @@ async function eliminarProcedimientoAsincrono(tipo, id, elementoVisual) {
                             if (typeof actualizarColaReproduccion === 'function') {
                                 actualizarColaReproduccion();
                                 const panel = document.getElementById('colaPanel');
-                                if (panel && panel.classList.contains('activo')) renderizarColaVisual();
+                                if (panel && panel.classList.contains('activo') && typeof renderizarColaVisual === 'function') renderizarColaVisual();
                             }
                         }
                     }, 400);
@@ -368,8 +450,10 @@ async function eliminarProcedimientoAsincrono(tipo, id, elementoVisual) {
                     setTimeout(() => itemArt.remove(), 400);
                 }
                 const contenedoresBuscadores = [
-                    'contenedor_buscador_artistas', 'subir_can_contenedor_buscador',
-                    'edit_can_contenedor_buscador', 'edit_alb_contenedor_buscador'
+                    'contenedor_buscador_artistas',
+                    'subir_can_contenedor_buscador',
+                    'edit_can_contenedor_buscador',
+                    'edit_alb_contenedor_buscador'
                 ];
                 contenedoresBuscadores.forEach(idCont => {
                     const contSearch = document.getElementById(idCont);
@@ -392,10 +476,8 @@ async function quitarDePlaylistAsincrono(cancionId, playlistId, elementoBoton) {
     try {
         const url = `api/eliminar_elementos.php?tabla=quitar_de_playlist&cancion_id=${cancionId}&playlist_id=${playlistId}`;
         const respuesta = await fetch(url, { method: 'GET' });
-        
         if (!respuesta.ok) throw new Error('Error de red');
         const data = await respuesta.json();
-        
         if (data.status === 'success') {
             if (typeof mostrarNotificacionCola === 'function') {
                 mostrarNotificacionCola('Canción removida de la playlist.');
@@ -420,27 +502,20 @@ async function quitarDePlaylistAsincrono(cancionId, playlistId, elementoBoton) {
 async function agregarAPlaylistRealTime(event) {
     event.preventDefault();
     event.stopPropagation();
-    
     const form = event.target;
     const botonSubmit = form.querySelector('button[type="submit"]');
     const textoOriginal = botonSubmit.innerHTML;
-    
     botonSubmit.disabled = true;
     botonSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
-    
     const formData = new FormData(form);
-    
     try {
         const response = await fetch('api/insertar_elementos.php', { method: 'POST', body: formData });
         const data = await response.json();
-        
         if (data.status === 'success') {
             const modalEl = document.getElementById('agregarAPlaylistModal');
             bootstrap.Modal.getInstance(modalEl).hide();
-            
             const selectPlaylist = form.querySelector('select[name="playlist_id"]');
             const nombrePlaylist = selectPlaylist.options[selectPlaylist.selectedIndex].text;
-            
             if (window.filaCancionActiva) {
                 let playlistsActuales = window.filaCancionActiva.getAttribute('data-playlists') || '';
                 if (playlistsActuales.trim() !== '') {
@@ -450,14 +525,17 @@ async function agregarAPlaylistRealTime(event) {
                 }
                 window.filaCancionActiva.setAttribute('data-playlists', playlistsActuales);
             }
-            
             if (typeof mostrarNotificacionCola === 'function') {
                 mostrarNotificacionCola('¡Canción añadida a la playlist!');
             }
             form.reset();
         } else if (data.status === 'error' && data.message === 'duplicada') {
             document.getElementById('mensajeAlertaModal').innerText = 'Esta canción ya pertenece a la playlist seleccionada.';
-            new bootstrap.Modal(document.getElementById('modalAlertaSistema')).show();
+            if(bootstrap.Modal.getInstance(document.getElementById('modalAlertaSistema'))){
+               bootstrap.Modal.getInstance(document.getElementById('modalAlertaSistema')).show(); 
+            } else {
+               new bootstrap.Modal(document.getElementById('modalAlertaSistema')).show();
+            }
         } else {
             document.getElementById('mensajeAlertaModal').innerText = "Error: " + (data.message || "No se pudo añadir");
             new bootstrap.Modal(document.getElementById('modalAlertaSistema')).show();
@@ -473,7 +551,7 @@ async function agregarAPlaylistRealTime(event) {
 }
 
 // ==========================================
-// ENRUTADOR DE MUTACIONES EN VIVO (SPA)
+// 6. ENRUTADOR SPA E INYECTORES DOM
 // ==========================================
 function procesarMutacionSPA(accion, data) {
     if (!data) return;
@@ -513,9 +591,6 @@ function procesarMutacionSPA(accion, data) {
     }
 }
 
-// ==========================================
-// RECALCULAR INDICES VISUALES
-// ==========================================
 function recalcularIndicesTabla() {
     const filas = document.querySelectorAll('#tablaCanciones tbody .target-row');
     filas.forEach((fila, index) => {
@@ -524,18 +599,14 @@ function recalcularIndicesTabla() {
     });
 }
 
-// ==========================================
-// INYECTORES Y ACTUALIZADORES DOM 
-// ==========================================
 function inyectarPlaylistDOM(pl) {
     const ul = document.querySelector('#dropPlaylists .nav');
     if (!ul) return;
-    
     const li = document.createElement('li');
     li.className = "d-flex align-items-center justify-content-between p-1 rounded hover-bg-dark item-con-opciones";
     li.id = `li_pl_menu_${pl.id}`;
     li.innerHTML = `
-        <a href="#" class="text-secondary text-truncate flex-grow-1 text-decoration-none me-1 hover-text-white" data-nombre="${pl.nombre}" onclick="filtrarPorPlaylist(this.getAttribute('data-nombre'), ${pl.id})">
+        <a href="#" class="text-secondary text-truncate flex-grow-1 text-decoration-none me-1 hover-text-white" data-nombre="${pl.nombre}" onclick="if(typeof filtrarPorPlaylist==='function') filtrarPorPlaylist(this.getAttribute('data-nombre'), ${pl.id}); return false;">
             <i class="bi bi-music-note-list me-2 text-secondary"></i><span class="texto-nombre">${pl.nombre}</span>
         </a>
         <div class="d-flex gap-1 btn-opciones">
@@ -548,7 +619,6 @@ function inyectarPlaylistDOM(pl) {
         </div>
     `;
     insertarEnOrden(ul, li, '.item-con-opciones', '.texto-nombre');
-    
     const selectAdd = document.querySelector('#agregarAPlaylistModal select[name="playlist_id"]');
     if (selectAdd) selectAdd.insertAdjacentHTML('beforeend', `<option value="${pl.id}">${pl.nombre}</option>`);
 }
@@ -571,7 +641,6 @@ function actualizarPlaylistDOM(pl) {
         ul.removeChild(li);
         insertarEnOrden(ul, li, '.item-con-opciones', '.texto-nombre');
     }
-    
     document.querySelectorAll(`select[name="playlist_id"] option[value="${pl.id}"]`).forEach(opt => {
         opt.innerText = pl.nombre;
     });
@@ -580,13 +649,9 @@ function actualizarPlaylistDOM(pl) {
 function inyectarArtistaDOM(artista) {
     const contenedor = document.getElementById('acordeonSubArtistas');
     if (!contenedor) return;
-    
     const collapseId = `collapse_art_${artista.id}`;
     const esDefault = !artista.foto || artista.foto.includes('default.jpg') || artista.foto.trim() === '';
-    const iconoHTML = esDefault 
-        ? `<div class="bg-secondary d-flex align-items-center justify-content-center rounded-circle text-muted" style="width: 24px; height: 24px; min-width: 24px;"><i class="bi bi-person-fill small"></i></div>` 
-        : `<img src="${artista.foto}" style="width: 24px; height: 24px; object-fit: cover;" class="rounded-circle" alt="Art">`;
-        
+    const iconoHTML = esDefault ? `<div class="bg-secondary d-flex align-items-center justify-content-center rounded-circle text-muted" style="width: 24px; height: 24px; min-width: 24px;"><i class="bi bi-person-fill small"></i></div>` : `<img src="${artista.foto}" style="width: 24px; height: 24px; object-fit: cover;" class="rounded-circle" alt="Art">`;
     const divWrapper = document.createElement('div');
     divWrapper.className = "accordion-item bg-transparent border-0 mb-1";
     divWrapper.id = `block_art_${artista.id}`;
@@ -601,7 +666,7 @@ function inyectarArtistaDOM(artista) {
                     <i class="bi bi-three-dots-vertical"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
-                    <li><a class="dropdown-item small" href="#" data-nombre="${artista.nombre}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-nombre'); filtrarBiblioteca(true); return false;"><i class="bi bi-search text-success me-2"></i>Buscar todas sus canciones</a></li>
+                    <li><a class="dropdown-item small" href="#" data-nombre="${artista.nombre}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-nombre'); if(typeof filtrarBiblioteca === 'function') filtrarBiblioteca(true); return false;"><i class="bi bi-search text-success me-2"></i>Buscar todas sus canciones</a></li>
                     <li><a class="dropdown-item small" href="#" data-bs-toggle="modal" data-bs-target="#editArtistaModal" data-nombre="${artista.nombre}" onclick="document.getElementById('edit_art_id').value='${artista.id}'; document.getElementById('edit_art_nombre').value=this.getAttribute('data-nombre');"><i class="bi bi-pencil text-warning me-2"></i>Editar Artista</a></li>
                     <li><hr class="dropdown-divider border-secondary"></li>
                     <li><a class="dropdown-item small text-danger" href="#" onclick="event.preventDefault(); event.stopPropagation(); prepararEliminacion('artista', ${artista.id}, this)"><i class="bi bi-trash3 text-danger me-2"></i>Eliminar Artista</a></li>
@@ -613,14 +678,13 @@ function inyectarArtistaDOM(artista) {
                 <ul class="list-unstyled d-flex flex-column gap-1 small mb-0" id="lista_albumes_art_${artista.id}"><li class="text-muted small p-1 ps-2 fst-italic" style="font-size: 0.75rem;">Sin álbumes</li></ul>
             </div>
         </div>`;
-        
     insertarEnOrden(contenedor, divWrapper, '.accordion-item', '.text-white.fw-medium');
-    
     const contenedoresBuscadores = [
-        'contenedor_buscador_artistas', 'subir_can_contenedor_buscador', 
-        'edit_can_contenedor_buscador', 'edit_alb_contenedor_buscador'
+        'contenedor_buscador_artistas',
+        'subir_can_contenedor_buscador',
+        'edit_can_contenedor_buscador',
+        'edit_alb_contenedor_buscador'
     ];
-    
     contenedoresBuscadores.forEach(idCont => {
         const contSearch = document.getElementById(idCont);
         if (contSearch && contSearch.listaArtistas) {
@@ -637,17 +701,12 @@ function inyectarArtistaDOM(artista) {
 function actualizarArtistaDOM(artista) {
     const block = document.getElementById(`block_art_${artista.id}`);
     if (!block) return;
-    
     const txt = block.querySelector('.text-white.fw-medium');
     if (txt) txt.innerText = artista.nombre;
-    
     const esDefault = !artista.foto || artista.foto.includes('default.jpg') || artista.foto.trim() === '';
-    // ROMPEDOR DE CACHÉ: Obliga al navegador a renderizar la imagen sin usar su memoria
     const cacheBuster = esDefault ? '' : '?v=' + new Date().getTime();
-    
     let img = block.querySelector('img');
     let divFallback = block.querySelector('.bg-secondary');
-    
     if (esDefault) {
         if (img) {
             const newDiv = document.createElement('div');
@@ -667,37 +726,33 @@ function actualizarArtistaDOM(artista) {
             divFallback.replaceWith(newImg);
         }
     }
-    
     const editBtn = block.querySelector('[data-bs-target="#editArtistaModal"]');
     if (editBtn) editBtn.setAttribute('data-nombre', artista.nombre);
-    
     const contenedor = document.getElementById('acordeonSubArtistas');
     contenedor.removeChild(block);
     insertarEnOrden(contenedor, block, '.accordion-item', '.text-white.fw-medium');
-
     document.querySelectorAll('#tablaCanciones tbody .target-row').forEach(tr => {
         const artistsIds = tr.getAttribute('data-artistas-ids') || '';
         if (artistsIds.split(',').map(id => id.trim()).includes(artista.id.toString())) {
             const enlaceArtista = tr.querySelector(`.artist-col a[data-artista-id="${artista.id}"]`);
             if (enlaceArtista) {
                 enlaceArtista.innerText = artista.nombre;
-                enlaceArtista.setAttribute('onclick', `document.getElementById('buscadorInput').value='${artista.nombre.replace(/'/g, "\\'")}'; filtrarBiblioteca(true); return false;`);
+                enlaceArtista.setAttribute('onclick', `document.getElementById('buscadorInput').value='${artista.nombre.replace(/'/g, "\\'")}'; if(typeof filtrarBiblioteca === 'function') filtrarBiblioteca(true); return false;`);
             }
             const todosLosNombres = Array.from(tr.querySelectorAll('.artist-col a')).map(a => a.innerText.trim()).join(', ');
             tr.setAttribute('data-artista', todosLosNombres);
-
             if (window.rutaEnReproduccion === tr.getAttribute('data-ruta')) {
                 const currentArtistEl = document.getElementById('current-artist');
                 if(currentArtistEl) currentArtistEl.innerText = todosLosNombres;
             }
         }
     });
-    
     const contenedoresBuscadores = [
-        'contenedor_buscador_artistas', 'subir_can_contenedor_buscador', 
-        'edit_can_contenedor_buscador', 'edit_alb_contenedor_buscador'
+        'contenedor_buscador_artistas',
+        'subir_can_contenedor_buscador',
+        'edit_can_contenedor_buscador',
+        'edit_alb_contenedor_buscador'
     ];
-    
     contenedoresBuscadores.forEach(idCont => {
         const contSearch = document.getElementById(idCont);
         if (contSearch && contSearch.listaArtistas) {
@@ -714,21 +769,17 @@ function actualizarArtistaDOM(artista) {
 function inyectarAlbumDOM(album) {
     const ids = album.artistas_ids ? album.artistas_ids.split(',') : [];
     const esDefault = !album.caratula || album.caratula.includes('default.jpg') || album.caratula.trim() === '';
-    const iconoHTML = esDefault 
-        ? `<div class="bg-secondary d-flex align-items-center justify-content-center rounded text-muted" style="width: 20px; height: 20px; min-width: 20px;"><i class="bi bi-disc" style="font-size: 0.7rem;"></i></div>` 
-        : `<img src="${album.caratula}" style="width: 20px; height: 20px; object-fit: cover;" class="rounded" alt="Alb">`;
-        
+    const iconoHTML = esDefault ? `<div class="bg-secondary d-flex align-items-center justify-content-center rounded text-muted" style="width: 20px; height: 20px; min-width: 20px;"><i class="bi bi-disc" style="font-size: 0.7rem;"></i></div>` : `<img src="${album.caratula}" style="width: 20px; height: 20px; object-fit: cover;" class="rounded" alt="Alb">`;
     ids.forEach(idArt => {
         const ul = document.querySelector(`#lista_albumes_art_${idArt.trim()}`);
         if (ul) {
             const emptyNotice = ul.querySelector('.fst-italic');
             if (emptyNotice) emptyNotice.remove();
-            
             const li = document.createElement('li');
             li.className = "d-flex align-items-center justify-content-between text-secondary p-1 ps-2 hover-bg-dark rounded item-con-opciones";
             li.id = `li_alb_menu_${album.id}`;
             li.innerHTML = `
-                <div class="d-flex align-items-center gap-2 text-truncate flex-grow-1" style="cursor:pointer;" data-titulo="${album.titulo}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-titulo'); filtrarBiblioteca(true);">
+                <div class="d-flex align-items-center gap-2 text-truncate flex-grow-1" style="cursor:pointer;" data-titulo="${album.titulo}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-titulo'); if(typeof filtrarBiblioteca==='function') filtrarBiblioteca(true);">
                     ${iconoHTML}
                     <span class="text-white-50 text-truncate" style="font-size: 0.85rem;">${album.titulo}</span>
                 </div>
@@ -737,7 +788,7 @@ function inyectarAlbumDOM(album) {
                         <i class="bi bi-three-dots-vertical"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
-                        <li><a class="dropdown-item small" href="#" data-titulo="${album.titulo}" data-artistas-nombres="${album.artistas_nombres || ''}" data-artistas-ids="${album.artistas_ids}" data-bs-toggle="modal" data-bs-target="#editAlbumModal" onclick="cargarModalAlbum(${album.id}, this.getAttribute('data-titulo'), '${album.anio || ''}'); cargarEtiquetasEdicionAlbum(this.getAttribute('data-artistas-ids'), this.getAttribute('data-artistas-nombres'));"><i class="bi bi-pencil text-warning me-2"></i>Editar Álbum</a></li>
+                        <li><a class="dropdown-item small" href="#" data-titulo="${album.titulo}" data-artistas-nombres="${album.artistas_nombres || ''}" data-artistas-ids="${album.artistas_ids}" data-bs-toggle="modal" data-bs-target="#editAlbumModal" onclick="if(typeof cargarModalAlbum==='function') cargarModalAlbum(${album.id}, this.getAttribute('data-titulo'), '${album.anio || ''}'); if(typeof cargarEtiquetasEdicionAlbum==='function') cargarEtiquetasEdicionAlbum(this.getAttribute('data-artistas-ids'), this.getAttribute('data-artistas-nombres'));"><i class="bi bi-pencil text-warning me-2"></i>Editar Álbum</a></li>
                         <li><hr class="dropdown-divider border-secondary"></li>
                         <li><a class="dropdown-item small text-danger" href="#" onclick="event.preventDefault(); event.stopPropagation(); prepararEliminacion('album', ${album.id}, this)"><i class="bi bi-trash3 text-danger me-2"></i>Eliminar Álbum</a></li>
                     </ul>
@@ -746,7 +797,6 @@ function inyectarAlbumDOM(album) {
             insertarEnOrden(ul, li, '.item-con-opciones', 'span.text-white-50');
         }
     });
-    
     const strOpcion = `<option value="${album.id}">${album.titulo} (${album.artistas_nombres || ''})</option>`;
     document.querySelectorAll('select[name="album_id"]').forEach(select => select.insertAdjacentHTML('beforeend', strOpcion));
 }
@@ -754,41 +804,29 @@ function inyectarAlbumDOM(album) {
 function actualizarAlbumDOM(album) {
     const esDefault = !album.caratula || album.caratula.includes('default.jpg') || album.caratula.trim() === '';
     const cacheBuster = esDefault ? '' : '?v=' + new Date().getTime();
-
-    // 1. ELIMINAR EL ÁLBUM DEL MENÚ ACTUAL (Para poder moverlo a su nuevo artista)
     document.querySelectorAll(`[id^="li_alb_menu_${album.id}"]`).forEach(li => {
         const ul = li.parentNode;
         li.remove();
-        // Si el artista se quedó sin álbumes, mostramos el mensaje de "Sin álbumes"
         if (ul && ul.querySelectorAll('li.item-con-opciones').length === 0) {
             if (!ul.querySelector('.fst-italic')) {
                 ul.innerHTML = `<li class="text-muted small p-1 ps-2 fst-italic" style="font-size: 0.75rem;">Sin álbumes</li>`;
             }
         }
     });
-
-    // 2. VOLVER A CREAR EL ÁLBUM EN LOS ARTISTAS CORRESPONDIENTES
     const idsArt = album.artistas_ids ? album.artistas_ids.split(',') : [];
-    const iconoHTML = esDefault 
-        ? `<div class="bg-secondary d-flex align-items-center justify-content-center rounded text-muted" style="width: 20px; height: 20px; min-width: 20px;"><i class="bi bi-disc" style="font-size: 0.7rem;"></i></div>` 
-        : `<img src="${album.caratula}${cacheBuster}" style="width: 20px; height: 20px; object-fit: cover;" class="rounded" alt="Alb">`;
-
-    // Protegemos los textos por si tienen comillas dobles
+    const iconoHTML = esDefault ? `<div class="bg-secondary d-flex align-items-center justify-content-center rounded text-muted" style="width: 20px; height: 20px; min-width: 20px;"><i class="bi bi-disc" style="font-size: 0.7rem;"></i></div>` : `<img src="${album.caratula}${cacheBuster}" style="width: 20px; height: 20px; object-fit: cover;" class="rounded" alt="Alb">`;
     const tituloEsc = album.titulo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
     const artsNombresEsc = (album.artistas_nombres || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
-
     idsArt.forEach(idArt => {
         const ul = document.querySelector(`#lista_albumes_art_${idArt.trim()}`);
         if (ul) {
             const emptyNotice = ul.querySelector('.fst-italic');
             if (emptyNotice) emptyNotice.remove();
-            
             const li = document.createElement('li');
             li.className = "d-flex align-items-center justify-content-between text-secondary p-1 ps-2 hover-bg-dark rounded item-con-opciones";
             li.id = `li_alb_menu_${album.id}`;
-            
             li.innerHTML = `
-                <div class="d-flex align-items-center gap-2 text-truncate flex-grow-1" style="cursor:pointer;" data-titulo="${tituloEsc}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-titulo'); filtrarBiblioteca(true);">
+                <div class="d-flex align-items-center gap-2 text-truncate flex-grow-1" style="cursor:pointer;" data-titulo="${tituloEsc}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-titulo'); if(typeof filtrarBiblioteca==='function') filtrarBiblioteca(true);">
                     ${iconoHTML}
                     <span class="text-white-50 text-truncate" style="font-size: 0.85rem;">${album.titulo}</span>
                 </div>
@@ -797,7 +835,7 @@ function actualizarAlbumDOM(album) {
                         <i class="bi bi-three-dots-vertical"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
-                        <li><a class="dropdown-item small" href="#" data-titulo="${tituloEsc}" data-artistas-nombres="${artsNombresEsc}" data-artistas-ids="${album.artistas_ids}" data-bs-toggle="modal" data-bs-target="#editAlbumModal" onclick="cargarModalAlbum(${album.id}, this.getAttribute('data-titulo'), '${album.anio || ''}'); cargarEtiquetasEdicionAlbum(this.getAttribute('data-artistas-ids'), this.getAttribute('data-artistas-nombres'));"><i class="bi bi-pencil text-warning me-2"></i>Editar Álbum</a></li>
+                        <li><a class="dropdown-item small" href="#" data-titulo="${tituloEsc}" data-artistas-nombres="${artsNombresEsc}" data-artistas-ids="${album.artistas_ids}" data-bs-toggle="modal" data-bs-target="#editAlbumModal" onclick="if(typeof cargarModalAlbum==='function') cargarModalAlbum(${album.id}, this.getAttribute('data-titulo'), '${album.anio || ''}'); if(typeof cargarEtiquetasEdicionAlbum==='function') cargarEtiquetasEdicionAlbum(this.getAttribute('data-artistas-ids'), this.getAttribute('data-artistas-nombres'));"><i class="bi bi-pencil text-warning me-2"></i>Editar Álbum</a></li>
                         <li><hr class="dropdown-divider border-secondary"></li>
                         <li><a class="dropdown-item small text-danger" href="#" onclick="event.preventDefault(); event.stopPropagation(); prepararEliminacion('album', ${album.id}, this)"><i class="bi bi-trash3 text-danger me-2"></i>Eliminar Álbum</a></li>
                     </ul>
@@ -806,21 +844,17 @@ function actualizarAlbumDOM(album) {
             insertarEnOrden(ul, li, '.item-con-opciones', 'span.text-white-50');
         }
     });
-
-    // 3. ACTUALIZAR LAS CANCIONES EN LA TABLA PRINCIPAL (Por si cambió el nombre o la carátula)
     document.querySelectorAll(`#tablaCanciones tbody .target-row[data-album-id="${album.id}"]`).forEach(tr => {
         const albumCellA = tr.querySelector('.album-col a');
         if (albumCellA) {
             albumCellA.innerText = album.titulo;
-            albumCellA.setAttribute('onclick', `document.getElementById('buscadorInput').value='${tituloEsc}'; filtrarBiblioteca(true); return false;`);
+            albumCellA.setAttribute('onclick', `document.getElementById('buscadorInput').value='${tituloEsc}'; if(typeof filtrarBiblioteca==='function') filtrarBiblioteca(true); return false;`);
         }
-
         const container = tr.querySelector('.title-col .d-flex');
         if (container && album.caratula) {
             tr.setAttribute('data-caratula', album.caratula);
             let imgFila = container.querySelector('img');
             let divFallbackFila = container.querySelector('.bg-secondary');
-
             if (imgFila) {
                 imgFila.src = album.caratula + cacheBuster;
             } else if (divFallbackFila && !esDefault) {
@@ -832,8 +866,6 @@ function actualizarAlbumDOM(album) {
                 divFallbackFila.replaceWith(newImg);
             }
         }
-
-        // Si la canción del álbum está sonando ahora mismo, actualizar el reproductor
         if (window.rutaEnReproduccion === tr.getAttribute('data-ruta') && album.caratula) {
             const currentCover = document.getElementById('current-cover');
             const iconContainer = document.getElementById('player-icon-container');
@@ -841,54 +873,38 @@ function actualizarAlbumDOM(album) {
                 currentCover.src = album.caratula + cacheBuster;
                 currentCover.classList.remove('d-none');
                 iconContainer.classList.add('d-none');
-                
                 if ('mediaSession' in navigator) {
                     actualizarPantallaBloqueo(tr.getAttribute('data-titulo'), tr.getAttribute('data-artista'), album.titulo, album.caratula + cacheBuster);
                 }
             }
         }
     });
-    
-    // 4. ACTUALIZAR LOS MENÚS DESPLEGABLES DE LOS FORMULARIOS
     document.querySelectorAll(`select[name="album_id"] option[value="${album.id}"]`).forEach(opt => {
         opt.innerText = `${album.titulo} (${album.artistas_nombres || ''})`;
     });
-    
-    // Refrescar el buscador visualmente
     if (typeof filtrarBiblioteca === 'function') filtrarBiblioteca(true);
 }
 
 function inyectarCancionDOM(c) {
     const tbody = document.querySelector('#tablaCanciones tbody');
     if (!tbody) return;
-    
     if (tbody.querySelector('td[colspan="6"]')) {
         tbody.innerHTML = '';
     }
-    
     const mins = Math.floor(c.duracion / 60);
     const secs = c.duracion % 60;
     const duracionFmt = mins + ":" + (secs < 10 ? "0" : "") + secs;
-    
     const esDefault = !c.caratula || c.caratula.includes('default.jpg') || c.caratula.trim() === '';
-    const iconoHTML = esDefault 
-        ? `<div class="bg-secondary d-flex align-items-center justify-content-center rounded text-muted" style="width: 45px; height: 45px;"><i class="bi bi-music-note fs-4"></i></div>` 
-        : `<img src="${c.caratula}" class="album-img" alt="Cover" loading="lazy">`;
-        
+    const iconoHTML = esDefault ? `<div class="bg-secondary d-flex align-items-center justify-content-center rounded text-muted" style="width: 45px; height: 45px;"><i class="bi bi-music-note fs-4"></i></div>` : `<img src="${c.caratula}" class="album-img" alt="Cover" loading="lazy">`;
     const albumTexto = c.album === 'Single / Sencillo' ? 'Single' : c.album;
     const albumClase = c.album === 'Single / Sencillo' ? 'text-muted font-monospace small' : 'text-secondary';
-    
     const idsArt = (c.artistas_ids || '').split(',');
     const arts = (c.artistas_nombres || '').split(', ');
-    const htmlArtistas = arts.map((nom, idx) => 
-        `<a href="#" data-artista-id="${idsArt[idx] ? idsArt[idx].trim() : ''}" onclick="document.getElementById('buscadorInput').value='${nom.replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; filtrarBiblioteca(true); return false;" class="text-info text-decoration-none hover-underline">${nom}</a>`
-    ).join('<span class="text-secondary">, </span>');
-
+    const htmlArtistas = arts.map((nom, idx) => `<a href="#" data-artista-id="${idsArt[idx] ? idsArt[idx].trim() : ''}" onclick="document.getElementById('buscadorInput').value='${nom.replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; if(typeof filtrarBiblioteca==='function') filtrarBiblioteca(true); return false;" class="text-info text-decoration-none hover-underline">${nom}</a>` ).join('<span class="text-secondary">, </span>');
     const tituloEsc = c.titulo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
     const artsEsc = c.artistas_nombres.replace(/'/g, "\\'").replace(/"/g, "&quot;");
     const rutaEsc = c.ruta_archivo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
     const albEsc = albumTexto.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-    
     const tr = document.createElement('tr');
     tr.className = 'song-row target-row';
     tr.id = `fila_cancion_${c.id}`;
@@ -900,8 +916,7 @@ function inyectarCancionDOM(c) {
     tr.setAttribute('data-fecha', c.fecha_subida);
     tr.setAttribute('data-album-id', c.album_id || '');
     tr.setAttribute('data-artistas-ids', c.artistas_ids || '');
-    tr.setAttribute('onclick', 'reproducirDesdeFila(this)');
-    
+    if(typeof reproducirDesdeFila === 'function') tr.setAttribute('onclick', 'reproducirDesdeFila(this)');
     tr.innerHTML = `
         <td class="text-secondary"></td>
         <td class="title-col">
@@ -911,7 +926,7 @@ function inyectarCancionDOM(c) {
             </div>
         </td>
         <td class="album-col d-none d-md-table-cell">
-            <a href="#" onclick="document.getElementById('buscadorInput').value='${albEsc}'; filtrarBiblioteca(true); return false;" class="${albumClase} text-decoration-none hover-underline">
+            <a href="#" onclick="document.getElementById('buscadorInput').value='${albEsc}'; if(typeof filtrarBiblioteca==='function') filtrarBiblioteca(true); return false;" class="${albumClase} text-decoration-none hover-underline">
                 ${albumTexto}
             </a>
         </td>
@@ -926,7 +941,7 @@ function inyectarCancionDOM(c) {
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end bg-dark border border-secondary border-opacity-20 shadow-lg p-1">
                     <li>
-                        <button class="dropdown-item text-white hover-bg-dark rounded small py-1.5" onclick="agregarAColaManual('${c.ruta_archivo}'); event.stopPropagation();">
+                        <button class="dropdown-item text-white hover-bg-dark rounded small py-1.5" onclick="if(typeof agregarAColaManual==='function') agregarAColaManual('${c.ruta_archivo}'); event.stopPropagation();">
                             <i class="bi bi-music-note-list text-danger me-2"></i> Añadir a la cola
                         </button>
                     </li>
@@ -941,12 +956,12 @@ function inyectarCancionDOM(c) {
                         </button>
                     </li>
                     <li>
-                        <button type="button" class="dropdown-item text-white rounded small py-1.5" data-bs-toggle="modal" data-bs-target="#editCancionModal" onclick="cargarModalCancion(${c.id}, '${tituloEsc}', '${c.album_id || ''}', ${c.duracion}, '${rutaEsc}'); cargarEtiquetasEdicion('${c.artistas_ids || ''}', '${artsEsc}');">
+                        <button type="button" class="dropdown-item text-white rounded small py-1.5" data-bs-toggle="modal" data-bs-target="#editCancionModal" onclick="if(typeof cargarModalCancion==='function') cargarModalCancion(${c.id}, '${tituloEsc}', '${c.album_id || ''}', ${c.duracion}, '${rutaEsc}'); if(typeof cargarEtiquetasEdicion==='function') cargarEtiquetasEdicion('${c.artistas_ids || ''}', '${artsEsc}');">
                             <i class="bi bi-pencil me-2 text-warning"></i> Editar detalles
                         </button>
                     </li>
                     <li>
-                        <button type="button" class="dropdown-item text-white rounded small py-1.5" onclick="event.stopPropagation(); descargarCancionConMetadatos(this, '${rutaEsc}', '${tituloEsc}', '${artsEsc}', '${albEsc}');">
+                        <button type="button" class="dropdown-item text-white rounded small py-1.5" onclick="event.stopPropagation(); if(typeof descargarCancionConMetadatos==='function') descargarCancionConMetadatos(this, '${rutaEsc}', '${tituloEsc}', '${artsEsc}', '${albEsc}');">
                             <i class="bi bi-download me-2 text-success"></i> <span class="texto-btn">Descargar pista</span>
                         </button>
                     </li>
@@ -959,16 +974,14 @@ function inyectarCancionDOM(c) {
                 </ul>
             </div>
         </td>`;
-        
     tbody.insertBefore(tr, tbody.firstChild);
     recalcularIndicesTabla();
-    
     if (typeof filtrarBiblioteca === 'function') {
         filtrarBiblioteca(true);
         if (typeof actualizarColaReproduccion === 'function') {
             actualizarColaReproduccion();
             const panel = document.getElementById('colaPanel');
-            if (panel && panel.classList.contains('activo')) renderizarColaVisual();
+            if (panel && panel.classList.contains('activo') && typeof renderizarColaVisual==='function') renderizarColaVisual();
         }
     }
 }
@@ -976,7 +989,6 @@ function inyectarCancionDOM(c) {
 function actualizarCancionDOM(c) {
     const tr = document.getElementById(`fila_cancion_${c.id}`);
     if (!tr) return;
-    
     tr.setAttribute('data-titulo', c.titulo);
     tr.setAttribute('data-artista', c.artistas_nombres);
     tr.setAttribute('data-caratula', c.caratula);
@@ -984,17 +996,13 @@ function actualizarCancionDOM(c) {
     tr.setAttribute('data-playlists', c.playlists_nombres || '');
     tr.setAttribute('data-album-id', c.album_id || '');
     tr.setAttribute('data-artistas-ids', c.artistas_ids || '');
-    
     const tituloSpan = tr.querySelector('.title-col span.fw-bold');
     if (tituloSpan) tituloSpan.innerText = c.titulo;
-    
     const esDefault = !c.caratula || c.caratula.includes('default.jpg') || c.caratula.trim() === '';
     const cacheBuster = esDefault ? '' : '?v=' + new Date().getTime();
-    
     const container = tr.querySelector('.title-col .d-flex');
     let img = container.querySelector('img');
     let divFallback = container.querySelector('.bg-secondary');
-    
     if (esDefault) {
         if (img) {
             const newDiv = document.createElement('div');
@@ -1015,65 +1023,55 @@ function actualizarCancionDOM(c) {
             divFallback.replaceWith(newImg);
         }
     }
-    
     const albumCell = tr.querySelector('.album-col a');
     if (albumCell) {
         const isSingle = c.album === 'Single / Sencillo';
         albumCell.innerText = isSingle ? 'Single' : c.album;
         albumCell.className = `${isSingle ? 'text-muted font-monospace small' : 'text-secondary'} text-decoration-none hover-underline`;
-        albumCell.setAttribute('onclick', `document.getElementById('buscadorInput').value='${(isSingle ? 'Single' : c.album).replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; filtrarBiblioteca(true); return false;`);
+        albumCell.setAttribute('onclick', `document.getElementById('buscadorInput').value='${(isSingle ? 'Single' : c.album).replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; if(typeof filtrarBiblioteca==='function') filtrarBiblioteca(true); return false;`);
     }
-    
     const artistCell = tr.querySelector('.artist-col');
     if (artistCell) {
         const idsArt = (c.artistas_ids || '').split(',');
         const arts = (c.artistas_nombres || '').split(', ');
-        artistCell.innerHTML = arts.map((nom, idx) => 
-            `<a href="#" data-artista-id="${idsArt[idx] ? idsArt[idx].trim() : ''}" onclick="document.getElementById('buscadorInput').value='${nom.replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; filtrarBiblioteca(true); return false;" class="text-info text-decoration-none hover-underline">${nom}</a>`
-        ).join('<span class="text-secondary">, </span>');
+        artistCell.innerHTML = arts.map((nom, idx) => `<a href="#" data-artista-id="${idsArt[idx] ? idsArt[idx].trim() : ''}" onclick="document.getElementById('buscadorInput').value='${nom.replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; if(typeof filtrarBiblioteca==='function') filtrarBiblioteca(true); return false;" class="text-info text-decoration-none hover-underline">${nom}</a>` ).join('<span class="text-secondary">, </span>');
     }
-    
     const mins = Math.floor(c.duracion / 60);
     const secs = c.duracion % 60;
     const duracionCell = tr.querySelector('td.font-monospace');
     if (duracionCell) {
         duracionCell.innerText = mins + ":" + (secs < 10 ? "0" : "") + secs;
     }
-    
     if (window.rutaEnReproduccion === c.ruta_archivo) {
         document.getElementById('current-title').innerText = c.titulo;
         document.getElementById('current-artist').innerText = c.artistas_nombres;
         const currentCover = document.getElementById('current-cover');
         if (currentCover) currentCover.src = c.caratula + cacheBuster;
-        
         if ('mediaSession' in navigator) {
             actualizarPantallaBloqueo(c.titulo, c.artistas_nombres, c.album || 'Single', c.caratula + cacheBuster);
         }
     }
-    
     const editBtn = tr.querySelector('[data-bs-target="#editCancionModal"]');
     if (editBtn) {
         const tituloEscapado = c.titulo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const rutaEscapada = c.ruta_archivo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const artistasNombresEscapados = c.artistas_nombres.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-        editBtn.setAttribute('onclick', `cargarModalCancion(${c.id}, '${tituloEscapado}', '${c.album_id || ''}', ${c.duracion || 0}, '${rutaEscapada}'); cargarEtiquetasEdicion('${c.artistas_ids || ''}', '${artistasNombresEscapados}');`);
+        editBtn.setAttribute('onclick', `if(typeof cargarModalCancion==='function') cargarModalCancion(${c.id}, '${tituloEscapado}', '${c.album_id || ''}', ${c.duracion || 0}, '${rutaEscapada}'); if(typeof cargarEtiquetasEdicion==='function') cargarEtiquetasEdicion('${c.artistas_ids || ''}', '${artistasNombresEscapados}');`);
     }
-    
     const downloadBtn = tr.querySelector('.bi-download').closest('button');
     if (downloadBtn) {
         const tituloEscapado = c.titulo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const rutaEscapada = c.ruta_archivo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const artistasNombresEscapados = c.artistas_nombres.replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const albumEscapado = (c.album || 'Single').replace(/'/g, "\\'").replace(/"/g, "&quot;");
-        downloadBtn.setAttribute('onclick', `event.stopPropagation(); descargarCancionConMetadatos(this, '${rutaEscapada}', '${tituloEscapado}', '${artistasNombresEscapados}', '${albumEscapado}')`);
+        downloadBtn.setAttribute('onclick', `event.stopPropagation(); if(typeof descargarCancionConMetadatos==='function') descargarCancionConMetadatos(this, '${rutaEscapada}', '${tituloEscapado}', '${artistasNombresEscapados}', '${albumEscapado}')`);
     }
-    
     if (typeof filtrarBiblioteca === 'function') {
         filtrarBiblioteca(true);
         if (typeof actualizarColaReproduccion === 'function') {
             actualizarColaReproduccion();
             const panel = document.getElementById('colaPanel');
-            if (panel && panel.classList.contains('activo')) renderizarColaVisual();
+            if (panel && panel.classList.contains('activo') && typeof renderizarColaVisual==='function') renderizarColaVisual();
         }
     }
 }
@@ -1099,18 +1097,16 @@ function insertarEnOrden(contenedor, nuevoElemento, selectorItems, selectorNombr
 }
 
 // ==========================================
-// SISTEMA DE ETIQUETAS (TAGS) GENERALIZADO
+// 7. SISTEMA DE ETIQUETAS Y BUSCADOR WEB
 // ==========================================
 function inicializarBuscadorEtiquetas(config) {
     const { idContenedor, idSearch, idResults, idSelected, idHidden, setGlobal, prefix } = config;
     const contenedor = document.getElementById(idContenedor);
     if (!contenedor) return;
-    
     contenedor.listaArtistas = JSON.parse(contenedor.dataset.artistas || '[]');
     const searchInput = document.getElementById(idSearch);
     const resultsContainer = document.getElementById(idResults);
     if (!searchInput || !resultsContainer) return;
-    
     searchInput.addEventListener('input', function() {
         const query = this.value.toLowerCase().trim();
         resultsContainer.innerHTML = '';
@@ -1141,10 +1137,8 @@ function inicializarBuscadorEtiquetas(config) {
             });
         } else resultsContainer.style.display = 'none';
     });
-    
     document.addEventListener('click', function(e) {
-        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target))
-            resultsContainer.style.display = 'none';
+        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) resultsContainer.style.display = 'none';
     });
 }
 
@@ -1154,14 +1148,12 @@ function creadorDeEtiquetas(id, nombre, setGlobal, prefix, hiddenContainerId, se
     const hiddenContainer = document.getElementById(hiddenContainerId);
     const selectedContainer = document.getElementById(selectedContainerId);
     if (!hiddenContainer || !selectedContainer) return;
-    
     const hiddenInput = document.createElement('input');
     hiddenInput.type = 'hidden';
     hiddenInput.name = 'artista_ids[]';
     hiddenInput.value = idStr;
     hiddenInput.id = `${prefix}_hidden_art_${idStr}`;
     hiddenContainer.appendChild(hiddenInput);
-    
     const tag = document.createElement('span');
     tag.className = 'badge d-flex align-items-center p-2 rounded-pill';
     tag.style.cssText = 'background-color: #1a1a1a; border: 1px solid var(--borde-carmesí); color: #ffffff; font-size: 0.8rem;';
@@ -1205,62 +1197,10 @@ function cargarEtiquetasEdicion(idsCSV, nombresCSV) {
     for (let i = 0; i < ids.length; i++) if (ids[i].trim() !== '') window.agregarEtiquetaCancion(ids[i].trim(), nombres[i].trim());
 }
 
-// ==========================================
-// INITIALIZATION AND DELEGATED EVENTS
-// ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-    inicializarBuscadorEtiquetas({
-        idContenedor: 'contenedor_buscador_artistas',
-        idSearch: 'album_artist_search', idResults: 'album_artist_results',
-        idSelected: 'album_selected_artists', idHidden: 'album_hidden_inputs',
-        setGlobal: window.crearAlbArtistasSeleccionados, prefix: 'nuevo_alb'
-    });
-    
-    inicializarBuscadorEtiquetas({
-        idContenedor: 'subir_can_contenedor_buscador',
-        idSearch: 'subir_can_artist_search', idResults: 'subir_can_artist_results',
-        idSelected: 'subir_can_selected_artists', idHidden: 'subir_can_hidden_inputs',
-        setGlobal: window.subirArtistasSeleccionados, prefix: 'sub'
-    });
-    
-    inicializarBuscadorEtiquetas({
-        idContenedor: 'edit_can_contenedor_buscador',
-        idSearch: 'edit_can_artist_search', idResults: 'edit_can_artist_results',
-        idSelected: 'edit_can_selected_artists', idHidden: 'edit_can_hidden_inputs',
-        setGlobal: window.editArtistasSeleccionados, prefix: 'can'
-    });
-    
-    inicializarBuscadorEtiquetas({
-        idContenedor: 'edit_alb_contenedor_buscador',
-        idSearch: 'edit_alb_artist_search', idResults: 'edit_alb_artist_results',
-        idSelected: 'edit_alb_selected_artists', idHidden: 'edit_alb_hidden_inputs',
-        setGlobal: window.editAlbArtistasSeleccionados, prefix: 'alb'
-    });
-    
-    document.body.addEventListener('click', function(e) {
-        const itemCola = e.target.closest('[data-index]');
-        const perteneceACola = e.target.closest('#colaPanel') || e.target.closest('#lista-cola-dinamica');
-        if (itemCola && perteneceACola) {
-            if (e.target.closest('.btn-eliminar-cola') || e.target.tagName.toLowerCase() === 'button' || e.target.classList.contains('bi-x') || e.target.closest('i.bi-x-lg')) {
-                return;
-            }
-            const indiceStr = itemCola.getAttribute('data-index');
-            const indice = parseInt(indiceStr);
-            if (!isNaN(indice) && typeof reproducirDesdeCola === 'function') {
-                reproducirDesdeCola(indice);
-            }
-        }
-    });
-});
-
-// ==========================================
-// MOTOR DE BÚSQUEDA DE CARÁTULAS (iTUNES) - WIDGET FLOTANTE
-// ==========================================
 let _cancionesParaEscanearItunes = [];
 window._escaneoItunesActivo = false;
 window._indiceEscaneoItunes = 0;
 window._actualizadasItunes = 0;
-
 document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById('widgetProgresoItunes');
     const header = document.getElementById('widgetProgresoItunesHeader');
@@ -1290,26 +1230,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 });
 
-// ==========================================
-// BUSCADOR WEB DE PORTADAS MANUAL (DEEZER)
-// ==========================================
-
 let _nodoPreviewActivo = null;
 let _tipoBusquedaWeb = 'cancion';
-window._currentOffsetWeb = 0; 
+window._currentOffsetWeb = 0;
 
 function abrirBuscadorPortadas(tipo, inputIdParaTermino, botonElemento) {
     _tipoBusquedaWeb = tipo;
     _nodoPreviewActivo = botonElemento.closest('.input-group').parentElement;
     window._currentOffsetWeb = 0;
-    
     let tituloActual = document.getElementById(inputIdParaTermino).value.trim();
     let artistasNombres = [];
     let idContenedorArtistas = '';
-    
     if (tipo === 'cancion') idContenedorArtistas = inputIdParaTermino.replace('_titulo', '_selected_artists');
     if (tipo === 'album') idContenedorArtistas = inputIdParaTermino.replace('_titulo', '_selected_artists');
-    
     if (idContenedorArtistas) {
         const contenedorArt = document.getElementById(idContenedorArtistas);
         if (contenedorArt) {
@@ -1317,11 +1250,9 @@ function abrirBuscadorPortadas(tipo, inputIdParaTermino, botonElemento) {
             badges.forEach(b => artistasNombres.push(b.textContent.trim()));
         }
     }
-    
     document.getElementById('inputBusquedaWebTitulo').value = tituloActual;
     const inputArtista = document.getElementById('inputBusquedaWebArtista');
     const colArtista = document.getElementById('colBusquedaWebArtista');
-    
     if (tipo === 'artista') {
         colArtista.style.display = 'none';
         inputArtista.value = '';
@@ -1329,12 +1260,9 @@ function abrirBuscadorPortadas(tipo, inputIdParaTermino, botonElemento) {
         colArtista.style.display = 'block';
         inputArtista.value = artistasNombres.join(", ");
     }
-    
     document.getElementById('resultadosBusquedaWeb').innerHTML = '<div class="text-secondary my-4">Presiona buscar para escanear en Deezer.</div>';
-    
     const modalBuscador = new bootstrap.Modal(document.getElementById('modalBuscadorPortadas'));
     modalBuscador.show();
-
     if (tituloActual.trim() !== '') {
         ejecutarBusquedaWeb(false);
     }
@@ -1344,43 +1272,36 @@ async function ejecutarBusquedaWeb(cargarMas = false) {
     const titulo = document.getElementById('inputBusquedaWebTitulo').value.trim();
     const artista = document.getElementById('inputBusquedaWebArtista').value.trim();
     const contenedor = document.getElementById('resultadosBusquedaWeb');
-    
     if (!titulo) return;
-    
     if (!cargarMas) {
         window._currentOffsetWeb = 0;
         contenedor.innerHTML = '<div class="col-12 py-4"><div class="spinner-border text-danger" role="status"></div></div>';
     } else {
-        window._currentOffsetWeb += 12; 
+        window._currentOffsetWeb += 12;
         const btnCargarMas = document.getElementById('btnCargarMasWeb');
         if (btnCargarMas) btnCargarMas.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Cargando...';
     }
-    
     const fd = new FormData();
     fd.append('accion', 'buscar_opciones_portada');
     fd.append('tipo', _tipoBusquedaWeb);
     fd.append('titulo', titulo);
     fd.append('artista', artista);
     fd.append('offset', window._currentOffsetWeb);
-    
     try {
         const req = await fetch('api/insertar_elementos.php', { method: 'POST', body: fd });
         const texto = await req.text();
         console.log(texto);
         const res = JSON.parse(texto);
-        
         if (res.status === 'success' && res.data.length > 0) {
             if (!cargarMas) contenedor.innerHTML = '';
             else {
                 const oldBtnContainer = document.getElementById('contenedorCargarMasWeb');
                 if (oldBtnContainer) oldBtnContainer.remove();
             }
-            
             res.data.forEach(url => {
                 const col = document.createElement('div');
                 col.className = 'col-4 col-md-3 mb-2';
                 const claseImg = _tipoBusquedaWeb === 'artista' ? 'rounded-circle' : 'rounded';
-                
                 col.innerHTML = `
                     <div class="position-relative hover-scale" style="cursor: pointer;" onclick="seleccionarImagenWeb('${url}')">
                         <img src="${url}" class="img-fluid ${claseImg} border border-secondary hover-border-danger" style="aspect-ratio: 1/1; object-fit: cover; width: 100%;">
@@ -1388,7 +1309,6 @@ async function ejecutarBusquedaWeb(cargarMas = false) {
                 `;
                 contenedor.appendChild(col);
             });
-            
             if (res.data.length > 0) {
                 const btnContainer = document.createElement('div');
                 btnContainer.className = 'col-12 mt-3 mb-2';

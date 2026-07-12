@@ -726,23 +726,24 @@ function dibujarVisualizador() {
     const barWidth = (canvasVisualizador.width / barrasUtiles) * 1.5;
     let x = 0;
 
+    const rgbSistema = getComputedStyle(document.documentElement).getPropertyValue('--sistema-carmesí-rgb').trim() || '220, 38, 38';
+
     for (let i = inicio; i < fin; i++) {
-        // Obtenemos el volumen de esa frecuencia específica (de 0 a 255)
-        const valor = dataArray[i];
-        
-        // Calculamos la altura de la barra relativa al alto del canvas
-        const porcentajeAlto = valor / 255;
-        const barHeight = porcentajeAlto * canvasVisualizador.height;
+        // Dibujar en Barra Principal
+        if (ctxBarra) {
+            const barHeight = porcentajeAlto * canvasBarra.height;
+            ctxBarra.fillStyle = `rgba(${rgbSistema}, ${alpha})`; // <--- ACTUALIZADO
+            ctxBarra.fillRect(xBarra, canvasBarra.height - barHeight, barWidthBarra, barHeight);
+            xBarra += barWidthBarra + 1;
+        }
 
-        // Color Carmesí del sistema (--sistema-carmesí = #dc2626)
-        // Hacemos que los picos fuertes sean más brillantes y las bases más oscuras
-        const alpha = 0.5 + (porcentajeAlto * 0.5);
-        ctxVisualizador.fillStyle = `rgba(220, 38, 38, ${alpha})`;
-
-        // Dibujamos la barra desde abajo hacia arriba
-        ctxVisualizador.fillRect(x, canvasVisualizador.height - barHeight, barWidth, barHeight);
-
-        x += barWidth + 1; // 1px de separación entre barras
+        // Dibujar en Panel de Letras
+        if (ctxLetras) {
+            const barHeight = porcentajeAlto * (canvasLetras.height * 0.6);
+            ctxLetras.fillStyle = `rgba(${rgbSistema}, ${alpha})`; // <--- ACTUALIZADO
+            ctxLetras.fillRect(xLetras, canvasLetras.height - barHeight, barWidthLetras, barHeight);
+            xLetras += barWidthLetras + 1.5;
+        }
     }
 }
 

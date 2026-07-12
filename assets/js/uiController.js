@@ -175,6 +175,23 @@ function filtrarPorPlaylist(nombrePlaylist, idPlaylist = '') {
             btn.classList.add('d-none'); // Lo oculta en "Ver Todo"
         }
     });
+
+    // --- LÓGICA DE RESALTADO VISUAL DE PLAYLISTS ---
+    // 1. Apagamos todas las playlists (incluyendo "Ver Todo")
+    document.querySelectorAll('[id^="li_pl_menu_"]').forEach(li => {
+        li.classList.remove('playlist-activa');
+    });
+    
+    // 2. Encendemos la opción correcta
+    if (id === '') {
+        // Si no hay ID, encendemos "Ver Todo"
+        const btnTodas = document.getElementById('li_pl_menu_todas');
+        if (btnTodas) btnTodas.classList.add('playlist-activa');
+    } else {
+        // Si hay ID, encendemos la playlist específica
+        const btnActivo = document.getElementById('li_pl_menu_' + id);
+        if (btnActivo) btnActivo.classList.add('playlist-activa');
+    }
 }
 
 function filtrarMenuCatalogo() {
