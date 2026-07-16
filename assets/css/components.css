@@ -1,128 +1,153 @@
 /* =====================================================================
-   COMPONENTS.CSS - ESTILOS DE ELEMENTOS (TABLAS, BOTONES, MENÚS, FORMS)
+   COMPONENTS.CSS - ESTILOS DE ELEMENTOS INDIVIDUALES
+   Responsabilidad: Tablas, botones, menús desplegables, inputs y acordeones.
 ====================================================================== */
 
 /* IMÁGENES Y CARÁTULAS */
-.album-img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
-.player-img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
-.cover-placeholder { background-color: #1a1a1a; color: #404040; border-radius: 6px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
+.album-img {
+    width: 44px; height: 44px;
+    object-fit: cover; border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+}
+.player-img {
+    width: 56px; height: 56px;
+    object-fit: cover; border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+}
 
-/* TABLA DE CANCIONES (La tabla en sí, los hovers están en base.css) */
+/* TABLA DE CANCIONES */
 .table-responsive { overflow: visible !important; }
 .table-dark-custom { --bs-table-bg: transparent; --bs-table-color: #fff; margin-bottom: 0; }
-.table-header-row th { border-bottom: 1px solid var(--borde-carmesí) !important; color: #a3a3a3; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 15px; border-top: none; }
-.song-row { transition: background-color 0.2s ease; cursor: pointer; border-bottom: 1px solid var(--borde-tenue) !important; }
+.table-header-row th {
+    border-bottom: 1px solid var(--borde-carmesí) !important;
+    color: #a3a3a3; font-size: 0.85rem;
+    text-transform: uppercase; letter-spacing: 1px;
+    padding-bottom: 15px; border-top: none;
+}
+.song-row {
+    transition: background-color 0.2s ease; cursor: pointer;
+    border-bottom: 1px solid var(--borde-tenue) !important;
+}
+.song-row:hover { background-color: rgba(var(--sistema-carmesí-rgb), 0.08) !important; }
 .song-row td { border: none !important; vertical-align: middle; padding: 12px 8px; }
 .title-col { font-weight: 600; color: #fff; letter-spacing: 0.3px; }
-.artist-col, .artist-col a { color: var(--texto-secundario) !important; font-size: 0.85rem; text-decoration: none; transition: color 0.2s; }
+.artist-col, .artist-col a {
+    color: var(--texto-secundario) !important;
+    font-size: 0.85rem; text-decoration: none; transition: color 0.2s;
+}
 
-/* BOTONES GLOBALES */
-.btn-primary { background-color: var(--sistema-carmesí) !important; border: none !important; font-weight: 600 !important; }
-.btn-primary:hover { background-color: var(--carmesí-hover) !important; }
-.btn-secondary { background-color: #27272a !important; border: none !important; }
-.btn-filtro-orden { border: 1px solid rgba(255, 255, 255, 0.1); background-color: transparent; color: #9ca3af; transition: all 0.3s ease; }
-.btn-filtro-orden:hover { border-color: rgba(255, 255, 255, 0.3); color: #fff; }
+/* MENÚS DESPLEGABLES (3 PUNTITOS) */
+.item-con-opciones .btn-opciones {
+    opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+}
+.item-con-opciones:hover .btn-opciones, .item-con-opciones .btn-opciones button[aria-expanded="true"] {
+    opacity: 1; pointer-events: auto;
+}
+.dropdown-menu {
+    background-color: var(--bg-superficie-ligero) !important;
+    border: 1px solid var(--borde-carmesí) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.95) !important;
+    border-radius: 8px !important; padding: 6px 0 !important; z-index: 9999 !important;
+}
+.dropdown-item {
+    color: var(--texto-secundario) !important;
+    font-size: 0.85rem !important; padding: 8px 20px !important;
+    transition: background-color 0.2s ease, color 0.2s ease !important;
+    display: flex; align-items: center;
+}
+.dropdown-item:hover { color: var(--texto-primario) !important; background-color: rgba(var(--sistema-carmesí-rgb), 0.08) !important; }
+.dropdown-item.text-danger:hover {
+    background-color: rgba(var(--sistema-carmesí-rgb), 0.15) !important;
+    color: var(--carmesí-brillante) !important;
+}
+.dropdown-menu i { color: var(--carmesí-brillante) !important; }
 
-/* MENÚS DESPLEGABLES Y TRES PUNTITOS */
-.item-con-opciones .btn-opciones { opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
-.item-con-opciones:hover .btn-opciones, .item-con-opciones .btn-opciones button[aria-expanded="true"] { opacity: 1; pointer-events: auto; }
-.dropdown-menu { background-color: var(--bg-superficie-ligero) !important; border: 1px solid var(--borde-carmesí) !important; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.95) !important; border-radius: 8px !important; padding: 6px 0 !important; z-index: 9999 !important; }
-.dropdown-item { color: var(--texto-secundario) !important; font-size: 0.85rem !important; padding: 8px 20px !important; transition: background-color 0.2s ease, color 0.2s ease !important; display: flex; align-items: center; }
-.dropdown-item:hover, .dropdown-item:focus { color: var(--texto-primario) !important; }
-.dropdown-divider { border-top: 1px solid var(--borde-tenue) !important; margin: 6px 0 !important; }
+/* FORMULARIOS Y SLIDERS */
+.form-control, .form-select {
+    background-color: var(--bg-superficie-ligero) !important;
+    color: var(--texto-primario) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--sistema-carmesí) !important;
+    background-color: var(--bg-superficie-hover) !important;
+    box-shadow: none !important;
+}
+.form-range::-webkit-slider-thumb { background-color: var(--carmesí-brillante) !important; }
+.form-range:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 1px var(--bg-base), 0 0 0 0.25rem rgba(var(--sistema-carmesí-rgb), 0.3) !important;
+}
 
-/* FORMULARIOS Y RANGOS (INPUTS) */
-.form-control, .form-select { background-color: var(--bg-superficie-ligero) !important; color: var(--texto-primario) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; }
-.form-control:focus, .form-select:focus { border-color: var(--sistema-carmesí) !important; background-color: var(--bg-superficie-hover) !important; box-shadow: none !important; }
-.input-group { border: 1px solid rgba(255, 255, 255, 0.1) !important; background-color: #111111 !important; }
-.form-control::placeholder, .form-select::placeholder { color: var(--texto-secundario) !important; opacity: 0.8 !important; }
-.form-range::-webkit-slider-thumb, .form-range::-moz-range-thumb { background: var(--carmesí-brillante) !important; }
-
-/* ACORDEONES (Sidebar) */
+/* NEUTRALIZACIÓN DE FLECHAS DE ACORDEÓN (Única declaración) */
 .accordion-item { background-color: transparent !important; border: none !important; }
 .accordion-button { font-size: 0.85rem !important; letter-spacing: 0.05em; padding: 12px 0 !important; }
-.accordion-button:not(.collapsed) { background-color: transparent !important; color: var(--carmesí-brillante) !important; }
-
-/* ESTILOS INTERNOS DE LOS MODALES */
-.modal-content { background-color: var(--bg-superficie) !important; border-radius: 12px !important; }
-.modal-header, .modal-footer { border-color: var(--borde-carmesí) !important; }
-.modal-body .form-control, .modal-body .form-select { background-color: var(--bg-superficie-hover) !important; border: 1px solid #333 !important; padding: 0.6rem 1rem !important; border-radius: 6px !important; }
-.modal-body label { font-size: 0.75rem !important; text-transform: uppercase !important; letter-spacing: 0.05rem !important; color: #71717a !important; margin-bottom: 0.5rem !important; }
-
-/* BURBUJAS DE TEMA EN CONFIGURACIÓN */
-.color-dot { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; display: inline-block; border: 2px solid transparent; transition: transform 0.2s ease, border-color 0.2s ease; }
-.color-dot:hover { transform: scale(1.2); }
-.color-dot.active { border-color: #ffffff !important; box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
-.bg-carmesi { background-color: #dc2626; } .bg-emerald { background-color: #16a34a; } .bg-ocean { background-color: #2563eb; } .bg-amethyst { background-color: #9333ea; } .bg-amber { background-color: #d97706; }
-
-/* ACORDEÓN INTERNO DE CONFIGURACIÓN */
-.btn-config-item { cursor: pointer; transition: background-color 0.2s ease; }
-.btn-config-item:hover { background-color: rgba(255, 255, 255, 0.1); }
-.btn-config-item .flecha-giratoria { transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
-.btn-config-item[aria-expanded="true"] .flecha-giratoria { transform: rotate(90deg); }
-
-/* SISTEMA DE LETRAS (ESTILO TEXTO) */
-.lyric-line { transition: color 0.4s ease, transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), text-shadow 0.4s ease; cursor: pointer; transform-origin: center center; color: #737373 !important; font-size: 1.05rem !important; margin-bottom: 24px !important; line-height: 1.6; display: block; }
-.lyric-line:hover { color: #d4d4d4 !important; }
-.lyric-line.active { color: #ffffff !important; transform: scale(1.15); text-shadow: 0 0 15px rgba(255, 255, 255, 0.3); }
-@media (max-width: 768px) { .lyric-line { font-size: 1rem !important; margin-bottom: 22px !important; } .lyric-line.active { transform: scale(1.12); } }
-
-/* ==================================================
-   NEUTRALIZACIÓN DE FLECHAS DE ACORDEÓN
-================================================== */
-/* 1. Resetear cualquier filtro que las esté coloreando */
+.accordion-button:not(.collapsed) { background-color: transparent !important; color: var(--texto-primario) !important; }
 .accordion-button::after {
     filter: none !important;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e") !important;
-    opacity: 0.6 !important; /* Opacidad neutra */
+    opacity: 0.6 !important;
 }
-
-/* 2. Mantenerlas neutrales incluso cuando el acordeón está desplegado */
 .accordion-button:not(.collapsed)::after {
     filter: none !important;
     opacity: 0.6 !important;
-    transform: rotate(-180deg) !important; /* Rotación estándar */
+    transform: rotate(-180deg) !important;
 }
 
-/* 3. Asegurar que el texto del acordeón tampoco fuerce color en la flecha */
-.accordion-button:not(.collapsed) {
-    color: var(--texto-primario) !important; /* Texto blanco en lugar de forzar color de tema */
+/* MODALES */
+.modal-content, #widgetProgresoItunes {
+    background-color: var(--bg-superficie) !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--sistema-carmesí) !important;
+    box-shadow: 0 0 15px rgba(var(--sistema-carmesí-rgb), 0.3), inset 0 0 10px rgba(var(--sistema-carmesí-rgb), 0.1) !important;
+}
+.modal-header, .modal-footer { border-color: var(--borde-carmesí) !important; }
+
+/* LETRAS SINCRONIZADAS */
+.lyric-line {
+    transition: color 0.4s ease, transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), text-shadow 0.4s ease;
+    cursor: pointer; transform-origin: center center;
+    color: #737373 !important; font-size: 1.05rem !important;
+    margin-bottom: 24px !important; line-height: 1.6; display: block;
+}
+.lyric-line:hover { color: #d4d4d4 !important; }
+.lyric-line.active {
+    color: #ffffff !important; transform: scale(1.15);
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
 }
 
-/* ==================================================
-   PANTALLA DE CARGA (ANTI-PARPADEO)
-================================================== */
-#pantalla-carga {
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100vw; 
-    height: 100vh;
-    background-color: #050505; 
-    z-index: 9999;
-    /* NO PONGAS OPACIDAD NI VISIBILIDAD AQUÍ */
-    transition: opacity 0.5s ease;
-}
-
-/* ==================================================
-   DOMINIO ABSOLUTO DE PLAYLIST ACTIVA (TEXTO + ÍCONO)
-================================================== */
-/* 1. Fondo limpio (como en tu imagen) */
-#dropPlaylists li.playlist-activa {
-    background-color: transparent !important;
-}
-
-/* 2. Aplastar a Bootstrap y restaurar opacidad al 100% */
-#dropPlaylists li.playlist-activa a,
-#dropPlaylists li.playlist-activa a i,
-#dropPlaylists li.playlist-activa a span {
+/* PLAYLIST ACTIVA (Bordes limpios) */
+#dropPlaylists li.playlist-activa { background-color: transparent !important; }
+#dropPlaylists li.playlist-activa a, #dropPlaylists li.playlist-activa a i, #dropPlaylists li.playlist-activa a span {
     color: var(--carmesí-brillante) !important;
     font-weight: 700 !important;
-    opacity: 1 !important; /* Mata el efecto fantasma del text-white-50 */
+    opacity: 1 !important;
 }
 
-/* 3. Forzar a que todo el botón sea clickeable siempre */
-#dropPlaylists a i,
-#dropPlaylists a span {
-    pointer-events: none !important;
+/* ==================================================
+   BURBUJAS DE TEMA (CONFIGURACIÓN)
+================================================== */
+.color-dot {
+    width: 24px; 
+    height: 24px; 
+    border-radius: 50%; 
+    cursor: pointer; 
+    display: inline-block; 
+    border: 2px solid transparent; 
+    transition: transform 0.2s ease, border-color 0.2s ease; 
 }
+
+.color-dot:hover { 
+    transform: scale(1.2); 
+}
+
+.color-dot.active { 
+    border-color: #ffffff !important; 
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); 
+}
+
+/* Colores estáticos de las burbujas */
+.bg-carmesi { background-color: #dc2626; }
+.bg-emerald { background-color: #16a34a; }
+.bg-ocean { background-color: #2563eb; }
+.bg-amethyst { background-color: #9333ea; }
+.bg-amber { background-color: #d97706; }

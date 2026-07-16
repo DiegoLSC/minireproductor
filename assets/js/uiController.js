@@ -1,13 +1,49 @@
-// assets/js/uiController.js
+// ==========================================
+// uiController.js - GESTIÓN DEL DOM Y EVENTOS VISUALES
+// Responsabilidad: Paginación, modales, SPA, buscador web y etiquetas.
+// ==========================================
 
 let paginaActual = 1;
 const cancionesPorPagina = 20;
-let filasFiltradasGlobal = []; 
+let filasFiltradasGlobal = [];
 let filtroPlaylistActivo = "";
 let sortableCola = null;
-let volumenAnterior = 1;
 
-// Función Helper: Quita tildes y diacríticos para búsquedas exactas
+// Inicializador de Interfaz (Llamado por main.js)
+function inicializarUI() {
+    filtrarBiblioteca(true);
+
+    if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+        bootstrap.Dropdown.Default.popperConfig = function (defaultConfig) {
+            return { ...defaultConfig, strategy: 'fixed' };
+        };
+    }
+
+    configurarLimpiezaModales();
+
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar && window.innerWidth > 768 && localStorage.getItem('sidebarContraido') === 'true') {
+        sidebar.classList.add('contraido');
+    }
+
+    configurarBuscadoresEtiquetas();
+    
+    // Sidebar acordiones toggle
+    document.querySelectorAll('.accordion-button').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            if (window.innerWidth > 768 && document.getElementById('sidebar').classList.contains('contraido')) {
+                e.stopPropagation();
+                toggleSidebar();
+                setTimeout(() => {
+                    let targetId = this.getAttribute('data-bs-target');
+                    let targetContent = document.querySelector(targetId);
+                    if (targetContent) new bootstrap.Collapse(targetContent, { toggle: false }).show();
+                }, 350);
+            }
+        });
+    });
+}
+
 function quitarTildes(texto) {
     if (!texto) return "";
     return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -20,72 +56,45 @@ function formatearTiempo(segundos) {
     return mins + ":" + (secs < 10 ? "0" : "") + secs;
 }
 
-// ==========================================
-// RENDERIZADO VISUAL Y PAGINACIÓN
-// ==========================================
-function ordenarBibliotecaAsincrona(tipoOrden) {
-    const tablaBody = document.querySelector('#tablaCanciones tbody');
-    const filas = Array.from(tablaBody.querySelectorAll('.target-row'));
-    filas.sort((filaA, filaB) => {
-        const fechaA = new Date(filaA.getAttribute('data-fecha'));
-        const fechaB = new Date(filaB.getAttribute('data-fecha'));
-        return tipoOrden === 'asc' ? fechaA - fechaB : fechaB - fechaA;
-    });
-    filas.forEach(fila => tablaBody.appendChild(fila));
-    document.getElementById('btn-orden-desc').className = tipoOrden === 'desc' ? "btn btn-sm btn-success" : "btn btn-sm btn-outline-secondary text-white";
-    document.getElementById('btn-orden-asc').className = tipoOrden === 'asc' ? "btn btn-sm btn-success" : "btn btn-sm btn-outline-secondary text-white";
-    filtrarBiblioteca(true); 
-}
-
+// 1. GESTIÓN DE TABLAS, BÚSQUEDA Y PAGINACIÓN
 function limpiarBuscador() {
     const input = document.getElementById('buscadorInput');
-    input.value = ''; 
-    filtrarBiblioteca(true); 
-    input.focus(); 
+    input.value = '';
+    filtrarBiblioteca(true);
+    input.focus();
 }
 
 function filtrarBiblioteca(mantenerPagina = false) {
     const textoFiltro = quitarTildes(document.getElementById('buscadorInput').value.toLowerCase());
-    
     const btnLimpiar = document.getElementById('btn-limpiar-busqueda');
     if (btnLimpiar) btnLimpiar.classList.toggle('d-none', textoFiltro.length === 0);
 
     const todasLasFilas = Array.from(document.querySelectorAll('.target-row'));
-    filasFiltradasGlobal = []; 
+    filasFiltradasGlobal = [];
 
     todasLasFilas.forEach(fila => {
         const titulo = quitarTildes(fila.querySelector('.title-col').innerText.toLowerCase());
         const album = quitarTildes(fila.querySelector('.album-col').innerText.toLowerCase());
         const artistas = quitarTildes(fila.querySelector('.artist-col').innerText.toLowerCase());
         const playlistsAsociadas = quitarTildes(fila.getAttribute('data-playlists') ? fila.getAttribute('data-playlists').toLowerCase() : "");
-        
+
         const coincideTexto = titulo.includes(textoFiltro) || album.includes(textoFiltro) || artistas.includes(textoFiltro);
         const coincidePlaylist = (typeof filtroPlaylistActivo === 'undefined' || filtroPlaylistActivo === "") || playlistsAsociadas.includes(quitarTildes(filtroPlaylistActivo.toLowerCase()));
-        
+
         if (coincideTexto && coincidePlaylist) filasFiltradasGlobal.push(fila);
-        fila.style.display = 'none'; 
+        fila.style.display = 'none';
     });
 
     const badgeContador = document.getElementById('contador-dinamico');
     if (badgeContador) badgeContador.innerText = (typeof filtroPlaylistActivo === 'undefined' || filtroPlaylistActivo === "") ? `${filasFiltradasGlobal.length} canciones totales` : `${filasFiltradasGlobal.length} en "${filtroPlaylistActivo}"`;
-    
-    // SOLUCIÓN: Lógica condicional de paginación
+
     if (!mantenerPagina) {
-        // Si es una búsqueda nueva, te manda a la página 1
-        paginaActual = 1; 
+        paginaActual = 1;
     } else {
-        // Si estás editando/borrando, te deja en la misma página.
-        // Además, incluye una protección por si borras el ÚLTIMO elemento de la página 10 y esta queda vacía.
-        const limite = typeof cancionesPorPagina !== 'undefined' ? cancionesPorPagina : 50; 
-        const maxPaginas = Math.ceil(filasFiltradasGlobal.length / limite);
-        
-        if (paginaActual > maxPaginas && maxPaginas > 0) {
-            paginaActual = maxPaginas; // Te retrocede una página automáticamente
-        } else if (maxPaginas === 0) {
-            paginaActual = 1;
-        }
+        const maxPaginas = Math.ceil(filasFiltradasGlobal.length / cancionesPorPagina);
+        if (paginaActual > maxPaginas && maxPaginas > 0) paginaActual = maxPaginas;
+        else if (maxPaginas === 0) paginaActual = 1;
     }
-    
     renderizarPaginaActual();
 }
 
@@ -94,7 +103,8 @@ function renderizarPaginaActual() {
     const inicio = (paginaActual - 1) * cancionesPorPagina;
     const fin = inicio + cancionesPorPagina;
     const filasAMostrar = filasFiltradasGlobal.slice(inicio, fin);
-    filasAMostrar.forEach(fila => fila.style.display = ''); 
+    
+    filasAMostrar.forEach(fila => fila.style.display = '');
 
     const totalPaginas = Math.ceil(filasFiltradasGlobal.length / cancionesPorPagina);
     const infoPaginacion = document.getElementById('info-paginacion');
@@ -127,7 +137,6 @@ function renderizarPaginaActual() {
                 ulPaginacion.appendChild(li);
             }
         }
-
         const liNext = document.createElement('li');
         liNext.className = `page-item ${paginaActual === totalPaginas || totalPaginas === 0 ? 'disabled' : ''}`;
         liNext.innerHTML = `<a class="page-link bg-dark border-secondary text-white shadow-none" href="#" onclick="cambiarPagina(${paginaActual + 1}); return false;">&raquo;</a>`;
@@ -144,74 +153,76 @@ function cambiarPagina(nuevaPagina) {
     }
 }
 
-// ==========================================
-// GESTIÓN DEL SIDEBAR Y MODALES
-// ==========================================
+function ordenarBibliotecaAsincrona(tipoOrden) {
+    const tablaBody = document.querySelector('#tablaCanciones tbody');
+    const filas = Array.from(tablaBody.querySelectorAll('.target-row'));
+    
+    filas.sort((filaA, filaB) => {
+        const fechaA = new Date(filaA.getAttribute('data-fecha'));
+        const fechaB = new Date(filaB.getAttribute('data-fecha'));
+        return tipoOrden === 'asc' ? fechaA - fechaB : fechaB - fechaA;
+    });
+    
+    filas.forEach(fila => tablaBody.appendChild(fila));
+    
+    document.getElementById('btn-orden-desc').className = tipoOrden === 'desc' ? "btn btn-sm btn-success" : "btn btn-sm btn-outline-secondary text-white";
+    document.getElementById('btn-orden-asc').className = tipoOrden === 'asc' ? "btn btn-sm btn-success" : "btn btn-sm btn-outline-secondary text-white";
+    filtrarBiblioteca(true);
+}
+
+// 2. GESTIÓN DEL SIDEBAR Y FILTROS
 function filtrarPorPlaylist(nombrePlaylist, idPlaylist = '') {
     filtroPlaylistActivo = nombrePlaylist;
     if (nombrePlaylist === "") document.getElementById('buscadorInput').value = "";
     filtrarBiblioteca(true);
-    
+
     const enlaces = document.querySelectorAll('#acordeonSidebar .nav-link, #acordeonSidebar a');
-    enlaces.forEach(enlace => { enlace.classList.remove('text-success', 'fw-bold'); enlace.classList.add('text-secondary'); });
-    
-    const eventoOrigen = window.event?.target;
-    if (eventoOrigen && eventoOrigen.tagName === 'A') { 
-        eventoOrigen.classList.remove('text-secondary'); 
-        eventoOrigen.classList.add('text-success', 'fw-bold'); 
-    }
-
-    // ==========================================
-    // MAGIA: MOSTRAR/OCULTAR BOTÓN "QUITAR DE PLAYLIST"
-    // ==========================================
-    const inputPlaylistActiva = document.getElementById('playlist_activa_id');
-    if (inputPlaylistActiva) inputPlaylistActiva.value = idPlaylist;
-
-    const botonesQuitar = document.querySelectorAll('.btn-quitar-playlist');
-    botonesQuitar.forEach(btn => {
-        if (nombrePlaylist && nombrePlaylist.trim() !== '') {
-            btn.classList.remove('d-none'); // Muestra el botón
-        } else {
-            btn.classList.add('d-none'); // Lo oculta en "Ver Todo"
-        }
+    enlaces.forEach(enlace => {
+        enlace.classList.remove('text-success', 'fw-bold');
+        enlace.classList.add('text-secondary');
     });
 
-    // --- LÓGICA DE RESALTADO VISUAL DE PLAYLISTS ---
-    // 1. Apagamos todas las playlists (incluyendo "Ver Todo")
+    const eventoOrigen = window.event?.target;
+    if (eventoOrigen && eventoOrigen.tagName === 'A') {
+        eventoOrigen.classList.remove('text-secondary');
+        eventoOrigen.classList.add('text-success', 'fw-bold');
+    }
+
+    const inputPlaylistActiva = document.getElementById('playlist_activa_id');
+    if (inputPlaylistActiva) inputPlaylistActiva.value = idPlaylist;
+    
+    const botonesQuitar = document.querySelectorAll('.btn-quitar-playlist');
+    botonesQuitar.forEach(btn => {
+        if (nombrePlaylist && nombrePlaylist.trim() !== '') btn.classList.remove('d-none');
+        else btn.classList.add('d-none');
+    });
+
     document.querySelectorAll('[id^="li_pl_menu_"]').forEach(li => {
         li.classList.remove('playlist-activa');
     });
-    
-    // 2. Encendemos la opción correcta
-    if (id === '') {
-        // Si no hay ID, encendemos "Ver Todo"
+
+    if (idPlaylist === '') {
         const btnTodas = document.getElementById('li_pl_menu_todas');
         if (btnTodas) btnTodas.classList.add('playlist-activa');
     } else {
-        // Si hay ID, encendemos la playlist específica
-        const btnActivo = document.getElementById('li_pl_menu_' + id);
+        const btnActivo = document.getElementById('li_pl_menu_' + idPlaylist);
         if (btnActivo) btnActivo.classList.add('playlist-activa');
     }
 }
 
 function filtrarMenuCatalogo() {
     const texto = quitarTildes(document.getElementById('inputBuscarCatalogo').value.toLowerCase());
-    
     document.querySelectorAll('#acordeonSubArtistas > .accordion-item').forEach(block => {
         const spanArtista = block.querySelector('.text-white.fw-medium.text-truncate');
         if (!spanArtista) return;
-        
         const textoArtista = quitarTildes(spanArtista.innerText.toLowerCase());
         const coincideArtista = textoArtista.includes(texto);
-        
         let algunAlbumCoincide = false;
-
+        
         block.querySelectorAll('ul > li.item-con-opciones').forEach(li => {
             const spanAlbum = li.querySelector('.text-white-50.text-truncate');
             if (!spanAlbum) return;
-            
             const textoAlbum = quitarTildes(spanAlbum.innerText.toLowerCase());
-            
             if (coincideArtista || textoAlbum.includes(texto)) {
                 li.classList.replace('d-none', 'd-flex');
                 if (textoAlbum.includes(texto)) algunAlbumCoincide = true;
@@ -219,7 +230,7 @@ function filtrarMenuCatalogo() {
                 li.classList.replace('d-flex', 'd-none');
             }
         });
-
+        
         const collapseDiv = block.querySelector('.accordion-collapse');
         if (coincideArtista || algunAlbumCoincide) {
             block.style.display = '';
@@ -263,7 +274,6 @@ function cargarModalCancion(id, titulo, album_id, duracion, ruta) {
     const inputArchivo = document.getElementById('edit_can_archivo');
     if(inputArchivo) inputArchivo.value = '';
     document.getElementById('edit_can_album').value = album_id || '';
-    
     let min = Math.floor(duracion / 60);
     let sec = duracion % 60;
     let inputDuracion = document.getElementById('edit_can_duracion_texto');
@@ -276,20 +286,29 @@ function cargarModalAlbum(id, titulo, anio) {
     document.getElementById('edit_alb_anio').value = anio || '';
 }
 
-// ==========================================
-// SISTEMA DE ETIQUETAS (TAGS) GENERALIZADO
-// ==========================================
+// 3. SISTEMA DE ETIQUETAS CENTRALIZADO
+window.editAlbArtistasSeleccionados = new Set();
+window.editArtistasSeleccionados = new Set();
+window.subirArtistasSeleccionados = new Set();
+window.crearAlbArtistasSeleccionados = new Set();
+
+function configurarBuscadoresEtiquetas() {
+    inicializarBuscadorEtiquetas({ idContenedor: 'contenedor_buscador_artistas', idSearch: 'album_artist_search', idResults: 'album_artist_results', idSelected: 'album_selected_artists', idHidden: 'album_hidden_inputs', setGlobal: window.crearAlbArtistasSeleccionados, prefix: 'nuevo_alb' });
+    inicializarBuscadorEtiquetas({ idContenedor: 'subir_can_contenedor_buscador', idSearch: 'subir_can_artist_search', idResults: 'subir_can_artist_results', idSelected: 'subir_can_selected_artists', idHidden: 'subir_can_hidden_inputs', setGlobal: window.subirArtistasSeleccionados, prefix: 'sub' });
+    inicializarBuscadorEtiquetas({ idContenedor: 'edit_can_contenedor_buscador', idSearch: 'edit_can_artist_search', idResults: 'edit_can_artist_results', idSelected: 'edit_can_selected_artists', idHidden: 'edit_can_hidden_inputs', setGlobal: window.editArtistasSeleccionados, prefix: 'can' });
+    inicializarBuscadorEtiquetas({ idContenedor: 'edit_alb_contenedor_buscador', idSearch: 'edit_alb_artist_search', idResults: 'edit_alb_artist_results', idSelected: 'edit_alb_selected_artists', idHidden: 'edit_alb_hidden_inputs', setGlobal: window.editAlbArtistasSeleccionados, prefix: 'alb' });
+}
+
 function inicializarBuscadorEtiquetas(config) {
     const { idContenedor, idSearch, idResults, idSelected, idHidden, setGlobal, prefix } = config;
     const contenedor = document.getElementById(idContenedor);
     if (!contenedor) return;
-
-    // Guardamos la lista directamente en el objeto contenedor como referencia mutable
+    
     contenedor.listaArtistas = JSON.parse(contenedor.dataset.artistas || '[]');
     const searchInput = document.getElementById(idSearch);
     const resultsContainer = document.getElementById(idResults);
     if (!searchInput || !resultsContainer) return;
-
+    
     searchInput.addEventListener('input', function() {
         const query = this.value.toLowerCase().trim();
         resultsContainer.innerHTML = '';
@@ -297,11 +316,10 @@ function inicializarBuscadorEtiquetas(config) {
             resultsContainer.style.display = 'none';
             return;
         }
-
-        // Leemos la lista actualizada desde el contenedor en tiempo real
+        
         const listaActual = contenedor.listaArtistas || [];
         const filtrados = listaActual.filter(art => art.nombre.toLowerCase().includes(query) && !setGlobal.has(art.id.toString()));
-
+        
         if (filtrados.length > 0) {
             resultsContainer.style.display = 'block';
             filtrados.forEach(art => {
@@ -323,55 +341,39 @@ function inicializarBuscadorEtiquetas(config) {
             });
         } else resultsContainer.style.display = 'none';
     });
-
+    
     document.addEventListener('click', function(e) {
-        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target))
-            resultsContainer.style.display = 'none';
+        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) resultsContainer.style.display = 'none';
     });
 }
 
 function creadorDeEtiquetas(id, nombre, setGlobal, prefix, hiddenContainerId, selectedContainerId) {
-    console.log(`[Creador] Construyendo tag para: ${nombre} -> Contenedor destino: ${selectedContainerId}`);
     const idStr = id.toString();
     setGlobal.add(idStr);
-
     const hiddenContainer = document.getElementById(hiddenContainerId);
     const selectedContainer = document.getElementById(selectedContainerId);
-
-    if (!hiddenContainer || !selectedContainer) {
-        console.error(`[Error] No se encontraron los contenedores en el HTML: ${hiddenContainerId} o ${selectedContainerId}`);
-        return;
-    }
-
+    if (!hiddenContainer || !selectedContainer) return;
+    
     const hiddenInput = document.createElement('input');
     hiddenInput.type = 'hidden';
     hiddenInput.name = 'artista_ids[]';
     hiddenInput.value = idStr;
     hiddenInput.id = `${prefix}_hidden_art_${idStr}`;
     hiddenContainer.appendChild(hiddenInput);
-
+    
     const tag = document.createElement('span');
     tag.className = 'badge d-flex align-items-center p-2 rounded-pill';
     tag.style.cssText = 'background-color: #1a1a1a; border: 1px solid var(--borde-carmesí); color: #ffffff; font-size: 0.8rem;';
     tag.id = `${prefix}_tag_art_${idStr}`;
     tag.innerHTML = `${nombre} <i class="bi bi-x-circle-fill ms-2 text-danger" style="cursor:pointer; font-size: 0.9rem;"></i>`;
-
     tag.querySelector('i').addEventListener('click', function() {
         tag.remove();
         const inputABorrar = document.getElementById(`${prefix}_hidden_art_${idStr}`);
         if (inputABorrar) inputABorrar.remove();
         setGlobal.delete(idStr);
     });
-    
     selectedContainer.appendChild(tag);
-    console.log(`[Éxito] Tag inyectado correctamente en ${selectedContainerId}`);
 }
-
-// Inicialización de Sets globales
-window.editAlbArtistasSeleccionados = new Set();
-window.editArtistasSeleccionados = new Set();
-window.subirArtistasSeleccionados = new Set();
-window.crearAlbArtistasSeleccionados = new Set(); 
 
 window.agregarEtiquetaAlbum = (id, nombre) => creadorDeEtiquetas(id, nombre, window.editAlbArtistasSeleccionados, 'alb', 'edit_alb_hidden_inputs', 'edit_alb_selected_artists');
 window.agregarEtiquetaCancion = (id, nombre) => creadorDeEtiquetas(id, nombre, window.editArtistasSeleccionados, 'can', 'edit_can_hidden_inputs', 'edit_can_selected_artists');
@@ -398,103 +400,859 @@ function cargarEtiquetasEdicion(idsCSV, nombresCSV) {
     for (let i = 0; i < ids.length; i++) if (ids[i].trim() !== '') window.agregarEtiquetaCancion(ids[i].trim(), nombres[i].trim());
 }
 
-// ==========================================
-// GESTIÓN VISUAL DEL VOLUMEN
-// ==========================================
-function actualizarIconoVolumen(isMuted, val) {
-    const iconVolumen = document.getElementById('volume-icon');
-    if (!iconVolumen) return;
-    if (isMuted || val === 0) iconVolumen.className = 'bi bi-volume-mute-fill text-danger fs-5';
-    else if (val < 0.5) iconVolumen.className = 'bi bi-volume-down text-secondary fs-5';
-    else iconVolumen.className = 'bi bi-volume-up text-secondary fs-5';
+function configurarLimpiezaModales() {
+    const modalSubir = document.getElementById('cancionModal');
+    if (modalSubir) {
+        modalSubir.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('subir_can_selected_artists').innerHTML = '';
+            document.getElementById('subir_can_hidden_inputs').innerHTML = '';
+            if (window.subirArtistasSeleccionados) window.subirArtistasSeleccionados.clear();
+            document.getElementById('subir_can_artist_search').value = '';
+            document.getElementById('subir_can_artist_results').style.display = 'none';
+        });
+    }
+
+    const modalNuevoAlbum = document.getElementById('albumModal');
+    if (modalNuevoAlbum) {
+        modalNuevoAlbum.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('album_selected_artists').innerHTML = '';
+            document.getElementById('album_hidden_inputs').innerHTML = '';
+            if (window.crearAlbArtistasSeleccionados) window.crearAlbArtistasSeleccionados.clear();
+            document.getElementById('album_artist_search').value = '';
+            document.getElementById('album_artist_results').style.display = 'none';
+        });
+    }
+
+    ['editCancionModal', 'editArtistaModal', 'editAlbumModal'].forEach(modalId => {
+        const modalEl = document.getElementById(modalId);
+        if (modalEl) {
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                const fileInput = this.querySelector('input[type="file"]');
+                if (fileInput) fileInput.value = '';
+                const hiddenUrl = this.querySelector('.hidden-url-online');
+                if (hiddenUrl) hiddenUrl.value = '';
+                const previewContainer = this.querySelector('.preview-container');
+                const previewImg = this.querySelector('.preview-img');
+                if (previewContainer) previewContainer.classList.add('d-none');
+                if (previewImg) previewImg.src = '';
+            });
+        }
+    });
 }
 
-function toggleMute() {
-    const reproductor = document.getElementById('audio-player');
-    const volumeSlider = document.getElementById('volume-slider');
-    if (!reproductor || !volumeSlider) return;
-
-    if (reproductor.muted || parseFloat(volumeSlider.value) === 0) {
-        reproductor.muted = false;
-        let nuevoVol = volumenAnterior > 0 ? volumenAnterior : 1; 
-        reproductor.volume = nuevoVol;
-        volumeSlider.value = nuevoVol; 
-        actualizarIconoVolumen(false, nuevoVol);
-    } else {
-        volumenAnterior = parseFloat(volumeSlider.value);
-        reproductor.muted = true;
-        volumeSlider.value = 0; 
-        actualizarIconoVolumen(true, 0);
+// 4. INYECCIÓN DOM SPA (Single Page Application)
+function procesarMutacionSPA(accion, data) {
+    if (!data) return;
+    switch(accion) {
+        case 'crear_artista':
+            inyectarArtistaDOM(data);
+            if (typeof mostrarNotificacionCola === 'function') mostrarNotificacionCola('Artista registrado');
+            break;
+        case 'editar_artista':
+            actualizarArtistaDOM(data);
+            if (typeof mostrarNotificacionCola === 'function') mostrarNotificacionCola('Artista actualizado');
+            break;
+        case 'crear_album':
+            inyectarAlbumDOM(data);
+            if (typeof mostrarNotificacionCola === 'function') mostrarNotificacionCola('Álbum registrado');
+            break;
+        case 'editar_album':
+            actualizarAlbumDOM(data);
+            if (typeof mostrarNotificacionCola === 'function') mostrarNotificacionCola('Álbum actualizado');
+            break;
+        case 'crear_playlist':
+            inyectarPlaylistDOM(data);
+            if (typeof mostrarNotificacionCola === 'function') mostrarNotificacionCola('Playlist creada');
+            break;
+        case 'editar_playlist':
+            actualizarPlaylistDOM(data);
+            if (typeof mostrarNotificacionCola === 'function') mostrarNotificacionCola('Playlist actualizada');
+            break;
+        case 'subir_cancion':
+            inyectarCancionDOM(data);
+            if (typeof mostrarNotificacionCola === 'function') mostrarNotificacionCola('Pista publicada');
+            break;
+        case 'editar_cancion':
+            actualizarCancionDOM(data);
+            if (typeof mostrarNotificacionCola === 'function') mostrarNotificacionCola('Pista modificada');
+            break;
     }
 }
 
-// ==========================================
-// INITIALIZATION AND DELEGATED EVENTS
-// ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-    
-    console.log("[Sistema] Inicializando los 4 Buscadores de Etiquetas...");
-
-    // 1. Modal Registrar Álbum (albumModal)
-    inicializarBuscadorEtiquetas({
-        idContenedor: 'contenedor_buscador_artistas',
-        idSearch: 'album_artist_search',
-        idResults: 'album_artist_results',
-        idSelected: 'album_selected_artists',
-        idHidden: 'album_hidden_inputs',
-        setGlobal: window.crearAlbArtistasSeleccionados,
-        prefix: 'nuevo_alb'
+function recalcularIndicesTabla() {
+    const filas = document.querySelectorAll('#tablaCanciones tbody .target-row');
+    filas.forEach((fila, index) => {
+        const celdaNumero = fila.querySelector('td:first-child');
+        if (celdaNumero) celdaNumero.innerText = index + 1;
     });
+}
 
-    // 2. Modal Publicar Canción (cancionModal)
-    inicializarBuscadorEtiquetas({
-        idContenedor: 'subir_can_contenedor_buscador',
-        idSearch: 'subir_can_artist_search',
-        idResults: 'subir_can_artist_results',
-        idSelected: 'subir_can_selected_artists',
-        idHidden: 'subir_can_hidden_inputs',
-        setGlobal: window.subirArtistasSeleccionados,
-        prefix: 'sub'
+function insertarEnOrden(contenedor, nuevoElemento, selectorItems, selectorNombre) {
+    const items = Array.from(contenedor.children).filter(el => el.matches && el.matches(selectorItems));
+    const getTexto = (el) => {
+        const nodo = el.querySelector(selectorNombre);
+        return nodo ? nodo.innerText.trim() : "";
+    };
+    const nombreNuevo = getTexto(nuevoElemento);
+    let insertado = false;
+    for (let item of items) {
+        if (item === nuevoElemento) continue;
+        const nombreExistente = getTexto(item);
+        if (nombreNuevo.localeCompare(nombreExistente, 'es', { sensitivity: 'base', numeric: true }) < 0) {
+            contenedor.insertBefore(nuevoElemento, item);
+            insertado = true;
+            break;
+        }
+    }
+    if (!insertado) contenedor.appendChild(nuevoElemento);
+}
+
+function inyectarPlaylistDOM(pl) {
+    const ul = document.querySelector('#dropPlaylists .nav');
+    if (!ul) return;
+    const li = document.createElement('li');
+    li.className = "d-flex align-items-center justify-content-between p-1 rounded hover-bg-dark item-con-opciones";
+    li.id = `li_pl_menu_${pl.id}`;
+    li.innerHTML = `
+        <a href="#" class="text-secondary text-truncate flex-grow-1 text-decoration-none me-1 hover-text-white" data-nombre="${pl.nombre}" onclick="if(typeof filtrarPorPlaylist==='function') filtrarPorPlaylist(this.getAttribute('data-nombre'), ${pl.id}); return false;">
+            <i class="bi bi-music-note-list me-2 text-secondary"></i><span class="texto-nombre">${pl.nombre}</span>
+        </a>
+        <div class="d-flex gap-1 btn-opciones">
+            <span style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#editPlaylistModal" data-nombre="${pl.nombre}" data-desc="${pl.descripcion || ''}" onclick="document.getElementById('edit_pl_id').value='${pl.id}'; document.getElementById('edit_pl_nombre').value=this.getAttribute('data-nombre'); document.getElementById('edit_pl_desc').value=this.getAttribute('data-desc');">
+                <i class="bi bi-pencil small text-warning opacity-75 hover-opacity-100"></i>
+            </span>
+            <span style="cursor:pointer;" onclick="event.stopPropagation(); prepararEliminacion('playlist', ${pl.id}, this)">
+                <i class="bi bi-trash3 small text-danger opacity-75 hover-opacity-100"></i>
+            </span>
+        </div>
+    `;
+    insertarEnOrden(ul, li, '.item-con-opciones', '.texto-nombre');
+    const selectAdd = document.querySelector('#agregarAPlaylistModal select[name="playlist_id"]');
+    if (selectAdd) selectAdd.insertAdjacentHTML('beforeend', `<option value="${pl.id}">${pl.nombre}</option>`);
+}
+
+function actualizarPlaylistDOM(pl) {
+    const li = document.getElementById(`li_pl_menu_${pl.id}`);
+    if (li) {
+        const a = li.querySelector('a');
+        if (a) {
+            a.setAttribute('data-nombre', pl.nombre);
+            const spanTexto = a.querySelector('.texto-nombre');
+            if (spanTexto) spanTexto.innerText = pl.nombre;
+        }
+        const editBtn = li.querySelector('[data-bs-target="#editPlaylistModal"]');
+        if (editBtn) {
+            editBtn.setAttribute('data-nombre', pl.nombre);
+            editBtn.setAttribute('data-desc', pl.descripcion || '');
+        }
+        const ul = li.parentNode;
+        ul.removeChild(li);
+        insertarEnOrden(ul, li, '.item-con-opciones', '.texto-nombre');
+    }
+    document.querySelectorAll(`select[name="playlist_id"] option[value="${pl.id}"]`).forEach(opt => {
+        opt.innerText = pl.nombre;
     });
+}
 
-    // 3. Modal Modificar Canción (editCancionModal)
-    inicializarBuscadorEtiquetas({
-        idContenedor: 'edit_can_contenedor_buscador',
-        idSearch: 'edit_can_artist_search',
-        idResults: 'edit_can_artist_results',
-        idSelected: 'edit_can_selected_artists',
-        idHidden: 'edit_can_hidden_inputs',
-        setGlobal: window.editArtistasSeleccionados,
-        prefix: 'can'
-    });
-
-    // 4. Modal Editar Álbum (editAlbumModal)
-    inicializarBuscadorEtiquetas({
-        idContenedor: 'edit_alb_contenedor_buscador',
-        idSearch: 'edit_alb_artist_search',
-        idResults: 'edit_alb_artist_results',
-        idSelected: 'edit_alb_selected_artists',
-        idHidden: 'edit_alb_hidden_inputs',
-        setGlobal: window.editAlbArtistasSeleccionados,
-        prefix: 'alb'
-    });
-
-    // Escucha de clics delegados para reproducir canciones desde la cola visual
-    document.body.addEventListener('click', function(e) {
-        const itemCola = e.target.closest('[data-index]');
-        const perteneceACola = e.target.closest('#colaPanel') || e.target.closest('#lista-cola-dinamica');
-
-        if (itemCola && perteneceACola) {
-            if (e.target.closest('.btn-eliminar-cola') || e.target.tagName.toLowerCase() === 'button' || e.target.classList.contains('bi-x') || e.target.closest('i.bi-x-lg')) {
-                return; 
-            }
-
-            const indiceStr = itemCola.getAttribute('data-index');
-            const indice = parseInt(indiceStr);
-
-            if (!isNaN(indice) && typeof reproducirDesdeCola === 'function') {
-                reproducirDesdeCola(indice);
+function inyectarArtistaDOM(artista) {
+    const contenedor = document.getElementById('acordeonSubArtistas');
+    if (!contenedor) return;
+    const collapseId = `collapse_art_${artista.id}`;
+    const esDefault = !artista.foto || artista.foto.includes('default.jpg') || artista.foto.trim() === '';
+    const iconoHTML = esDefault ? `<div class="bg-secondary d-flex align-items-center justify-content-center rounded-circle text-muted" style="width: 24px; height: 24px; min-width: 24px;"><i class="bi bi-person-fill small"></i></div>` : `<img src="${artista.foto}" style="width: 24px; height: 24px; object-fit: cover;" class="rounded-circle" alt="Art">`;
+    const divWrapper = document.createElement('div');
+    divWrapper.className = "accordion-item bg-transparent border-0 mb-1";
+    divWrapper.id = `block_art_${artista.id}`;
+    divWrapper.innerHTML = `
+        <div class="d-flex align-items-center justify-content-between text-secondary p-1 rounded hover-bg-dark item-con-opciones">
+            <div class="d-flex align-items-center gap-2 text-truncate flex-grow-1" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                ${iconoHTML}
+                <span class="text-white fw-medium text-truncate">${artista.nombre}</span>
+            </div>
+            <div class="dropdown btn-opciones ms-2">
+                <button class="btn btn-link text-secondary p-0 border-0 shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="event.stopPropagation();">
+                    <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
+                    <li><a class="dropdown-item small" href="#" data-nombre="${artista.nombre}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-nombre'); if(typeof filtrarBiblioteca === 'function') filtrarBiblioteca(true); return false;"><i class="bi bi-search text-success me-2"></i>Buscar todas sus canciones</a></li>
+                    <li><a class="dropdown-item small" href="#" data-bs-toggle="modal" data-bs-target="#editArtistaModal" data-nombre="${artista.nombre}" onclick="document.getElementById('edit_art_id').value='${artista.id}'; document.getElementById('edit_art_nombre').value=this.getAttribute('data-nombre');"><i class="bi bi-pencil text-warning me-2"></i>Editar Artista</a></li>
+                    <li><hr class="dropdown-divider border-secondary"></li>
+                    <li><a class="dropdown-item small text-danger" href="#" onclick="event.preventDefault(); event.stopPropagation(); prepararEliminacion('artista', ${artista.id}, this)"><i class="bi bi-trash3 text-danger me-2"></i>Eliminar Artista</a></li>
+                </ul>
+            </div>
+        </div>
+        <div id="${collapseId}" class="accordion-collapse collapse" data-bs-parent="#acordeonSubArtistas">
+            <div class="accordion-body p-0 py-1 ps-4 ms-2 border-start border-secondary border-opacity-25">
+                <ul class="list-unstyled d-flex flex-column gap-1 small mb-0" id="lista_albumes_art_${artista.id}"><li class="text-muted small p-1 ps-2 fst-italic" style="font-size: 0.75rem;">Sin álbumes</li></ul>
+            </div>
+        </div>`;
+    insertarEnOrden(contenedor, divWrapper, '.accordion-item', '.text-white.fw-medium');
+    const contenedoresBuscadores = ['contenedor_buscador_artistas', 'subir_can_contenedor_buscador', 'edit_can_contenedor_buscador', 'edit_alb_contenedor_buscador'];
+    contenedoresBuscadores.forEach(idCont => {
+        const contSearch = document.getElementById(idCont);
+        if (contSearch && contSearch.listaArtistas) {
+            contSearch.listaArtistas.push({ id: artista.id, nombre: artista.nombre, foto: artista.foto });
+            const currentData = JSON.parse(contSearch.dataset.artistas || '[]');
+            if (!currentData.some(a => a.id == artista.id)) {
+                currentData.push({ id: artista.id, nombre: artista.nombre, foto: artista.foto });
+                contSearch.dataset.artistas = JSON.stringify(currentData);
             }
         }
     });
+}
+
+function actualizarArtistaDOM(artista) {
+    const block = document.getElementById(`block_art_${artista.id}`);
+    if (!block) return;
+    const txt = block.querySelector('.text-white.fw-medium');
+    if (txt) txt.innerText = artista.nombre;
+    const esDefault = !artista.foto || artista.foto.includes('default.jpg') || artista.foto.trim() === '';
+    const cacheBuster = esDefault ? '' : '?v=' + new Date().getTime();
+    let img = block.querySelector('img');
+    let divFallback = block.querySelector('.bg-secondary');
+    
+    if (esDefault) {
+        if (img) {
+            const newDiv = document.createElement('div');
+            newDiv.className = 'bg-secondary d-flex align-items-center justify-content-center rounded-circle text-muted';
+            newDiv.style.cssText = 'width: 24px; height: 24px; min-width: 24px;';
+            newDiv.innerHTML = '<i class="bi bi-person-fill small"></i>';
+            img.replaceWith(newDiv);
+        }
+    } else {
+        if (img) {
+            img.src = artista.foto + cacheBuster;
+        } else if (divFallback) {
+            const newImg = document.createElement('img');
+            newImg.src = artista.foto + cacheBuster;
+            newImg.style.cssText = 'width: 24px; height: 24px; object-fit: cover;';
+            newImg.className = 'rounded-circle';
+            divFallback.replaceWith(newImg);
+        }
+    }
+    
+    const editBtn = block.querySelector('[data-bs-target="#editArtistaModal"]');
+    if (editBtn) editBtn.setAttribute('data-nombre', artista.nombre);
+    const contenedor = document.getElementById('acordeonSubArtistas');
+    contenedor.removeChild(block);
+    insertarEnOrden(contenedor, block, '.accordion-item', '.text-white.fw-medium');
+    
+    document.querySelectorAll('#tablaCanciones tbody .target-row').forEach(tr => {
+        const artistsIds = tr.getAttribute('data-artistas-ids') || '';
+        if (artistsIds.split(',').map(id => id.trim()).includes(artista.id.toString())) {
+            const enlaceArtista = tr.querySelector(`.artist-col a[data-artista-id="${artista.id}"]`);
+            if (enlaceArtista) {
+                enlaceArtista.innerText = artista.nombre;
+                enlaceArtista.setAttribute('onclick', `document.getElementById('buscadorInput').value='${artista.nombre.replace(/'/g, "\\'")}'; if(typeof filtrarBiblioteca === 'function') filtrarBiblioteca(true); return false;`);
+            }
+            const todosLosNombres = Array.from(tr.querySelectorAll('.artist-col a')).map(a => a.innerText.trim()).join(', ');
+            tr.setAttribute('data-artista', todosLosNombres);
+            if (window.rutaEnReproduccion === tr.getAttribute('data-ruta')) {
+                const currentArtistEl = document.getElementById('current-artist');
+                if(currentArtistEl) currentArtistEl.innerText = todosLosNombres;
+            }
+        }
+    });
+    
+    const contenedoresBuscadores = ['contenedor_buscador_artistas', 'subir_can_contenedor_buscador', 'edit_can_contenedor_buscador', 'edit_alb_contenedor_buscador'];
+    contenedoresBuscadores.forEach(idCont => {
+        const contSearch = document.getElementById(idCont);
+        if (contSearch && contSearch.listaArtistas) {
+            const index = contSearch.listaArtistas.findIndex(a => a.id == artista.id);
+            if (index !== -1) {
+                contSearch.listaArtistas[index].nombre = artista.nombre;
+                if (artista.foto) contSearch.listaArtistas[index].foto = artista.foto + cacheBuster;
+            }
+            contSearch.dataset.artistas = JSON.stringify(contSearch.listaArtistas);
+        }
+    });
+}
+
+function inyectarAlbumDOM(album) {
+    const ids = album.artistas_ids ? album.artistas_ids.split(',') : [];
+    const esDefault = !album.caratula || album.caratula.includes('default.jpg') || album.caratula.trim() === '';
+    const iconoHTML = esDefault ? `<div class="bg-secondary d-flex align-items-center justify-content-center rounded text-muted" style="width: 20px; height: 20px; min-width: 20px;"><i class="bi bi-disc" style="font-size: 0.7rem;"></i></div>` : `<img src="${album.caratula}" style="width: 20px; height: 20px; object-fit: cover;" class="rounded" alt="Alb">`;
+    ids.forEach(idArt => {
+        const ul = document.querySelector(`#lista_albumes_art_${idArt.trim()}`);
+        if (ul) {
+            const emptyNotice = ul.querySelector('.fst-italic');
+            if (emptyNotice) emptyNotice.remove();
+            const li = document.createElement('li');
+            li.className = "d-flex align-items-center justify-content-between text-secondary p-1 ps-2 hover-bg-dark rounded item-con-opciones";
+            li.id = `li_alb_menu_${album.id}`;
+            li.innerHTML = `
+                <div class="d-flex align-items-center gap-2 text-truncate flex-grow-1" style="cursor:pointer;" data-titulo="${album.titulo}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-titulo'); if(typeof filtrarBiblioteca==='function') filtrarBiblioteca(true);">
+                    ${iconoHTML}
+                    <span class="text-white-50 text-truncate" style="font-size: 0.85rem;">${album.titulo}</span>
+                </div>
+                <div class="dropdown btn-opciones ms-2">
+                    <button class="btn btn-link text-secondary p-0 border-0 shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="event.stopPropagation();">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
+                        <li><a class="dropdown-item small" href="#" data-titulo="${album.titulo}" data-artistas-nombres="${album.artistas_nombres || ''}" data-artistas-ids="${album.artistas_ids}" data-bs-toggle="modal" data-bs-target="#editAlbumModal" onclick="if(typeof cargarModalAlbum==='function') cargarModalAlbum(${album.id}, this.getAttribute('data-titulo'), '${album.anio || ''}'); if(typeof cargarEtiquetasEdicionAlbum==='function') cargarEtiquetasEdicionAlbum(this.getAttribute('data-artistas-ids'), this.getAttribute('data-artistas-nombres'));"><i class="bi bi-pencil text-warning me-2"></i>Editar Álbum</a></li>
+                        <li><hr class="dropdown-divider border-secondary"></li>
+                        <li><a class="dropdown-item small text-danger" href="#" onclick="event.preventDefault(); event.stopPropagation(); prepararEliminacion('album', ${album.id}, this)"><i class="bi bi-trash3 text-danger me-2"></i>Eliminar Álbum</a></li>
+                    </ul>
+                </div>
+            `;
+            insertarEnOrden(ul, li, '.item-con-opciones', 'span.text-white-50');
+        }
+    });
+    const strOpcion = `<option value="${album.id}">${album.titulo} (${album.artistas_nombres || ''})</option>`;
+    document.querySelectorAll('select[name="album_id"]').forEach(select => select.insertAdjacentHTML('beforeend', strOpcion));
+}
+
+function actualizarAlbumDOM(album) {
+    const esDefault = !album.caratula || album.caratula.includes('default.jpg') || album.caratula.trim() === '';
+    const cacheBuster = esDefault ? '' : '?v=' + new Date().getTime();
+    document.querySelectorAll(`[id^="li_alb_menu_${album.id}"]`).forEach(li => {
+        const ul = li.parentNode;
+        li.remove();
+        if (ul && ul.querySelectorAll('li.item-con-opciones').length === 0) {
+            if (!ul.querySelector('.fst-italic')) {
+                ul.innerHTML = `<li class="text-muted small p-1 ps-2 fst-italic" style="font-size: 0.75rem;">Sin álbumes</li>`;
+            }
+        }
+    });
+    const idsArt = album.artistas_ids ? album.artistas_ids.split(',') : [];
+    const iconoHTML = esDefault ? `<div class="bg-secondary d-flex align-items-center justify-content-center rounded text-muted" style="width: 20px; height: 20px; min-width: 20px;"><i class="bi bi-disc" style="font-size: 0.7rem;"></i></div>` : `<img src="${album.caratula}${cacheBuster}" style="width: 20px; height: 20px; object-fit: cover;" class="rounded" alt="Alb">`;
+    const tituloEsc = album.titulo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+    const artsNombresEsc = (album.artistas_nombres || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+    idsArt.forEach(idArt => {
+        const ul = document.querySelector(`#lista_albumes_art_${idArt.trim()}`);
+        if (ul) {
+            const emptyNotice = ul.querySelector('.fst-italic');
+            if (emptyNotice) emptyNotice.remove();
+            const li = document.createElement('li');
+            li.className = "d-flex align-items-center justify-content-between text-secondary p-1 ps-2 hover-bg-dark rounded item-con-opciones";
+            li.id = `li_alb_menu_${album.id}`;
+            li.innerHTML = `
+                <div class="d-flex align-items-center gap-2 text-truncate flex-grow-1" style="cursor:pointer;" data-titulo="${tituloEsc}" onclick="document.getElementById('buscadorInput').value=this.getAttribute('data-titulo'); if(typeof filtrarBiblioteca==='function') filtrarBiblioteca(true);">
+                    ${iconoHTML}
+                    <span class="text-white-50 text-truncate" style="font-size: 0.85rem;">${album.titulo}</span>
+                </div>
+                <div class="dropdown btn-opciones ms-2">
+                    <button class="btn btn-link text-secondary p-0 border-0 shadow-none" type="button" data-bs-toggle="dropdown" data-bs-boundary="window" aria-expanded="false" onclick="event.stopPropagation();">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
+                        <li><a class="dropdown-item small" href="#" data-titulo="${tituloEsc}" data-artistas-nombres="${artsNombresEsc}" data-artistas-ids="${album.artistas_ids}" data-bs-toggle="modal" data-bs-target="#editAlbumModal" onclick="if(typeof cargarModalAlbum==='function') cargarModalAlbum(${album.id}, this.getAttribute('data-titulo'), '${album.anio || ''}'); if(typeof cargarEtiquetasEdicionAlbum==='function') cargarEtiquetasEdicionAlbum(this.getAttribute('data-artistas-ids'), this.getAttribute('data-artistas-nombres'));"><i class="bi bi-pencil text-warning me-2"></i>Editar Álbum</a></li>
+                        <li><hr class="dropdown-divider border-secondary"></li>
+                        <li><a class="dropdown-item small text-danger" href="#" onclick="event.preventDefault(); event.stopPropagation(); prepararEliminacion('album', ${album.id}, this)"><i class="bi bi-trash3 text-danger me-2"></i>Eliminar Álbum</a></li>
+                    </ul>
+                </div>
+            `;
+            insertarEnOrden(ul, li, '.item-con-opciones', 'span.text-white-50');
+        }
+    });
+    
+    document.querySelectorAll(`#tablaCanciones tbody .target-row[data-album-id="${album.id}"]`).forEach(tr => {
+        const albumCellA = tr.querySelector('.album-col a');
+        if (albumCellA) {
+            albumCellA.innerText = album.titulo;
+            albumCellA.setAttribute('onclick', `document.getElementById('buscadorInput').value='${tituloEsc}'; if(typeof filtrarBiblioteca==='function') filtrarBiblioteca(true); return false;`);
+        }
+        const container = tr.querySelector('.title-col .d-flex');
+        if (container && album.caratula) {
+            tr.setAttribute('data-caratula', album.caratula);
+            let imgFila = container.querySelector('img');
+            let divFallbackFila = container.querySelector('.bg-secondary');
+            if (imgFila) {
+                imgFila.src = album.caratula + cacheBuster;
+            } else if (divFallbackFila && !esDefault) {
+                const newImg = document.createElement('img');
+                newImg.src = album.caratula + cacheBuster;
+                newImg.className = 'album-img';
+                newImg.alt = 'Cover';
+                newImg.loading = 'lazy';
+                divFallbackFila.replaceWith(newImg);
+            }
+        }
+        if (window.rutaEnReproduccion === tr.getAttribute('data-ruta') && album.caratula) {
+            const currentCover = document.getElementById('current-cover');
+            const iconContainer = document.getElementById('player-icon-container');
+            if (currentCover && iconContainer) {
+                currentCover.src = album.caratula + cacheBuster;
+                currentCover.classList.remove('d-none');
+                iconContainer.classList.add('d-none');
+                if ('mediaSession' in navigator) {
+                    actualizarPantallaBloqueo(tr.getAttribute('data-titulo'), tr.getAttribute('data-artista'), album.titulo, album.caratula + cacheBuster);
+                }
+            }
+        }
+    });
+    document.querySelectorAll(`select[name="album_id"] option[value="${album.id}"]`).forEach(opt => {
+        opt.innerText = `${album.titulo} (${album.artistas_nombres || ''})`;
+    });
+    if (typeof filtrarBiblioteca === 'function') filtrarBiblioteca(true);
+}
+
+function inyectarCancionDOM(c) {
+    const tbody = document.querySelector('#tablaCanciones tbody');
+    if (!tbody) return;
+    if (tbody.querySelector('td[colspan="6"]')) tbody.innerHTML = '';
+    
+    const mins = Math.floor(c.duracion / 60);
+    const secs = c.duracion % 60;
+    const duracionFmt = mins + ":" + (secs < 10 ? "0" : "") + secs;
+    const esDefault = !c.caratula || c.caratula.includes('default.jpg') || c.caratula.trim() === '';
+    const iconoHTML = esDefault ? `<div class="bg-secondary d-flex align-items-center justify-content-center rounded text-muted" style="width: 45px; height: 45px;"><i class="bi bi-music-note fs-4"></i></div>` : `<img src="${c.caratula}" class="album-img" alt="Cover" loading="lazy">`;
+    const albumTexto = c.album === 'Single / Sencillo' ? 'Single' : c.album;
+    const albumClase = c.album === 'Single / Sencillo' ? 'text-muted font-monospace small' : 'text-secondary';
+    const idsArt = (c.artistas_ids || '').split(',');
+    const arts = (c.artistas_nombres || '').split(', ');
+    
+    const htmlArtistas = arts.map((nom, idx) => `<a href="#" data-artista-id="${idsArt[idx] ? idsArt[idx].trim() : ''}" onclick="document.getElementById('buscadorInput').value='${nom.replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; if(typeof filtrarBiblioteca==='function') filtrarBiblioteca(true); return false;" class="text-info text-decoration-none hover-underline">${nom}</a>`).join('<span class="text-secondary">, </span>');
+    const tituloEsc = c.titulo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+    const artsEsc = c.artistas_nombres.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+    const rutaEsc = c.ruta_archivo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+    const albEsc = albumTexto.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+    
+    const tr = document.createElement('tr');
+    tr.className = 'song-row target-row';
+    tr.id = `fila_cancion_${c.id}`;
+    tr.setAttribute('data-playlists', c.playlists_nombres || '');
+    tr.setAttribute('data-ruta', c.ruta_archivo);
+    tr.setAttribute('data-titulo', c.titulo);
+    tr.setAttribute('data-artista', c.artistas_nombres);
+    tr.setAttribute('data-caratula', c.caratula);
+    tr.setAttribute('data-fecha', c.fecha_subida);
+    tr.setAttribute('data-album-id', c.album_id || '');
+    tr.setAttribute('data-artistas-ids', c.artistas_ids || '');
+    if(typeof reproducirDesdeFila === 'function') tr.setAttribute('onclick', 'reproducirDesdeFila(this)');
+    
+    tr.innerHTML = `
+        <td class="text-secondary"></td>
+        <td class="title-col"><div class="d-flex align-items-center gap-3">${iconoHTML}<span class="fw-bold">${c.titulo}</span></div></td>
+        <td class="album-col d-none d-md-table-cell"><a href="#" onclick="document.getElementById('buscadorInput').value='${albEsc}'; if(typeof filtrarBiblioteca==='function') filtrarBiblioteca(true); return false;" class="${albumClase} text-decoration-none hover-underline">${albumTexto}</a></td>
+        <td class="artist-col">${htmlArtistas}</td>
+        <td class="text-secondary font-monospace small d-none d-md-table-cell">${duracionFmt}</td>
+        <td onclick="event.stopPropagation();">
+            <div class="dropdown">
+                <button type="button" class="btn text-secondary border-0 p-1 shadow-none" data-bs-toggle="dropdown" data-bs-boundary="window" style="background: none; line-height: 1;"><i class="bi bi-three-dots-vertical fs-5"></i></button>
+                <ul class="dropdown-menu dropdown-menu-end bg-dark border border-secondary border-opacity-20 shadow-lg p-1">
+                    <li><button class="dropdown-item text-white hover-bg-dark rounded small py-1.5" onclick="if(typeof agregarAColaManual==='function') agregarAColaManual('${c.ruta_archivo}'); event.stopPropagation();"><i class="bi bi-music-note-list text-danger me-2"></i> Añadir a la cola</button></li>
+                    <li><button type="button" class="dropdown-item text-white rounded small py-1.5" data-bs-toggle="modal" data-bs-target="#agregarAPlaylistModal" onclick="document.getElementById('id_cancion_playlist').value='${c.id}'; window.filaCancionActiva = this.closest('tr');"><i class="bi bi-plus-circle me-2 text-info"></i> Añadir a Playlist</button></li>
+                    <li><button type="button" class="dropdown-item text-danger rounded small py-1.5 d-none btn-quitar-playlist" onclick="event.stopPropagation(); quitarDePlaylistAsincrono(${c.id}, document.getElementById('playlist_activa_id').value, this)"><i class="bi bi-x-circle text-danger me-2"></i>Quitar de Playlist</button></li>
+                    <li><button type="button" class="dropdown-item text-white rounded small py-1.5" data-bs-toggle="modal" data-bs-target="#editCancionModal" onclick="if(typeof cargarModalCancion==='function') cargarModalCancion(${c.id}, '${tituloEsc}', '${c.album_id || ''}', ${c.duracion}, '${rutaEsc}'); if(typeof cargarEtiquetasEdicion==='function') cargarEtiquetasEdicion('${c.artistas_ids || ''}', '${artsEsc}');"><i class="bi bi-pencil me-2 text-warning"></i> Editar detalles</button></li>
+                    <li><button type="button" class="dropdown-item text-white rounded small py-1.5" onclick="event.stopPropagation(); if(typeof descargarCancionConMetadatos==='function') descargarCancionConMetadatos(this, '${rutaEsc}', '${tituloEsc}', '${artsEsc}', '${albEsc}');"><i class="bi bi-download me-2 text-success"></i> <span class="texto-btn">Descargar pista</span></button></li>
+                    <li><hr class="dropdown-divider border-secondary border-opacity-20 my-1"></li>
+                    <li><button type="button" class="dropdown-item text-danger rounded small py-1.5" onclick="prepararEliminacion('cancion', ${c.id}, this); event.stopPropagation();"><i class="bi bi-trash3 me-2"></i> Eliminar pista</button></li>
+                </ul>
+            </div>
+        </td>`;
+    
+    tbody.insertBefore(tr, tbody.firstChild);
+    recalcularIndicesTabla();
+    if (typeof filtrarBiblioteca === 'function') {
+        filtrarBiblioteca(true);
+        if (typeof actualizarColaReproduccion === 'function') {
+            actualizarColaReproduccion();
+            const panel = document.getElementById('colaPanel');
+            if (panel && panel.classList.contains('activo') && typeof renderizarColaVisual==='function') renderizarColaVisual();
+        }
+    }
+}
+
+function actualizarCancionDOM(c) {
+    const tr = document.getElementById(`fila_cancion_${c.id}`);
+    if (!tr) return;
+    tr.setAttribute('data-titulo', c.titulo);
+    tr.setAttribute('data-artista', c.artistas_nombres);
+    tr.setAttribute('data-caratula', c.caratula);
+    tr.setAttribute('data-ruta', c.ruta_archivo);
+    tr.setAttribute('data-playlists', c.playlists_nombres || '');
+    tr.setAttribute('data-album-id', c.album_id || '');
+    tr.setAttribute('data-artistas-ids', c.artistas_ids || '');
+    
+    const tituloSpan = tr.querySelector('.title-col span.fw-bold');
+    if (tituloSpan) tituloSpan.innerText = c.titulo;
+    
+    const esDefault = !c.caratula || c.caratula.includes('default.jpg') || c.caratula.trim() === '';
+    const cacheBuster = esDefault ? '' : '?v=' + new Date().getTime();
+    const container = tr.querySelector('.title-col .d-flex');
+    let img = container.querySelector('img');
+    let divFallback = container.querySelector('.bg-secondary');
+    
+    if (esDefault) {
+        if (img) {
+            const newDiv = document.createElement('div');
+            newDiv.className = 'bg-secondary d-flex align-items-center justify-content-center rounded text-muted';
+            newDiv.style.cssText = 'width: 45px; height: 45px;';
+            newDiv.innerHTML = '<i class="bi bi-music-note fs-4"></i>';
+            img.replaceWith(newDiv);
+        }
+    } else {
+        if (img) {
+            img.src = c.caratula + cacheBuster;
+        } else if (divFallback) {
+            const newImg = document.createElement('img');
+            newImg.src = c.caratula + cacheBuster;
+            newImg.className = 'album-img';
+            newImg.alt = 'Cover';
+            newImg.loading = 'lazy';
+            divFallback.replaceWith(newImg);
+        }
+    }
+    
+    const albumCell = tr.querySelector('.album-col a');
+    if (albumCell) {
+        const isSingle = c.album === 'Single / Sencillo';
+        albumCell.innerText = isSingle ? 'Single' : c.album;
+        albumCell.className = `${isSingle ? 'text-muted font-monospace small' : 'text-secondary'} text-decoration-none hover-underline`;
+        albumCell.setAttribute('onclick', `document.getElementById('buscadorInput').value='${(isSingle ? 'Single' : c.album).replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; if(typeof filtrarBiblioteca==='function') filtrarBiblioteca(true); return false;`);
+    }
+    
+    const artistCell = tr.querySelector('.artist-col');
+    if (artistCell) {
+        const idsArt = (c.artistas_ids || '').split(',');
+        const arts = (c.artistas_nombres || '').split(', ');
+        artistCell.innerHTML = arts.map((nom, idx) => `<a href="#" data-artista-id="${idsArt[idx] ? idsArt[idx].trim() : ''}" onclick="document.getElementById('buscadorInput').value='${nom.replace(/'/g, "\\'").replace(/"/g, "&quot;")}'; if(typeof filtrarBiblioteca==='function') filtrarBiblioteca(true); return false;" class="text-info text-decoration-none hover-underline">${nom}</a>`).join('<span class="text-secondary">, </span>');
+    }
+    
+    const mins = Math.floor(c.duracion / 60);
+    const secs = c.duracion % 60;
+    const duracionCell = tr.querySelector('td.font-monospace');
+    if (duracionCell) duracionCell.innerText = mins + ":" + (secs < 10 ? "0" : "") + secs;
+    
+    if (window.rutaEnReproduccion === c.ruta_archivo) {
+        document.getElementById('current-title').innerText = c.titulo;
+        document.getElementById('current-artist').innerText = c.artistas_nombres;
+        const currentCover = document.getElementById('current-cover');
+        if (currentCover) currentCover.src = c.caratula + cacheBuster;
+        if ('mediaSession' in navigator) actualizarPantallaBloqueo(c.titulo, c.artistas_nombres, c.album || 'Single', c.caratula + cacheBuster);
+    }
+    
+    const editBtn = tr.querySelector('[data-bs-target="#editCancionModal"]');
+    if (editBtn) {
+        const tituloEscapado = c.titulo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const rutaEscapada = c.ruta_archivo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const artistasNombresEscapados = c.artistas_nombres.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        editBtn.setAttribute('onclick', `if(typeof cargarModalCancion==='function') cargarModalCancion(${c.id}, '${tituloEscapado}', '${c.album_id || ''}', ${c.duracion || 0}, '${rutaEscapada}'); if(typeof cargarEtiquetasEdicion==='function') cargarEtiquetasEdicion('${c.artistas_ids || ''}', '${artistasNombresEscapados}');`);
+    }
+    
+    const downloadBtn = tr.querySelector('.bi-download').closest('button');
+    if (downloadBtn) {
+        const tituloEscapado = c.titulo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const rutaEscapada = c.ruta_archivo.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const artistasNombresEscapados = c.artistas_nombres.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const albumEscapado = (c.album || 'Single').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        downloadBtn.setAttribute('onclick', `event.stopPropagation(); if(typeof descargarCancionConMetadatos==='function') descargarCancionConMetadatos(this, '${rutaEscapada}', '${tituloEscapado}', '${artistasNombresEscapados}', '${albumEscapado}')`);
+    }
+    
+    if (typeof filtrarBiblioteca === 'function') {
+        filtrarBiblioteca(true);
+        if (typeof actualizarColaReproduccion === 'function') {
+            actualizarColaReproduccion();
+            const panel = document.getElementById('colaPanel');
+            if (panel && panel.classList.contains('activo') && typeof renderizarColaVisual==='function') renderizarColaVisual();
+        }
+    }
+}
+
+// 5. GESTIÓN DE ELIMINACIÓN Y LISTAS
+let _tipoAEliminar = '';
+let _idAEliminar = 0;
+let _elementoVisualARemover = null;
+
+function prepararEliminacion(tipo, id, btnElemento) {
+    _tipoAEliminar = tipo;
+    _idAEliminar = id;
+    _elementoVisualARemover = btnElemento.closest('.target-row') || btnElemento.closest('tr') || btnElemento.closest('.accordion-item') || btnElemento.closest('li.item-con-opciones');
+    const mensajeEl = document.getElementById('mensajeEliminacionModal');
+    if (!mensajeEl) return;
+    const configuracionTipos = {
+        'cancion':  { articulo: 'esta', nombre: 'pista' },
+        'playlist': { articulo: 'esta', nombre: 'playlist' },
+        'album':    { articulo: 'este', nombre: 'álbum' },
+        'artista':  { articulo: 'este', nombre: 'artista' }
+    };
+    const config = configuracionTipos[tipo] || { articulo: 'este', nombre: tipo };
+    mensajeEl.innerText = `¿Estás seguro de que deseas eliminar ${config.articulo} ${config.nombre} permanentemente?`;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmarEliminacion')).show();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btnAceptar = document.getElementById('btnAceptarEliminacion');
+    if (!btnAceptar) return;
+    btnAceptar.addEventListener('click', () => {
+        const modalEl = document.getElementById('modalConfirmarEliminacion');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modalInstance.hide();
+        eliminarProcedimientoAsincrono(_tipoAEliminar, _idAEliminar, _elementoVisualARemover);
+    });
 });
+
+async function eliminarProcedimientoAsincrono(tipo, id, elementoVisual) {
+    try {
+        const url = `api/eliminar_elementos.php?tabla=${tipo}&id=${id}`;
+        const respuesta = await fetch(url, { method: 'GET' });
+        if (!respuesta.ok) throw new Error('Error en la respuesta del servidor');
+        const data = await respuesta.json();
+        
+        if (data.status === 'success') {
+            if (typeof mostrarNotificacionCola === 'function') mostrarNotificacionCola('Elemento eliminado correctamente.');
+            if (tipo === 'cancion') {
+                if (elementoVisual && elementoVisual.classList.contains('target-row')) {
+                    elementoVisual.style.transition = "all 0.4s ease";
+                    elementoVisual.style.opacity = "0";
+                    elementoVisual.style.transform = "scale(0.95)";
+                    setTimeout(() => {
+                        elementoVisual.remove();
+                        recalcularIndicesTabla();
+                        if (typeof filtrarBiblioteca === 'function') {
+                            filtrarBiblioteca(true);
+                            if (typeof actualizarColaReproduccion === 'function') {
+                                actualizarColaReproduccion();
+                                const panel = document.getElementById('colaPanel');
+                                if (panel && panel.classList.contains('activo') && typeof renderizarColaVisual === 'function') renderizarColaVisual();
+                            }
+                        }
+                    }, 400);
+                }
+            } else if (tipo === 'playlist') {
+                const itemPL = document.getElementById(`li_pl_menu_${id}`);
+                if (itemPL) {
+                    itemPL.style.transition = "all 0.4s ease";
+                    itemPL.style.opacity = "0";
+                    setTimeout(() => itemPL.remove(), 400);
+                }
+                document.querySelectorAll(`select option[value="${id}"]`).forEach(opt => opt.remove());
+            } else if (tipo === 'album') {
+                document.querySelectorAll(`[id^="li_alb_menu_${id}"]`).forEach(item => {
+                    const ul = item.parentNode;
+                    item.style.transition = "all 0.4s ease";
+                    item.style.opacity = "0";
+                    setTimeout(() => {
+                        item.remove();
+                        if (ul && ul.querySelectorAll('li.item-con-opciones').length === 0) {
+                            ul.innerHTML = `<li class="text-muted small p-1 ps-2 fst-italic" style="font-size: 0.75rem;">Sin álbumes</li>`;
+                        }
+                    }, 400);
+                });
+                document.querySelectorAll(`select option[value="${id}"]`).forEach(opt => opt.remove());
+            } else if (tipo === 'artista') {
+                const itemArt = document.getElementById(`block_art_${id}`);
+                if (itemArt) {
+                    itemArt.style.transition = "all 0.4s ease";
+                    itemArt.style.opacity = "0";
+                    setTimeout(() => itemArt.remove(), 400);
+                }
+                const contenedoresBuscadores = ['contenedor_buscador_artistas', 'subir_can_contenedor_buscador', 'edit_can_contenedor_buscador', 'edit_alb_contenedor_buscador'];
+                contenedoresBuscadores.forEach(idCont => {
+                    const contSearch = document.getElementById(idCont);
+                    if (contSearch && contSearch.listaArtistas) {
+                        contSearch.listaArtistas = contSearch.listaArtistas.filter(a => a.id != id);
+                        contSearch.dataset.artistas = JSON.stringify(contSearch.listaArtistas);
+                    }
+                });
+            }
+        } else {
+            alert("Error al eliminar: " + (data.message || "Motivo desconocido"));
+        }
+    } catch (error) {
+        console.error("Error en la petición de eliminación:", error);
+        alert("Ocurrió un error de conexión al intentar eliminar el elemento.");
+    }
+}
+
+async function quitarDePlaylistAsincrono(cancionId, playlistId, elementoBoton) {
+    try {
+        const url = `api/eliminar_elementos.php?tabla=quitar_de_playlist&cancion_id=${cancionId}&playlist_id=${playlistId}`;
+        const respuesta = await fetch(url, { method: 'GET' });
+        if (!respuesta.ok) throw new Error('Error de red');
+        const data = await respuesta.json();
+        
+        if (data.status === 'success') {
+            if (typeof mostrarNotificacionCola === 'function') mostrarNotificacionCola('Canción removida de la playlist.');
+            const elementoVisual = elementoBoton.closest('.target-row') || elementoBoton.closest('tr');
+            if (elementoVisual) {
+                elementoVisual.style.transition = "all 0.4s ease";
+                elementoVisual.style.opacity = "0";
+                elementoVisual.style.transform = "scale(0.95)";
+                setTimeout(() => {
+                    elementoVisual.remove();
+                    recalcularIndicesTabla();
+                    if (typeof filtrarBiblioteca === 'function') filtrarBiblioteca(true);
+                }, 400);
+            }
+        }
+    } catch (error) {
+        console.error("Error:", error);
+    }
+}
+
+async function agregarAPlaylistRealTime(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const form = event.target;
+    const botonSubmit = form.querySelector('button[type="submit"]');
+    const textoOriginal = botonSubmit.innerHTML;
+    botonSubmit.disabled = true;
+    botonSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
+    
+    const formData = new FormData(form);
+    try {
+        const response = await fetch('api/insertar_elementos.php', { method: 'POST', body: formData });
+        const data = await response.json();
+        if (data.status === 'success') {
+            const modalEl = document.getElementById('agregarAPlaylistModal');
+            bootstrap.Modal.getInstance(modalEl).hide();
+            const selectPlaylist = form.querySelector('select[name="playlist_id"]');
+            const nombrePlaylist = selectPlaylist.options[selectPlaylist.selectedIndex].text;
+            
+            if (window.filaCancionActiva) {
+                let playlistsActuales = window.filaCancionActiva.getAttribute('data-playlists') || '';
+                if (playlistsActuales.trim() !== '') playlistsActuales += ', ' + nombrePlaylist;
+                else playlistsActuales = nombrePlaylist;
+                window.filaCancionActiva.setAttribute('data-playlists', playlistsActuales);
+            }
+            if (typeof mostrarNotificacionCola === 'function') mostrarNotificacionCola('¡Canción añadida a la playlist!');
+            form.reset();
+        } else if (data.status === 'error' && data.message === 'duplicada') {
+            document.getElementById('mensajeAlertaModal').innerText = 'Esta canción ya pertenece a la playlist seleccionada.';
+            if(bootstrap.Modal.getInstance(document.getElementById('modalAlertaSistema'))){
+                bootstrap.Modal.getInstance(document.getElementById('modalAlertaSistema')).show();
+            } else {
+                new bootstrap.Modal(document.getElementById('modalAlertaSistema')).show();
+            }
+        } else {
+            document.getElementById('mensajeAlertaModal').innerText = "Error: " + (data.message || "No se pudo añadir");
+            new bootstrap.Modal(document.getElementById('modalAlertaSistema')).show();
+        }
+    } catch (error) {
+        console.error("Error en la petición:", error);
+        document.getElementById('mensajeAlertaModal').innerText = "Ocurrió un error al conectar con el servidor.";
+        new bootstrap.Modal(document.getElementById('modalAlertaSistema')).show();
+    } finally {
+        botonSubmit.disabled = false;
+        botonSubmit.innerHTML = textoOriginal;
+    }
+}
+
+// 6. BUSCADOR WEB (DEEZER)
+let _nodoPreviewActivo = null;
+let _tipoBusquedaWeb = 'cancion';
+window._currentOffsetWeb = 0;
+
+function abrirBuscadorPortadas(tipo, inputIdParaTermino, botonElemento) {
+    _tipoBusquedaWeb = tipo;
+    _nodoPreviewActivo = botonElemento.closest('.input-group').parentElement;
+    window._currentOffsetWeb = 0;
+    
+    let tituloActual = document.getElementById(inputIdParaTermino).value.trim();
+    let artistasNombres = [];
+    let idContenedorArtistas = '';
+    
+    if (tipo === 'cancion' || tipo === 'album') idContenedorArtistas = inputIdParaTermino.replace('_titulo', '_selected_artists');
+    
+    if (idContenedorArtistas) {
+        const contenedorArt = document.getElementById(idContenedorArtistas);
+        if (contenedorArt) {
+            const badges = contenedorArt.querySelectorAll('.badge');
+            badges.forEach(b => artistasNombres.push(b.textContent.trim()));
+        }
+    }
+    
+    document.getElementById('inputBusquedaWebTitulo').value = tituloActual;
+    const inputArtista = document.getElementById('inputBusquedaWebArtista');
+    const colArtista = document.getElementById('colBusquedaWebArtista');
+    
+    if (tipo === 'artista') {
+        colArtista.style.display = 'none';
+        inputArtista.value = '';
+    } else {
+        colArtista.style.display = 'block';
+        inputArtista.value = artistasNombres.join(", ");
+    }
+    
+    document.getElementById('resultadosBusquedaWeb').innerHTML = '<div class="text-secondary my-4">Presiona buscar para escanear en Deezer.</div>';
+    new bootstrap.Modal(document.getElementById('modalBuscadorPortadas')).show();
+    if (tituloActual.trim() !== '') ejecutarBusquedaWeb(false);
+}
+
+async function ejecutarBusquedaWeb(cargarMas = false) {
+    const titulo = document.getElementById('inputBusquedaWebTitulo').value.trim();
+    const artista = document.getElementById('inputBusquedaWebArtista').value.trim();
+    const contenedor = document.getElementById('resultadosBusquedaWeb');
+    if (!titulo) return;
+    
+    if (!cargarMas) {
+        window._currentOffsetWeb = 0;
+        contenedor.innerHTML = '<div class="col-12 py-4"><div class="spinner-border text-danger" role="status"></div></div>';
+    } else {
+        window._currentOffsetWeb += 12;
+        const btnCargarMas = document.getElementById('btnCargarMasWeb');
+        if (btnCargarMas) btnCargarMas.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Cargando...';
+    }
+    
+    const fd = new FormData();
+    fd.append('accion', 'buscar_opciones_portada');
+    fd.append('tipo', _tipoBusquedaWeb);
+    fd.append('titulo', titulo);
+    fd.append('artista', artista);
+    fd.append('offset', window._currentOffsetWeb);
+    
+    try {
+        const req = await fetch('api/insertar_elementos.php', { method: 'POST', body: fd });
+        const texto = await req.text();
+        const res = JSON.parse(texto);
+        
+        if (res.status === 'success' && res.data.length > 0) {
+            if (!cargarMas) contenedor.innerHTML = '';
+            else {
+                const oldBtnContainer = document.getElementById('contenedorCargarMasWeb');
+                if (oldBtnContainer) oldBtnContainer.remove();
+            }
+            
+            res.data.forEach(url => {
+                const col = document.createElement('div');
+                col.className = 'col-4 col-md-3 mb-2';
+                const claseImg = _tipoBusquedaWeb === 'artista' ? 'rounded-circle' : 'rounded';
+                col.innerHTML = `
+                    <div class="position-relative hover-scale" style="cursor: pointer;" onclick="seleccionarImagenWeb('${url}')">
+                        <img src="${url}" class="img-fluid ${claseImg} border border-secondary hover-border-danger" style="aspect-ratio: 1/1; object-fit: cover; width: 100%;">
+                    </div>
+                `;
+                contenedor.appendChild(col);
+            });
+            
+            if (res.data.length > 0) {
+                const btnContainer = document.createElement('div');
+                btnContainer.className = 'col-12 mt-3 mb-2';
+                btnContainer.id = 'contenedorCargarMasWeb';
+                btnContainer.innerHTML = `<button id="btnCargarMasWeb" class="btn btn-outline-danger btn-sm fw-bold px-4 shadow-none" onclick="ejecutarBusquedaWeb(true)">Cargar más resultados <i class="bi bi-chevron-down ms-1"></i></button>`;
+                contenedor.appendChild(btnContainer);
+            }
+        } else {
+            if (!cargarMas) {
+                contenedor.innerHTML = '<div class="text-danger my-4"><i class="bi bi-emoji-frown me-2"></i>No se encontraron resultados en Deezer. Intenta modificar el nombre.</div>';
+            } else {
+                const oldBtnContainer = document.getElementById('contenedorCargarMasWeb');
+                if (oldBtnContainer) oldBtnContainer.innerHTML = '<div class="text-secondary small mt-2 fw-bold">Fin de la galería.</div>';
+            }
+        }
+    } catch (e) {
+        if (!cargarMas) contenedor.innerHTML = '<div class="text-danger my-4">Error de red. Intenta nuevamente.</div>';
+        else {
+            const btnCargarMas = document.getElementById('btnCargarMasWeb');
+            if (btnCargarMas) btnCargarMas.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Error. Reintentar';
+        }
+    }
+}
+
+function seleccionarImagenWeb(url) {
+    if (_nodoPreviewActivo) {
+        const hiddenInput = _nodoPreviewActivo.querySelector('.hidden-url-online');
+        if (hiddenInput) hiddenInput.value = url;
+        const previewContainer = _nodoPreviewActivo.querySelector('.preview-container');
+        const previewImg = _nodoPreviewActivo.querySelector('.preview-img');
+        if (previewContainer && previewImg) {
+            previewImg.src = url;
+            previewContainer.classList.remove('d-none');
+        }
+    }
+    const modalBuscador = bootstrap.Modal.getInstance(document.getElementById('modalBuscadorPortadas'));
+    if (modalBuscador) modalBuscador.hide();
+}

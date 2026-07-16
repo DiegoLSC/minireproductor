@@ -1,5 +1,6 @@
 /* =====================================================================
-   BASE.CSS - VARIABLES GLOBALES Y SECUESTRO DE BOOTSTRAP (THEME ENGINE)
+   BASE.CSS - VARIABLES GLOBALES Y MOTOR DE COLOR
+   Responsabilidad: Estilos puros de raíz, scrollbars y overrides globales.
 ====================================================================== */
 
 :root {
@@ -38,74 +39,35 @@ html, body {
     overflow: hidden;
 }
 
-/* PANTALLA DE CARGA GLOBAL */
-#pantalla-carga {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background-color: var(--bg-base);
-    z-index: 9999;
-    transition: opacity 0.6s ease, visibility 0.6s ease;
-}
-#pantalla-carga.oculto {
-    opacity: 0; visibility: hidden;
-}
-
 /* ==================================================
    PARCHE MAESTRO: APLICACIÓN DEL COLOR AL SISTEMA
 ================================================== */
-/* Textos e Iconos Activos */
 .text-danger, .text-success { color: var(--carmesí-brillante) !important; }
 .text-info { color: var(--carmesí-pastel) !important; }
 .text-secondary { color: var(--texto-secundario) !important; }
 
-/* Botones Nativos */
 .btn-success, .btn-danger {
     background-color: var(--sistema-carmesí) !important;
     border-color: var(--sistema-carmesí) !important;
     color: #ffffff !important;
 }
-.btn-success:hover, .btn-danger:hover { background-color: var(--carmesí-hover) !important; }
+
+.btn-success:hover, .btn-danger:hover { 
+    background-color: var(--carmesí-hover) !important; 
+}
+
 .btn-outline-danger {
     color: var(--carmesí-brillante) !important;
     border-color: var(--sistema-carmesí) !important;
 }
 
-/* Modales y Bordes Neón (Usa RGB para transparencia inteligente) */
-.modal-content, #widgetProgresoItunes {
-    border: 1px solid var(--sistema-carmesí) !important;
-    box-shadow: 0 0 15px rgba(var(--sistema-carmesí-rgb), 0.3), 
-                inset 0 0 10px rgba(var(--sistema-carmesí-rgb), 0.1) !important;
-}
-
-/* Bordes en resultados de búsqueda JS */
-div[id$="_artist_results"] { border: 1px solid rgba(var(--sistema-carmesí-rgb), 0.5) !important; }
-
-/* Efectos Hover Generales (Celdas, menús desplegables) */
-.song-row:hover, 
-.dropdown-item:hover, 
-.table-header-row th {
-    background-color: rgba(var(--sistema-carmesí-rgb), 0.08) !important;
-}
-
-/* Hover más fuerte específico para botones de peligro (Eliminar) */
-.dropdown-item.text-danger:hover {
-    background-color: rgba(var(--sistema-carmesí-rgb), 0.15) !important;
-    color: var(--carmesí-brillante) !important;
-}
-
-/* Íconos del Menú Lateral (Siempre color del tema) */
-.btn-menu-lateral i { color: var(--carmesí-brillante) !important; transition: color 0.3s ease; }
-.btn-menu-lateral:hover { background-color: rgba(var(--sistema-carmesí-rgb), 0.08) !important; }
-
-/* Controles de Reproducción y Misc */
-.text-success.bi-shuffle, .text-success.bi-queue { filter: drop-shadow(0 0 8px rgba(var(--sistema-carmesí-rgb), 0.6)) !important; }
-.btn-filtro-orden.active { border-color: var(--sistema-carmesí) !important; color: var(--sistema-carmesí) !important; font-weight: 600; }
-.accordion-button i.text-danger, .artist-col a:hover { color: var(--carmesí-brillante) !important; }
-
-/* Rueda de Configuración y Utilidades */
+/* Efectos Hover Globales */
 .hover-bg-carmesi:hover { background-color: rgba(var(--sistema-carmesí-rgb), 0.1) !important; }
 .hover-underline:hover { text-decoration: underline !important; }
+
+/* Íconos del Menú Lateral */
+.btn-menu-lateral i { color: var(--carmesí-brillante) !important; transition: color 0.3s ease; }
+.btn-menu-lateral:hover { background-color: rgba(var(--sistema-carmesí-rgb), 0.08) !important; }
 
 /* Scrollbars Globales */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -113,72 +75,7 @@ div[id$="_artist_results"] { border: 1px solid rgba(var(--sistema-carmesí-rgb),
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--sistema-carmesí) !important; }
 
-/* ==================================================
-   SINCRONIZACIÓN DE BARRAS DE PROGRESO Y SLIDERS
-================================================== */
-/* 1. La "bolita" (thumb) del reproductor y el volumen */
-.form-range::-webkit-slider-thumb { background-color: var(--carmesí-brillante) !important; }
-.form-range::-moz-range-thumb { background-color: var(--carmesí-brillante) !important; }
-
-/* 2. El resplandor neón cuando haces clic en el reproductor */
-.form-range:focus::-webkit-slider-thumb {
-    box-shadow: 0 0 0 1px var(--bg-base), 0 0 0 0.25rem rgba(var(--sistema-carmesí-rgb), 0.3) !important;
-}
-.form-range:focus::-moz-range-thumb {
-    box-shadow: 0 0 0 1px var(--bg-base), 0 0 0 0.25rem rgba(var(--sistema-carmesí-rgb), 0.3) !important;
-}
-
-/* 3. Barras de carga rectas (Subir canción, Buscar carátulas) */
-.progress-bar {
-    background-color: var(--sistema-carmesí) !important;
-    transition: width 0.6s ease, background-color 0.3s ease !important;
-}
-
-/* ==================================================
-   UNIFICACIÓN GLOBAL DE ÍCONOS DE OPCIONES (3 PUNTITOS)
-================================================== */
-
-/* 1. Fuerza a que TODOS los íconos dentro de los menús desplegables usen tu color dinámico (aplasta el warning, info, success nativos) */
-.dropdown-menu i {
-    color: var(--carmesí-brillante) !important;
-}
-
-/* 2. Fuerza a que los íconos en línea (Editar/Borrar Playlists en la barra lateral) usen el color dinámico */
-.item-con-opciones .btn-opciones i {
-    color: var(--carmesí-brillante) !important;
-}
-
-/* 3. Ilumina el botón de los 3 puntitos en sí cuando le pasas el cursor (Tabla de canciones y Catálogo) */
-button[data-bs-toggle="dropdown"]:hover i,
-.dropdown:hover > button i {
-    color: var(--carmesí-brillante) !important;
-    transition: color 0.2s ease;
-}
-
-/* 4. Excepción de Diseño: Mantiene las flechitas giratorias de la Configuración en gris para no saturar */
-.dropdown-menu i.bi-chevron-right {
-    color: var(--texto-secundario) !important;
-}
-
-/* ==================================================
-   LIMPIEZA DE FANTASMAS (Degradados y sombras fijas)
-================================================== */
-
-/* 1. Fondo degradado de la página (Layout) */
+/* Degradado de fondo */
 .main-content {
     background: linear-gradient(to bottom, rgba(var(--sistema-carmesí-rgb), 0.1) 0%, var(--bg-base) 40%) !important;
-}
-
-/* 2. Botón de ubicar canción actual (El fondo neón estático) */
-button[onclick="irACancionActual()"] i {
-    filter: drop-shadow(0 0 5px rgba(var(--sistema-carmesí-rgb), 0.6)) !important;
-    color: var(--carmesí-brillante) !important;
-}
-
-/* 3. Flechas de los acordeones en sidebar (Playlists y Catálogo) */
-.accordion-button::after {
-    filter: hue-rotate(0deg) brightness(1);
-    /* Forzamos a que el filtro de la flecha se aplique dinámicamente */
-    background-image: var(--bs-accordion-btn-icon) !important;
-    filter: invert(1) sepia(1) saturate(5) hue-rotate(calc(var(--hue-rotate, 0deg))) !important;
 }
