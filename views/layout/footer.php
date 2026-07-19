@@ -1,5 +1,8 @@
 </div>
 
+<!-- ============================================== -->
+<!-- REPRODUCTOR (PLAYER BAR) -->
+<!-- ============================================== -->
 <div class="player-bar d-flex align-items-center justify-content-between position-relative">
     <div class="d-flex align-items-center gap-3" style="width: 25%;">
         <div id="player-icon-container" class="bg-secondary d-flex align-items-center justify-content-center rounded text-muted border border-secondary" style="width: 55px; height: 55px; min-width: 55px;">
@@ -16,6 +19,7 @@
             </button>
         </div>
     </div>
+    
     <div class="d-flex flex-column align-items-center" style="width: 50%;">
         <audio id="audio-player" class="d-none"></audio>
         <div class="d-flex align-items-center gap-3 mb-1">
@@ -23,7 +27,11 @@
             <button id="prev-btn" class="btn text-white fs-4 p-0 lh-1" onclick="cancionAnterior()"><i class="bi bi-skip-start-fill"></i></button>
             <button id="play-btn" class="btn btn-light rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:40px; height:40px;" onclick="togglePlay()"><i class="bi bi-play-fill fs-4 text-black"></i></button>
             <button id="next-btn" class="btn text-white fs-4 p-0" onclick="siguienteCancion()"><i class="bi bi-skip-end-fill"></i></button>
-            <button id="repeat-btn" class="btn text-secondary fs-5 p-0 lh-1" onclick=" window.modoRepetirActivo = !window.modoRepetirActivo; this.className = window.modoRepetirActivo ? 'btn text-success fs-5 p-0 lh-1' : 'btn text-secondary fs-5 p-0 lh-1'; document.getElementById('repeat-icon').className = window.modoRepetirActivo ? 'bi bi-repeat-1' : 'bi bi-repeat'; ">
+            <button id="repeat-btn" class="btn text-secondary fs-5 p-0 lh-1" onclick="
+                window.modoRepetirActivo = !window.modoRepetirActivo;
+                this.className = window.modoRepetirActivo ? 'btn text-success fs-5 p-0 lh-1' : 'btn text-secondary fs-5 p-0 lh-1';
+                document.getElementById('repeat-icon').className = window.modoRepetirActivo ? 'bi bi-repeat-1' : 'bi bi-repeat';
+            ">
                 <i class="bi bi-repeat" id="repeat-icon"></i>
             </button>
         </div>
@@ -33,25 +41,28 @@
             <span id="time-total" class="text-secondary small" style="min-width: 35px;">0:00</span>
         </div>
     </div>
+    
     <div class="d-flex align-items-center justify-content-end gap-3" style="width: 25%; min-width: 150px;">
         <div class="d-flex align-items-center gap-2">
             <i id="volume-icon" class="bi bi-volume-up text-secondary fs-5" style="cursor: pointer;" onclick="toggleMute()"></i>
             <input type="range" id="volume-slider" class="form-range" style="width:90px;" min="0" max="1" step="0.05" value="1">
         </div>
     </div>
+    
     <button type="button" id="btn-abrir-cola" class="btn text-secondary p-0 fs-5 lh-1 shadow-none ms-4" onclick="togglePanelCola()" title="Ver cola">
         <i class="bi bi-view-list"></i>
     </button>
     <button id="btn-abrir-letras" class="btn text-secondary p-0 fs-5 lh-1 ms-4" onclick="togglePanelLetras()" title="Ver Letras">
         <i class="bi bi-card-text"></i>
     </button>
-
+    
     <canvas id="visualizador-fondo" class="position-absolute top-0 start-0 w-100 h-100" style="z-index: 0; pointer-events: none; opacity: 0.15;"></canvas>
 </div>
 
 <!-- ============================================== -->
 <!-- MODALES DE CREACIÓN -->
 <!-- ============================================== -->
+
 <div class="modal fade" id="artistaModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -63,11 +74,11 @@
                 <input type="hidden" name="accion" value="crear_artista">
                 <div class="modal-body d-flex flex-column gap-3">
                     <div>
-                        <label class="form-label">Nombre del Artista</label>
+                        <label class="form-label text-secondary small fw-bold">Nombre del Artista</label>
                         <input type="text" name="nombre" class="form-control" required>
                     </div>
                     <div>
-                        <label class="form-label">Foto de Perfil <span class="text-warning">(Opcional)</span></label>
+                        <label class="form-label text-secondary small fw-bold">Foto de Perfil <span class="text-warning">(Opcional)</span></label>
                         <input type="file" name="foto" class="form-control" accept="image/*">
                     </div>
                 </div>
@@ -94,11 +105,12 @@
                         <input type="text" name="titulo" class="form-control bg-secondary text-white border-0" required>
                     </div>
                     <div id="contenedor_buscador_artistas" data-artistas='<?= htmlspecialchars(json_encode($artistas), ENT_QUOTES, 'UTF-8') ?>'>
-                        <label class="form-label">Artistas Responsables</label>
+                        <label class="form-label text-secondary small fw-bold">Artistas Responsables</label>
                         <div id="album_selected_artists" class="d-flex flex-wrap gap-2 mb-2"></div>
                         <div class="position-relative">
                             <input type="text" id="album_artist_search" class="form-control" placeholder="Escribe para buscar un artista..." autocomplete="off">
-                            <div id="album_artist_results" class="position-absolute w-100 mt-1 rounded shadow-lg" style="display: none; z-index: 1060; max-height: 160px; overflow-y: auto; background-color: #141414; border: 1px solid rgba(220, 38, 38, 0.4);"> </div>
+                            <div id="album_artist_results" class="position-absolute w-100 mt-1 rounded shadow-lg" style="display: none; z-index: 1060; max-height: 160px; overflow-y: auto; background-color: #141414; border: 1px solid rgba(220, 38, 38, 0.4);">
+                            </div>
                         </div>
                         <div id="album_hidden_inputs"></div>
                     </div>
@@ -162,24 +174,29 @@
                 <input type="hidden" name="duracion" id="input_duracion_mp3" value="0">
                 <div class="modal-body d-flex flex-column gap-3">
                     <div>
-                        <label class="form-label">Archivo de Audio (.MP3)</label>
+                        <label class="form-label text-secondary small fw-bold">Archivo de Audio (.MP3)</label>
                         <input type="file" name="archivo_mp3" id="file_mp3" class="form-control" accept=".mp3" onchange="obtenerDuracionArchivo(this)" required>
                     </div>
                     <div>
-                        <label class="form-label">Título del Track</label>
+                        <label class="form-label text-secondary small fw-bold">Título del Track</label>
                         <input type="text" name="titulo" class="form-control" required>
                     </div>
                     <div>
-                        <label class="form-label">Álbum Vinculado <span class="text-warning">(Opcional)</span></label>
+                        <label class="form-label text-secondary small fw-bold">Álbum Vinculado <span class="text-warning">(Opcional)</span></label>
                         <select name="album_id" class="form-select">
                             <option value="">-- Ninguno (Single / Sencillo) --</option>
                             <?php foreach($albumes as $alb): ?>
-                                <option value="<?= $alb['id'] ?>"> <?= htmlspecialchars($alb['titulo']) ?> <?php if(!empty($alb['artistas_nombres'])): ?> (<?= htmlspecialchars($alb['artistas_nombres']) ?>) <?php endif; ?> </option>
+                                <option value="<?= $alb['id'] ?>">
+                                    <?= htmlspecialchars($alb['titulo']) ?>
+                                    <?php if(!empty($alb['artistas_nombres'])): ?>
+                                        (<?= htmlspecialchars($alb['artistas_nombres']) ?>)
+                                    <?php endif; ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div>
-                        <label class="form-label">Artistas Integrantes</label>
+                        <label class="form-label text-secondary small fw-bold">Artistas Integrantes</label>
                         <div id="subir_can_contenedor_buscador" data-artistas='<?= htmlspecialchars(json_encode($artistas), ENT_QUOTES, 'UTF-8') ?>'>
                             <div id="subir_can_selected_artists" class="d-flex flex-wrap gap-2 mb-2"></div>
                             <div class="position-relative">
@@ -237,6 +254,7 @@
 <!-- ============================================== -->
 <!-- MODALES DE EDICIÓN CON BÚSQUEDA WEB CORREGIDA -->
 <!-- ============================================== -->
+
 <div class="modal fade" id="editCancionModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -249,30 +267,35 @@
                 <input type="hidden" name="id" id="edit_can_id">
                 <div class="modal-body d-flex flex-column gap-3">
                     <div>
-                        <label class="form-label">Título de la Canción</label>
+                        <label class="form-label text-secondary small fw-bold">Título de la Canción</label>
                         <input type="text" name="titulo" id="edit_can_titulo" class="form-control" required>
                     </div>
                     <div>
-                        <label class="form-label">Archivo MP3 (Opcional)</label>
+                        <label class="form-label text-secondary small fw-bold">Archivo MP3 (Opcional)</label>
                         <input type="file" name="archivo_mp3" id="edit_can_archivo" class="form-control bg-dark border-secondary text-white shadow-none" accept=".mp3,audio/*" onchange="obtenerDuracionArchivo(this)">
                         <div class="form-text text-white-50" style="font-size: 0.75rem;">Sube un nuevo archivo solo si deseas reemplazar el audio actual.</div>
                         <input type="hidden" name="ruta_actual" id="edit_can_ruta_actual">
                     </div>
                     <div>
-                        <label class="form-label">Álbum</label>
+                        <label class="form-label text-secondary small fw-bold">Álbum</label>
                         <select name="album_id" id="edit_can_album" class="form-select">
                             <option value="">-- Ninguno (Single / Sencillo) --</option>
                             <?php foreach($albumes as $alb): ?>
-                                <option value="<?= $alb['id'] ?>"> <?= htmlspecialchars($alb['titulo']) ?> <?php if(!empty($alb['artistas_nombres'])): ?> (<?= htmlspecialchars($alb['artistas_nombres']) ?>) <?php endif; ?> </option>
+                                <option value="<?= $alb['id'] ?>">
+                                    <?= htmlspecialchars($alb['titulo']) ?>
+                                    <?php if(!empty($alb['artistas_nombres'])): ?>
+                                        (<?= htmlspecialchars($alb['artistas_nombres']) ?>)
+                                    <?php endif; ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div>
-                        <label class="form-label">Duración del Track</label>
+                        <label class="form-label text-secondary small fw-bold">Duración del Track</label>
                         <input type="text" id="edit_can_duracion_texto" class="form-control font-monospace" readonly>
                     </div>
                     <div>
-                        <label class="form-label">Artistas Integrantes</label>
+                        <label class="form-label text-secondary small fw-bold">Artistas Integrantes</label>
                         <div id="edit_can_contenedor_buscador" data-artistas='<?= htmlspecialchars(json_encode($artistas), ENT_QUOTES, 'UTF-8') ?>'>
                             <div id="edit_can_selected_artists" class="d-flex flex-wrap gap-2 mb-2"></div>
                             <div class="position-relative">
@@ -283,8 +306,7 @@
                         </div>
                     </div>
                     <div>
-                        <label class="form-label">Reemplazar Carátula <span class="text-warning">(Solo si es Sencillo)</span></label>
-                        <!-- INPUT GROUP UNIFICADO -->
+                        <label class="form-label text-secondary small fw-bold">Reemplazar Carátula <span class="text-warning">(Solo si es Sencillo)</span></label>
                         <div class="input-group">
                             <input type="file" name="caratula" class="form-control bg-dark border-secondary text-white shadow-none" accept="image/*">
                             <button type="button" class="btn btn-outline-danger fw-bold shadow-none" onclick="abrirBuscadorPortadas('cancion', 'edit_can_titulo', this)">
@@ -318,12 +340,11 @@
                 <input type="hidden" name="id" id="edit_art_id">
                 <div class="modal-body d-flex flex-column gap-3">
                     <div>
-                        <label class="form-label">Nombre del Artista</label>
+                        <label class="form-label text-secondary small fw-bold">Nombre del Artista</label>
                         <input type="text" name="nombre" id="edit_art_nombre" class="form-control" required>
                     </div>
                     <div>
-                        <label class="form-label">Reemplazar Foto <span class="text-warning">(Opcional)</span></label>
-                        <!-- INPUT GROUP UNIFICADO -->
+                        <label class="form-label text-secondary small fw-bold">Reemplazar Foto <span class="text-warning">(Opcional)</span></label>
                         <div class="input-group">
                             <input type="file" name="foto" class="form-control bg-dark border-secondary text-white shadow-none" accept="image/*">
                             <button type="button" class="btn btn-outline-danger fw-bold shadow-none" onclick="abrirBuscadorPortadas('artista', 'edit_art_nombre', this)">
@@ -357,11 +378,11 @@
                 <input type="hidden" name="id" id="edit_alb_id">
                 <div class="modal-body d-flex flex-column gap-3">
                     <div>
-                        <label class="form-label">Título del Álbum</label>
+                        <label class="form-label text-secondary small fw-bold">Título del Álbum</label>
                         <input type="text" name="titulo" id="edit_alb_titulo" class="form-control" required>
                     </div>
                     <div>
-                        <label class="form-label">Artistas Responsables</label>
+                        <label class="form-label text-secondary small fw-bold">Artistas Responsables</label>
                         <div id="edit_alb_contenedor_buscador" data-artistas='<?= htmlspecialchars(json_encode($artistas), ENT_QUOTES, 'UTF-8') ?>'>
                             <div id="edit_alb_selected_artists" class="d-flex flex-wrap gap-2 mb-2"></div>
                             <div class="position-relative">
@@ -372,12 +393,11 @@
                         </div>
                     </div>
                     <div>
-                        <label class="form-label">Año</label>
+                        <label class="form-label text-secondary small fw-bold">Año</label>
                         <input type="number" name="anio" id="edit_alb_anio" class="form-control">
                     </div>
                     <div>
-                        <label class="form-label">Reemplazar Carátula <span class="text-warning">(Opcional)</span></label>
-                        <!-- INPUT GROUP UNIFICADO -->
+                        <label class="form-label text-secondary small fw-bold">Reemplazar Carátula <span class="text-warning">(Opcional)</span></label>
                         <div class="input-group">
                             <input type="file" name="caratula" class="form-control bg-dark border-secondary text-white shadow-none" accept="image/*">
                             <button type="button" class="btn btn-outline-danger fw-bold shadow-none" onclick="abrirBuscadorPortadas('album', 'edit_alb_titulo', this)">
@@ -411,15 +431,15 @@
                 <input type="hidden" name="id" id="edit_pl_id">
                 <div class="modal-body d-flex flex-column gap-3">
                     <div>
-                        <label class="form-label">Nombre</label>
+                        <label class="form-label text-secondary small fw-bold">Nombre</label>
                         <input type="text" name="nombre" id="edit_pl_nombre" class="form-control" required>
                     </div>
                     <div>
-                        <label class="form-label">Descripción</label>
+                        <label class="form-label text-secondary small fw-bold">Descripción</label>
                         <input type="text" name="descripcion" id="edit_pl_desc" class="form-control">
                     </div>
                     <div>
-                        <label class="form-label">Reemplazar Portada <span class="text-warning">(Opcional)</span></label>
+                        <label class="form-label text-secondary small fw-bold">Reemplazar Portada <span class="text-warning">(Opcional)</span></label>
                         <input type="file" name="caratula" class="form-control" accept="image/*">
                     </div>
                 </div>
@@ -530,7 +550,8 @@
     </div>
     <div id="letras-lista-dinamica" class="p-4 overflow-y-auto" style="height: calc(100% - 60px);">
         <div class="text-center py-5 text-secondary">
-            <i class="bi bi-music-note fs-1 d-block mb-3 opacity-50"></i> Reproduce una pista para buscar su letra
+            <i class="bi bi-music-note fs-1 d-block mb-3 opacity-50"></i>
+            Reproduce una pista para buscar su letra
         </div>
     </div>
 </div>

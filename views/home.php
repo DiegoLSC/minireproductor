@@ -38,19 +38,8 @@
                         </tr>
                     <?php else: ?>
                         <?php foreach($canciones as $index => $c): ?>
-                            <tr class="song-row target-row" 
-                                id="fila_cancion_<?= $c['id'] ?>"
-                                data-playlists="<?= htmlspecialchars($c['playlists_nombres']) ?>"
-                                data-ruta="<?= htmlspecialchars($c['ruta_archivo']) ?>"
-                                data-titulo="<?= htmlspecialchars($c['titulo']) ?>"
-                                data-artista="<?= htmlspecialchars($c['artistas_nombres']) ?>"
-                                data-caratula="<?= htmlspecialchars($c['caratula']) ?>"
-                                data-fecha="<?= htmlspecialchars($c['fecha_subida']) ?>"
-                                data-album-id="<?= $c['album_id'] ?? '' ?>"
-                                data-artistas-ids="<?= $c['artistas_ids'] ?? '' ?>">
-                                
+                            <tr class="song-row target-row" id="fila_cancion_<?= $c['id'] ?>" data-playlists="<?= htmlspecialchars($c['playlists_nombres']) ?>" data-ruta="<?= htmlspecialchars($c['ruta_archivo']) ?>" data-titulo="<?= htmlspecialchars($c['titulo']) ?>" data-artista="<?= htmlspecialchars($c['artistas_nombres']) ?>" data-caratula="<?= htmlspecialchars($c['caratula']) ?>" data-fecha="<?= htmlspecialchars($c['fecha_subida']) ?>" data-album-id="<?= $c['album_id'] ?? '' ?>" data-artistas-ids="<?= $c['artistas_ids'] ?? '' ?>">
                                 <td class="text-secondary"><?= $index + 1 ?></td>
-                                
                                 <td class="title-col">
                                     <div class="d-flex align-items-center gap-3">
                                         <?php if (empty($c['caratula']) || strpos($c['caratula'], 'default.jpg') !== false): ?>
@@ -61,7 +50,6 @@
                                         <span class="fw-bold"><?= htmlspecialchars($c['titulo']) ?></span>
                                     </div>
                                 </td>
-                                
                                 <td class="album-col d-none d-md-table-cell btn-no-propagar">
                                     <?php if ($c['album'] === 'Single / Sencillo'): ?>
                                         <a href="#" class="text-muted font-monospace small text-decoration-none hover-underline link-filtro-busqueda" data-filtro="Single">Single</a>
@@ -71,25 +59,16 @@
                                         </a>
                                     <?php endif; ?>
                                 </td>
-                                
                                 <td class="artist-col btn-no-propagar">
-                                    <?php 
-                                    $artistas_lista = explode(', ', $c['artistas_nombres'] ?? 'Artista Desconocido');
-                                    foreach($artistas_lista as $i => $nom_art): 
-                                    ?>
+                                    <?php $artistas_lista = explode(', ', $c['artistas_nombres'] ?? 'Artista Desconocido'); foreach($artistas_lista as $i => $nom_art): ?>
                                         <a href="#" class="text-info text-decoration-none hover-underline link-filtro-busqueda" data-filtro="<?= htmlspecialchars($nom_art, ENT_QUOTES) ?>">
                                             <?= htmlspecialchars($nom_art) ?>
                                         </a><?= ($i < count($artistas_lista) - 1) ? '<span class="text-secondary">, </span>' : '' ?>
                                     <?php endforeach; ?>
                                 </td>
-                                
                                 <td class="text-secondary font-monospace small d-none d-md-table-cell">
-                                    <?php 
-                                    $segundosTotales = $c['duracion'] ?? 0;
-                                    echo floor($segundosTotales / 60) . ":" . sprintf('%02d', $segundosTotales % 60); 
-                                    ?>
+                                    <?php $segundosTotales = $c['duracion'] ?? 0; echo floor($segundosTotales / 60) . ":" . sprintf('%02d', $segundosTotales % 60); ?>
                                 </td>
-                                
                                 <td class="btn-no-propagar">
                                     <div class="dropdown">
                                         <button type="button" class="btn text-secondary border-0 p-1 shadow-none" data-bs-toggle="dropdown" data-bs-boundary="window" style="background: none; line-height: 1;">
@@ -102,7 +81,7 @@
                                                 </button>
                                             </li>
                                             <li>
-                                                <button type="button" class="dropdown-item text-white rounded small py-1.5 btn-accion-fila" data-accion="add-playlist">
+                                                <button type="button" class="dropdown-item text-white rounded small py-1.5 btn-accion-fila" data-accion="add-playlist" data-bs-toggle="modal" data-bs-target="#agregarAPlaylistModal">
                                                     <i class="bi bi-plus-circle me-2 text-info"></i> Añadir a Playlist
                                                 </button>
                                             </li>
@@ -146,73 +125,117 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const tabla = document.getElementById('tablaCanciones');
-    if (!tabla) return;
-
-    tabla.addEventListener('click', (e) => {
-        // 1. Evitar que botones o links disparen la reproducción accidentalmente
-        if (e.target.closest('.btn-no-propagar')) {
-            e.stopPropagation();
-        }
-
-        // 2. Filtros rápidos de Artista o Álbum
-        const linkFiltro = e.target.closest('.link-filtro-busqueda');
-        if (linkFiltro) {
-            e.preventDefault();
-            document.getElementById('buscadorInput').value = linkFiltro.dataset.filtro;
-            if(typeof filtrarBiblioteca === 'function') filtrarBiblioteca();
-            return;
-        }
-
-        // 3. Reproducir desde Fila (Si se hizo clic en el <tr> pero no en los menús)
-        const fila = e.target.closest('.target-row');
-        if (fila && !e.target.closest('.dropdown') && !e.target.closest('a')) {
-            if (typeof reproducirDesdeFila === 'function') reproducirDesdeFila(fila);
-            return;
-        }
-
-        // 4. Acciones del Menú Desplegable (3 puntitos)
-        const btnAccion = e.target.closest('.btn-accion-fila');
-        if (btnAccion && fila) {
-            // Obtenemos los datos limpios de la fila
-            const id = fila.id.replace('fila_cancion_', '');
-            const titulo = fila.dataset.titulo;
-            const ruta = fila.dataset.ruta;
-            const albumId = fila.dataset.albumId;
-            const artIds = fila.dataset.artistasIds;
-            const artNombres = fila.dataset.artista;
+    // 1. LECTOR GLOBAL DE DURACIÓN MP3 (A prueba de fallos)
+    document.body.addEventListener('change', function(e) {
+        if (e.target.tagName === 'INPUT' && e.target.type === 'file' && (e.target.name === 'archivo_mp3' || e.target.accept.includes('audio'))) {
+            const archivo = e.target.files[0];
+            if (!archivo) return;
+            const form = e.target.closest('form');
+            if (!form) return;
             
-            switch (btnAccion.dataset.accion) {
-                case 'add-cola':
-                    if(typeof agregarAColaManual === 'function') agregarAColaManual(ruta);
-                    break;
-                case 'add-playlist':
-                    document.getElementById('id_cancion_playlist').value = id;
-                    window.filaCancionActiva = fila;
-                    break;
-                case 'remove-playlist':
-                    const inputPlaylist = document.getElementById('playlist_activa_id');
-                    if (inputPlaylist && typeof quitarDePlaylistAsincrono === 'function') {
-                        quitarDePlaylistAsincrono(id, inputPlaylist.value, btnAccion);
-                    }
-                    break;
-                case 'editar':
-                    // Extraemos la duración (escondida en texto)
-                    const duracionStr = fila.querySelector('td.font-monospace').innerText.split(':');
-                    const duracionSegs = (parseInt(duracionStr[0]) * 60) + parseInt(duracionStr[1]);
-                    
-                    if(typeof cargarModalCancion === 'function') cargarModalCancion(id, titulo, albumId, duracionSegs, ruta);
-                    if(typeof cargarEtiquetasEdicion === 'function') cargarEtiquetasEdicion(artIds, artNombres);
-                    break;
-                case 'descargar':
-                    const albumNombre = btnAccion.dataset.albumNombre;
-                    if(typeof descargarCancionConMetadatos === 'function') descargarCancionConMetadatos(btnAccion, ruta, titulo, artNombres, albumNombre);
-                    break;
-                case 'eliminar':
-                    if(typeof prepararEliminacion === 'function') prepararEliminacion('cancion', id, btnAccion);
-                    break;
+            let inputDuracion = form.querySelector('input[name="duracion"]');
+            if (!inputDuracion) {
+                inputDuracion = document.createElement('input');
+                inputDuracion.type = 'hidden';
+                inputDuracion.name = 'duracion';
+                form.appendChild(inputDuracion);
             }
+            const objUrl = URL.createObjectURL(archivo);
+            const audioTemp = new Audio(objUrl);
+            audioTemp.addEventListener('loadedmetadata', () => {
+                inputDuracion.value = Math.round(audioTemp.duration);
+                URL.revokeObjectURL(objUrl); 
+            });
         }
     });
+
+    // 2. ESCUCHADOR DE LA TABLA (Delegación principal)
+    const tabla = document.getElementById('tablaCanciones');
+    if (tabla) {
+        tabla.addEventListener('click', (e) => {
+            if (e.target.closest('.btn-no-propagar')) e.stopPropagation();
+
+            const linkFiltro = e.target.closest('.link-filtro-busqueda');
+            if (linkFiltro) {
+                e.preventDefault();
+                document.getElementById('buscadorInput').value = linkFiltro.dataset.filtro;
+                if(typeof filtrarBiblioteca === 'function') filtrarBiblioteca();
+                return;
+            }
+
+            const fila = e.target.closest('.target-row');
+            if (fila && !e.target.closest('.dropdown') && !e.target.closest('a')) {
+                if (typeof reproducirDesdeFila === 'function') reproducirDesdeFila(fila);
+                return;
+            }
+
+            const btnAccion = e.target.closest('.btn-accion-fila');
+            if (btnAccion && fila) {
+                const id = fila.id.replace('fila_cancion_', '');
+                const titulo = fila.dataset.titulo;
+                const ruta = fila.dataset.ruta;
+                const albumId = fila.dataset.albumId;
+                const artIds = fila.dataset.artistasIds;
+                const artNombres = fila.dataset.artista;
+                
+                switch (btnAccion.dataset.accion) {
+                    case 'add-cola':
+                        if(typeof agregarAColaManual === 'function') agregarAColaManual(ruta);
+                        break;
+                    case 'add-playlist':
+                        // ASIGNACIÓN DE DATOS
+                        const inputId = document.getElementById('id_cancion_playlist');
+                        if (inputId) inputId.value = id;
+                        window.filaCancionActiva = fila;
+                        
+                        // PARCHE DIRECTO: FORZAR APERTURA DE MODAL POR JAVASCRIPT
+                        const modalPlaylist = document.getElementById('agregarPlaylistModal'); // OJO: SI TU MODAL SE LLAMA DIFERENTE, CAMBIA ESTE NOMBRE
+                        if (modalPlaylist) {
+                            bootstrap.Modal.getOrCreateInstance(modalPlaylist).show();
+                        } else {
+                            console.error("No se encuentra el ID 'agregarPlaylistModal' en tu HTML.");
+                        }
+                        break;
+                    case 'remove-playlist':
+                        const inputPlaylist = document.getElementById('playlist_activa_id');
+                        if (inputPlaylist && typeof quitarDePlaylistAsincrono === 'function') {
+                            quitarDePlaylistAsincrono(id, inputPlaylist.value, btnAccion);
+                        }
+                        break;
+                    case 'editar':
+                        const tdDuracion = fila.querySelector('td.font-monospace');
+                        let duracionSegs = 0;
+                        if (tdDuracion) {
+                            const partes = tdDuracion.innerText.trim().split(':');
+                            if (partes.length === 2) {
+                                duracionSegs = (parseInt(partes[0]) * 60) + parseInt(partes[1]);
+                            }
+                        }
+                        if(typeof cargarModalCancion === 'function') cargarModalCancion(id, titulo, albumId, duracionSegs, ruta);
+                        if(typeof cargarEtiquetasEdicion === 'function') cargarEtiquetasEdicion(artIds, artNombres);
+                        
+                        const formEdicion = document.querySelector('#editCancionModal form');
+                        if (formEdicion) {
+                            let inputDur = formEdicion.querySelector('input[name="duracion"]');
+                            if (!inputDur) {
+                                inputDur = document.createElement('input');
+                                inputDur.type = 'hidden';
+                                inputDur.name = 'duracion';
+                                formEdicion.appendChild(inputDur);
+                            }
+                            inputDur.value = duracionSegs;
+                        }
+                        break;
+                    case 'descargar':
+                        const albumNombre = btnAccion.dataset.albumNombre;
+                        if(typeof descargarCancionConMetadatos === 'function') descargarCancionConMetadatos(btnAccion, ruta, titulo, artNombres, albumNombre);
+                        break;
+                    case 'eliminar':
+                        if(typeof prepararEliminacion === 'function') prepararEliminacion('cancion', id, btnAccion);
+                        break;
+                }
+            }
+        });
+    }
 });
 </script>

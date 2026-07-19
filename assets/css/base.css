@@ -41,24 +41,66 @@ html, body {
 
 /* ==================================================
    PARCHE MAESTRO: APLICACIÓN DEL COLOR AL SISTEMA
+   Sobrescribe todas las clases nativas y utilidades
+   para que obedezcan al color dinámico elegido.
 ================================================== */
+
+/* Textos, Fondos y Bordes globales (Aplica a notificaciones y modales) */
 .text-danger, .text-success { color: var(--carmesí-brillante) !important; }
 .text-info { color: var(--carmesí-pastel) !important; }
 .text-secondary { color: var(--texto-secundario) !important; }
 
-.btn-success, .btn-danger {
+.bg-danger { background-color: var(--sistema-carmesí) !important; }
+.border-danger { border-color: var(--sistema-carmesí) !important; }
+
+/* Botones Nativos (Ahora incluye btn-primary) */
+.btn-success, .btn-danger, .btn-primary {
     background-color: var(--sistema-carmesí) !important;
     border-color: var(--sistema-carmesí) !important;
     color: #ffffff !important;
 }
 
-.btn-success:hover, .btn-danger:hover { 
+.btn-success:hover, .btn-danger:hover, .btn-primary:hover { 
     background-color: var(--carmesí-hover) !important; 
+    border-color: var(--carmesí-hover) !important;
 }
 
 .btn-outline-danger {
     color: var(--carmesí-brillante) !important;
     border-color: var(--sistema-carmesí) !important;
+}
+
+.btn-outline-danger:hover {
+    background-color: var(--sistema-carmesí) !important;
+    color: #ffffff !important;
+}
+
+/* Etiquetas y Burbujas (Ej: Artistas seleccionados en el modal) */
+.badge.bg-danger, .badge.bg-success {
+    background-color: var(--sistema-carmesí) !important;
+    color: #ffffff !important;
+}
+
+/* Barras de progreso de subida y escaneo de iTunes */
+.progress-bar.bg-danger, .progress-bar.bg-success {
+    background-color: var(--sistema-carmesí) !important;
+}
+
+/* Brillo de íconos específicos (Ej: botón crosshair) */
+.bi-crosshair {
+    filter: drop-shadow(0 0 5px rgba(var(--sistema-carmesí-rgb), 0.5)) !important;
+}
+
+/* Sobrescribir bordes quemados inline en el HTML (Buscador de artistas) */
+div[id$="_artist_results"] {
+    border-color: rgba(var(--sistema-carmesí-rgb), 0.5) !important;
+}
+
+/* Notificaciones emergentes (Librería Toastify o Toasts nativos en rojo) */
+.toastify, .toast.bg-danger {
+    background-color: var(--sistema-carmesí) !important;
+    border-color: var(--carmesí-hover) !important;
+    color: #ffffff !important;
 }
 
 /* Efectos Hover Globales */
